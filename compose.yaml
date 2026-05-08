@@ -1,0 +1,49 @@
+﻿services:
+  postgres:
+    image: postgres:16-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: restaurant-api
+    ports:
+      - '5432:5432'
+    profiles:
+      - db
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U user -d token-based-auth-v1' ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  cache:
+    image: redis:latest
+    container_name: redist_container
+    restart: always
+    ports:
+      - "6379:6379"
+    command: >
+      --requirepass Secret123
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "Secret", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis_data:/data
+    profiles:
+      - db
+  redis_insight:
+    image: redislabs/redisinsight:latest
+    container_name: redis_insight
+    ports:
+      - "5540:5540"
+    depends_on:
+      cache:
+        condition: service_healthy
+    profiles:
+      - db
+
+volumes:
+  postgres_data:
+  redis_data:
