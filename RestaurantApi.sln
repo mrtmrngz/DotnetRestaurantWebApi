@@ -19,6 +19,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		compose.yaml = compose.yaml
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RestaurantApi.Infrastructure", "src\RestaurantApi.Infrastructure\RestaurantApi.Infrastructure.csproj", "{2AFC79CF-E48F-4C6F-B150-7488FB4DCBAD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,6 +31,7 @@ Global
 		{49A80971-EED3-4923-BC1B-D74587643810} = {26BFF2FD-4C4C-41E7-9492-50C028D29529}
 		{03B65461-02E4-4328-B042-949D56B53BAC} = {635088AE-76F4-4A2B-87C1-F06CD969AE90}
 		{476BC08E-0AD0-414A-8A9A-5EFDEF6CB2F8} = {3322EB5E-7F02-45B4-917B-6127F422AAC7}
+		{2AFC79CF-E48F-4C6F-B150-7488FB4DCBAD} = {635088AE-76F4-4A2B-87C1-F06CD969AE90}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{AB58D57D-CF2B-471A-A840-B0E3160098C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -47,5 +50,9 @@ Global
 		{476BC08E-0AD0-414A-8A9A-5EFDEF6CB2F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{476BC08E-0AD0-414A-8A9A-5EFDEF6CB2F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{476BC08E-0AD0-414A-8A9A-5EFDEF6CB2F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2AFC79CF-E48F-4C6F-B150-7488FB4DCBAD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2AFC79CF-E48F-4C6F-B150-7488FB4DCBAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2AFC79CF-E48F-4C6F-B150-7488FB4DCBAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2AFC79CF-E48F-4C6F-B150-7488FB4DCBAD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

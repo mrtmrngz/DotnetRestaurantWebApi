@@ -1,8 +1,7 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using RestaurantApi.Persistence.Context;
+using RestaurantApi.Infrastructure.DependencyInjection;
 using RestaurantApi.Persistence.Extension;
-using RestaurantApi.Persistence.Identity;
+using RestaurantApi.WebApi.Middlewares;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +20,17 @@ builder.Services.AddDbPersistance(builder.Configuration);
 // Redis Configuration
 builder.Services.AddRedis(builder.Configuration);
 
+// INFRA DI REGISTRATION
+builder.Services.AddInfrastructureServices();
+
+// Serilog
+builder.Host.UseSerilog((ctx, lc) =>
+{
+    lc.Enrich.FromLogContext()
+        .WriteTo.Console()
+        .WriteTo.Seq("http://localhost:5341");
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -30,7 +40,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
+// Logging Middleware
+app.UseMiddleware<RequestLoggingMiddleware>();
+
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
