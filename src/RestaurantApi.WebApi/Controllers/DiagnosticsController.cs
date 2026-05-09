@@ -4,7 +4,7 @@ using RestaurantApi.Infrastructure.Cache;
 namespace RestaurantApi.WebApi.Controllers;
 
 [ApiController]
-[Route("api/{controller}")]
+[Route("api/[controller]")]
 public class DiagnosticsController : ControllerBase
 {
     [HttpGet("cache")]

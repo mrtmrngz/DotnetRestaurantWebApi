@@ -1,3 +1,4 @@
+using RestaurantApi.Application.Common.Extensions;
 using RestaurantApi.Infrastructure.DependencyInjection;
 using RestaurantApi.Persistence.Extension;
 using RestaurantApi.WebApi.Middlewares;
@@ -23,6 +24,9 @@ builder.Services.AddRedis(builder.Configuration);
 // INFRA DI REGISTRATION
 builder.Services.AddInfrastructureServices();
 
+// MEDIATR & FLUENT VALIDATION PIPELINE
+builder.Services.AddApplicationServices();
+
 // Serilog
 builder.Host.UseSerilog((ctx, lc) =>
 {
@@ -39,6 +43,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Exception Middleware
+app.UseMiddleware<ExceptionMiddleware>();
 
 // Logging Middleware
 app.UseMiddleware<RequestLoggingMiddleware>();
