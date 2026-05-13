@@ -4,6 +4,7 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <UserSecretsId>3c33eb5a-a749-46b9-b076-abd44b934fdb</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>
@@ -24,7 +25,12 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\RestaurantApi.Application\RestaurantApi.Application.csproj" />
       <ProjectReference Include="..\RestaurantApi.Domain\RestaurantApi.Domain.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Entities\" />
     </ItemGroup>
 
 </Project>

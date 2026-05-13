@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using RestaurantApi.Domain.Entities;
-using RestaurantApi.Persistence.Entities;
-using RestaurantApi.Persistence.Identity;
+using RestaurantApi.Domain.Identity;
 
 namespace RestaurantApi.Persistence.Context;
 
@@ -17,7 +16,7 @@ public class ApiContext : IdentityDbContext<AppUser, AppRole, Guid>
         builder.ApplyConfigurationsFromAssembly(typeof(ApiContext).Assembly);
         base.OnModelCreating(builder);
     }
-    
+
     public DbSet<Address> Addresses { get; set; }
     public DbSet<Permission> Permissions { get; set; }
     public DbSet<RolePermission> RolePermissions { get; set; }
@@ -32,4 +31,5 @@ public class ApiContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<CartItem> CartItems { get; set; }
     public DbSet<Order> Orders { get; set; }
     public DbSet<OrderItem> OrderItems { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
 }

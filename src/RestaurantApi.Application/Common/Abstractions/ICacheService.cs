@@ -1,4 +1,4 @@
-namespace RestaurantApi.Infrastructure.Cache;
+namespace RestaurantApi.Application.Common.Abstractions;
 
 public interface ICacheService
 {
@@ -9,4 +9,6 @@ public interface ICacheService
     );
 
     Task RemoveAsync(string key);
+    Task SetAsync<T>(string key, T data, TimeSpan? expiration);
+    Task<T?> GetAsync<T>(string key);
 }

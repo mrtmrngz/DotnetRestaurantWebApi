@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity;
-using RestaurantApi.Persistence.Entities;
+using RestaurantApi.Domain.Entities;
 
-namespace RestaurantApi.Persistence.Identity;
+namespace RestaurantApi.Domain.Identity;
 
 public class AppRole : IdentityRole<Guid>
 {

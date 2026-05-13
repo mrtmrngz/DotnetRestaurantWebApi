@@ -1,6 +1,6 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
+using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Infrastructure.Common;
 using StackExchange.Redis;
 
@@ -57,13 +57,87 @@ public class CacheService : ICacheService
             await db.StringSetAsync(key, compressed, expiration ?? TimeSpan.FromHours(1));
 
             _logger.LogInformation("💾 CACHE SET: {Key}", key);
-            
+
             return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "🔴 Redis connection failed for key: {Key}", key);
+            return await task();
         }
         finally
         {
             await _lockService.ReleaseAsync(key);
             _logger.LogInformation("🔓 LOCK RELEASED: {Key}", key);
+        }
+    }
+
+    public async Task SetAsync<T>(string key, T data, TimeSpan? expiration = null)
+    {
+
+        int retryCount = 0;
+        const int maxRetries = 5;
+
+        while (retryCount < maxRetries)
+        {
+            var lockAcquired = await _lockService.AcquireLock(key, TimeSpan.FromSeconds(5));
+
+            if (lockAcquired)
+            {
+                try
+                {
+                    var db = _redis.GetDatabase();
+                    var json = JsonSerializer.Serialize(data);
+                    var compressed = CompressionHelper.Compress(json);
+
+                    await db.StringSetAsync(key, compressed, expiration ?? TimeSpan.FromHours(1));
+                    _logger.LogInformation("💾 CACHE MANUAL SET: {Key}", key);
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "🔴 Redis SetAsync failed: {Key}", key);
+                    return;
+                }
+                finally
+                {
+                    await _lockService.ReleaseAsync(key);
+                    _logger.LogInformation("🔓 LOCK RELEASED: {Key}", key);
+                }
+            }
+
+            retryCount++;
+            _logger.LogWarning("🔒 LOCK FAILED, retry {Count}/{Max}: {Key}", retryCount, maxRetries, key);
+            await Task.Delay(100);
+        }
+
+        _logger.LogError("🚫 Could not acquire lock for SetAsync after {Max} retries: {Key}", maxRetries, key);
+    }
+
+    public async Task<T?> GetAsync<T>(string key)
+    {
+        try
+        {
+            var db = _redis.GetDatabase();
+
+            var cachedValue = await db.StringGetAsync(key);
+
+            if (cachedValue.HasValue)
+            {
+                CacheMetrics.Hit();
+                _logger.LogInformation("⚡ CACHE HIT: {Key}", key);
+                var decompressed = CompressionHelper.Decompress(cachedValue!);
+                return JsonSerializer.Deserialize<T>(decompressed)!;
+            }
+            
+            CacheMetrics.Miss();
+            _logger.LogWarning("❌ CACHE MISS: {Key}", key);
+            return default;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "🔴 Redis GetAsync failed for key: {Key}", key);
+            return default;
         }
     }
 

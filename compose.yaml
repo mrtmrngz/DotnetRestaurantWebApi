@@ -54,9 +54,33 @@
       - seq-data:/data
     profiles:
       - logging
+  localstack:
+    image: localstack/localstack:latest
+    container_name: localstack-s3
+    ports:
+      - "4566:4566"
+    environment:
+      - DEBUG=1
+      - SERVICES=s3
+      - AWS_DEFAULT_REGION=eu-west-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./docker/localstack/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh
+      - localstack_data:/var/lib/localstack
+    profiles:
+      - localstack
+    healthcheck:
+      test: [ "CMD", "awslocal", "s3", "ls" ]
+      interval: 5s
+      timeout: 10s
+      retries: 5
   
 
 volumes:
   postgres_data:
   redis_data:
   seq-data:
+  localstack_data:

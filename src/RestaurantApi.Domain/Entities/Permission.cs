@@ -1,4 +1,4 @@
-namespace RestaurantApi.Persistence.Entities;
+namespace RestaurantApi.Domain.Entities;
 
 public class Permission
 {

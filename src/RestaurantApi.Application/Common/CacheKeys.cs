@@ -1,6 +1,8 @@
+
 namespace RestaurantApi.Application.Common;
 
 public static class CacheKeys
 {
-    // cache keys here later
+    public static string RefreshToken(string token) => $"refreshToken:{token}";
+    public static string RolePermissions(string role) => $"role:{role}:permissions";
 }

@@ -13,3 +13,17 @@ public abstract class AppException : Exception
         Code = code;
     }
 }
+
+public class UnauthorizedException : AppException
+{
+    public UnauthorizedException(string message) : base(message, statusCode: 401, code: Codes.UNAUTHORIZED)
+    {
+    }
+}
+
+public class NotFoundException : AppException
+{
+    public NotFoundException(string message) : base(message, statusCode: 404, code: Codes.NOT_FOUND)
+    {
+    }
+}

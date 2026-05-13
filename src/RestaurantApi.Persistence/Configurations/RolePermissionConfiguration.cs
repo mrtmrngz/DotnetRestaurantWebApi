@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using RestaurantApi.Persistence.Entities;
+using RestaurantApi.Domain.Entities;
 
 namespace RestaurantApi.Persistence.Configurations;
 

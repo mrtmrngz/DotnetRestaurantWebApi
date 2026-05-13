@@ -435,6 +435,28 @@ namespace RestaurantApi.Persistence.Migrations
                     b.ToTable("order_items", (string)null);
                 });
 
+            modelBuilder.Entity("RestaurantApi.Domain.Entities.Permission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("permissions", (string)null);
+                });
+
             modelBuilder.Entity("RestaurantApi.Domain.Entities.Product", b =>
                 {
                     b.Property<Guid>("Id")
@@ -515,6 +537,40 @@ namespace RestaurantApi.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("product_media", (string)null);
+                });
+
+            modelBuilder.Entity("RestaurantApi.Domain.Entities.RefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "Token");
+
+                    b.ToTable("refresh_tokens", (string)null);
                 });
 
             modelBuilder.Entity("RestaurantApi.Domain.Entities.Reservation", b =>
@@ -600,29 +656,7 @@ namespace RestaurantApi.Persistence.Migrations
                     b.ToTable("restaurant_tables", (string)null);
                 });
 
-            modelBuilder.Entity("RestaurantApi.Persistence.Entities.Permission", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.ToTable("permissions", (string)null);
-                });
-
-            modelBuilder.Entity("RestaurantApi.Persistence.Entities.RolePermission", b =>
+            modelBuilder.Entity("RestaurantApi.Domain.Entities.RolePermission", b =>
                 {
                     b.Property<Guid>("PermissionId")
                         .HasColumnType("uuid");
@@ -637,7 +671,7 @@ namespace RestaurantApi.Persistence.Migrations
                     b.ToTable("role_permissions", (string)null);
                 });
 
-            modelBuilder.Entity("RestaurantApi.Persistence.Identity.AppRole", b =>
+            modelBuilder.Entity("RestaurantApi.Domain.Identity.AppRole", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -664,7 +698,7 @@ namespace RestaurantApi.Persistence.Migrations
                     b.ToTable("AspNetRoles", (string)null);
                 });
 
-            modelBuilder.Entity("RestaurantApi.Persistence.Identity.AppUser", b =>
+            modelBuilder.Entity("RestaurantApi.Domain.Identity.AppUser", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -685,7 +719,9 @@ namespace RestaurantApi.Persistence.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("boolean");
@@ -695,7 +731,8 @@ namespace RestaurantApi.Persistence.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -719,7 +756,8 @@ namespace RestaurantApi.Persistence.Migrations
 
                     b.Property<string>("Surname")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("boolean");
@@ -729,6 +767,10 @@ namespace RestaurantApi.Persistence.Migrations
                         .HasColumnType("character varying(256)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Users_Email");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -742,7 +784,7 @@ namespace RestaurantApi.Persistence.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
-                    b.HasOne("RestaurantApi.Persistence.Identity.AppRole", null)
+                    b.HasOne("RestaurantApi.Domain.Identity.AppRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -751,7 +793,7 @@ namespace RestaurantApi.Persistence.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
                 {
-                    b.HasOne("RestaurantApi.Persistence.Identity.AppUser", null)
+                    b.HasOne("RestaurantApi.Domain.Identity.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -760,7 +802,7 @@ namespace RestaurantApi.Persistence.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
                 {
-                    b.HasOne("RestaurantApi.Persistence.Identity.AppUser", null)
+                    b.HasOne("RestaurantApi.Domain.Identity.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -769,13 +811,13 @@ namespace RestaurantApi.Persistence.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<System.Guid>", b =>
                 {
-                    b.HasOne("RestaurantApi.Persistence.Identity.AppRole", null)
+                    b.HasOne("RestaurantApi.Domain.Identity.AppRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("RestaurantApi.Persistence.Identity.AppUser", null)
+                    b.HasOne("RestaurantApi.Domain.Identity.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -784,7 +826,7 @@ namespace RestaurantApi.Persistence.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
                 {
-                    b.HasOne("RestaurantApi.Persistence.Identity.AppUser", null)
+                    b.HasOne("RestaurantApi.Domain.Identity.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -793,7 +835,7 @@ namespace RestaurantApi.Persistence.Migrations
 
             modelBuilder.Entity("RestaurantApi.Domain.Entities.Address", b =>
                 {
-                    b.HasOne("RestaurantApi.Persistence.Identity.AppUser", null)
+                    b.HasOne("RestaurantApi.Domain.Identity.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -807,7 +849,7 @@ namespace RestaurantApi.Persistence.Migrations
                         .HasForeignKey("RestaurantTableId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("RestaurantApi.Persistence.Identity.AppUser", null)
+                    b.HasOne("RestaurantApi.Domain.Identity.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -862,7 +904,7 @@ namespace RestaurantApi.Persistence.Migrations
                         .HasForeignKey("RestaurantTableId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("RestaurantApi.Persistence.Identity.AppUser", null)
+                    b.HasOne("RestaurantApi.Domain.Identity.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -915,6 +957,15 @@ namespace RestaurantApi.Persistence.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("RestaurantApi.Domain.Entities.RefreshToken", b =>
+                {
+                    b.HasOne("RestaurantApi.Domain.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("RestaurantApi.Domain.Entities.Reservation", b =>
                 {
                     b.HasOne("RestaurantApi.Domain.Entities.RestaurantTable", "RestaurantTable")
@@ -923,7 +974,7 @@ namespace RestaurantApi.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("RestaurantApi.Persistence.Identity.AppUser", null)
+                    b.HasOne("RestaurantApi.Domain.Identity.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -931,15 +982,15 @@ namespace RestaurantApi.Persistence.Migrations
                     b.Navigation("RestaurantTable");
                 });
 
-            modelBuilder.Entity("RestaurantApi.Persistence.Entities.RolePermission", b =>
+            modelBuilder.Entity("RestaurantApi.Domain.Entities.RolePermission", b =>
                 {
-                    b.HasOne("RestaurantApi.Persistence.Entities.Permission", "Permission")
+                    b.HasOne("RestaurantApi.Domain.Entities.Permission", "Permission")
                         .WithMany("RolePermissions")
                         .HasForeignKey("PermissionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("RestaurantApi.Persistence.Identity.AppRole", "Role")
+                    b.HasOne("RestaurantApi.Domain.Identity.AppRole", "Role")
                         .WithMany("RolePermissions")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -965,6 +1016,11 @@ namespace RestaurantApi.Persistence.Migrations
                     b.Navigation("OrderItems");
                 });
 
+            modelBuilder.Entity("RestaurantApi.Domain.Entities.Permission", b =>
+                {
+                    b.Navigation("RolePermissions");
+                });
+
             modelBuilder.Entity("RestaurantApi.Domain.Entities.Product", b =>
                 {
                     b.Navigation("Discounts");
@@ -977,12 +1033,7 @@ namespace RestaurantApi.Persistence.Migrations
                     b.Navigation("Reservations");
                 });
 
-            modelBuilder.Entity("RestaurantApi.Persistence.Entities.Permission", b =>
-                {
-                    b.Navigation("RolePermissions");
-                });
-
-            modelBuilder.Entity("RestaurantApi.Persistence.Identity.AppRole", b =>
+            modelBuilder.Entity("RestaurantApi.Domain.Identity.AppRole", b =>
                 {
                     b.Navigation("RolePermissions");
                 });

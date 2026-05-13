@@ -1,6 +1,6 @@
-using RestaurantApi.Persistence.Identity;
+using RestaurantApi.Domain.Identity;
 
-namespace RestaurantApi.Persistence.Entities;
+namespace RestaurantApi.Domain.Entities;
 
 public class RolePermission
 {

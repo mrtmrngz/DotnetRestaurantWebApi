@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using RestaurantApi.Domain.Entities;
 using RestaurantApi.Domain.Enums;
-using RestaurantApi.Persistence.Identity;
+using RestaurantApi.Domain.Identity;
 
 namespace RestaurantApi.Persistence.Configurations;
 

@@ -2,8 +2,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using RestaurantApi.Application.Common.Abstractions.Repositories;
+using RestaurantApi.Domain.Identity;
 using RestaurantApi.Persistence.Context;
-using RestaurantApi.Persistence.Identity;
+using RestaurantApi.Persistence.Repositories;
 
 namespace RestaurantApi.Persistence.Extension;
 
@@ -30,6 +32,11 @@ public static class PersistenceServiceRegistration
             })
             .AddEntityFrameworkStores<ApiContext>()
             .AddDefaultTokenProviders();
+        
+        // REPOSITORIES
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IPermissionRepository, PermissionRepository>();
 
         return services;
     }

@@ -22,10 +22,13 @@ builder.Services.AddDbPersistance(builder.Configuration);
 builder.Services.AddRedis(builder.Configuration);
 
 // INFRA DI REGISTRATION
-builder.Services.AddInfrastructureServices();
+builder.Services.AddInfrastructureServices(builder.Configuration);
 
 // MEDIATR & FLUENT VALIDATION PIPELINE
 builder.Services.AddApplicationServices();
+
+// lower case endpoint
+builder.Services.Configure<RouteOptions>(options => { options.LowercaseUrls = true; });
 
 // Serilog
 builder.Host.UseSerilog((ctx, lc) =>

@@ -22,6 +22,10 @@ bld/
 *.userosscache
 *.sln.docstates
 
+.env
+
+localstack_data/
+
 # Rider
 .idea/
 *.sln.iml
