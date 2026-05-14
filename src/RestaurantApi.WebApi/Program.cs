@@ -1,3 +1,4 @@
+using Hangfire;
 using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Extensions;
 using RestaurantApi.Infrastructure.DependencyInjection;
@@ -70,6 +71,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.UseHangfireDashboard();
 
 await app.Services.SeedDataAsync();
 

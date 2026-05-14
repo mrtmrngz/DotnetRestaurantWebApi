@@ -1,5 +1,7 @@
 using Amazon;
 using Amazon.S3;
+using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -8,6 +10,7 @@ using RestaurantApi.Application.Mail;
 using RestaurantApi.Infrastructure.Auth;
 using RestaurantApi.Infrastructure.Cache;
 using RestaurantApi.Infrastructure.Mail;
+using RestaurantApi.Infrastructure.Mail.BackgroundJobs;
 using RestaurantApi.Infrastructure.Mail.Factory;
 using RestaurantApi.Infrastructure.Mail.Handlers;
 using RestaurantApi.Infrastructure.Security.Authorization.Extension;
@@ -54,6 +57,16 @@ public static class ServiceRegistration
         services.AddJwtAuthenticationConfiguration(configuration);
         services.AddPermissionPolicy();
         
+        // handfire
+        services.AddHangfire(config => config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UsePostgreSqlStorage(configuration.GetConnectionString("DefaultConnection"))
+        );
+
+        services.AddHangfireServer();
+        
         // mail service secrets
         services.Configure<MailSettings>(configuration.GetSection("MailSettings"));
         
@@ -66,6 +79,8 @@ public static class ServiceRegistration
         
         // mail factory
         services.AddScoped<IMailFactory, MailFactory>();
+
+        services.AddScoped<IMailHandlerManager, MailHandlerManager>();
 
         return services;
     }    
