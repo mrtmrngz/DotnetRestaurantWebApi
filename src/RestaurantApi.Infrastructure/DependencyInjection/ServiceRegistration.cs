@@ -4,8 +4,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using RestaurantApi.Application.Common.Abstractions;
+using RestaurantApi.Application.Mail;
 using RestaurantApi.Infrastructure.Auth;
 using RestaurantApi.Infrastructure.Cache;
+using RestaurantApi.Infrastructure.Mail;
+using RestaurantApi.Infrastructure.Mail.Factory;
+using RestaurantApi.Infrastructure.Mail.Handlers;
 using RestaurantApi.Infrastructure.Security.Authorization.Extension;
 using RestaurantApi.Infrastructure.Settings;
 using RestaurantApi.Infrastructure.Storage;
@@ -49,7 +53,20 @@ public static class ServiceRegistration
 
         services.AddJwtAuthenticationConfiguration(configuration);
         services.AddPermissionPolicy();
+        
+        // mail service secrets
+        services.Configure<MailSettings>(configuration.GetSection("MailSettings"));
+        
+        // mail service
+        services.AddScoped<IMailService, SmtpMailService>();
+        services.AddSingleton<IMailTemplateRenderer, RazorTemplateRenderer>();
+        
+        // mail handlers
+        services.AddScoped<IMailHandler, WelcomeMailHandler>();
+        
+        // mail factory
+        services.AddScoped<IMailFactory, MailFactory>();
 
         return services;
-    }
+    }    
 }

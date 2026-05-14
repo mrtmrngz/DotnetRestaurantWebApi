@@ -1,0 +1,43 @@
+@model RestaurantApi.Infrastructure.Mail.Templates.ViewModels.WelcomeMailViewModel
+
+<!-- Greeting -->
+<div style="margin-bottom: 25px;">
+    <h2 style="color: #1a1a1a; font-size: 22px; margin: 0 0 10px 0;">Merhaba @Model.CustomerName,</h2>
+    <p style="color: #555; font-size: 15px; margin: 0;">Ailemize katıldığın için çok mutluyuz! Senin için harika lezzetler ve özel fırsatlar hazırladık.</p>
+</div>
+
+<!-- Info Box -->
+<div style="background-color: #fff8f3; border: 1px dashed #d4691d; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+    <h3 style="font-size: 13px; color: #d4691d; text-transform: uppercase; margin: 0 0 15px 0; letter-spacing: 1px;">Hesap Detayların</h3>
+    
+    <table style="width: 100%; font-size: 14px; color: #444; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 5px 0; font-weight: 600; width: 100px;">E-Posta:</td>
+            <td style="padding: 5px 0;">@Model.CustomerEmail</td>
+        </tr>
+        <tr>
+            <td style="padding: 5px 0; font-weight: 600;">Telefon:</td>
+            <td style="padding: 5px 0;">@(Model.CustomerPhone ?? "Belirtilmedi")</td>
+        </tr>
+    </table>
+</div>
+
+<!-- Features Section -->
+<div style="margin-bottom: 35px;">
+    <h4 style="font-size: 16px; color: #1a1a1a; margin: 0 0 15px 0;">Neler Yapabilirsin?</h4>
+    <div style="font-size: 14px; color: #666;">
+        <div style="margin-bottom: 12px;">✅ Hızlıca online sipariş verebilirsin.</div>
+        <div style="margin-bottom: 12px;">✅ Favori menülerini kaydedebilirsin.</div>
+        <div style="margin-bottom: 12px;">✅ Sana özel indirim kuponlarını kullanabilirsin.</div>
+    </div>
+</div>
+
+<!-- CTA -->
+<div style="text-align: center; margin-bottom: 20px;">
+    @if (!string.IsNullOrEmpty(Model.AppUrl))
+    {
+        <a href="@Model.AppUrl" style="display: inline-block; background-color: #d4691d; color: #ffffff; padding: 15px 35px; text-decoration: none; border-radius: 50px; font-weight: 700; font-size: 15px; transition: background 0.3s ease;">
+            Hemen Keşfetmeye Başla
+        </a>
+    }
+</div>

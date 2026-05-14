@@ -8,6 +8,10 @@ using Serilog;
 var builder = WebApplication.CreateBuilder(args);
 
 Console.WriteLine(builder.Configuration.GetValue<string>("ConnectionStrings:Redis"));
+Console.WriteLine(builder.Configuration.GetValue<string>("JwtSettings:SecretKey"));
+Console.WriteLine(builder.Configuration.GetValue<string>("MailSettings:Host"));
+Console.WriteLine(builder.Configuration.GetValue<string>("AWS:ServiceUrl"));
+Console.WriteLine(builder.Configuration.GetValue<string>("ConnectionStrings:DefaultConnection"));
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
