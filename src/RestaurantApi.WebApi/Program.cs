@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Extensions;
 using RestaurantApi.Infrastructure.DependencyInjection;
 using RestaurantApi.Persistence.Extension;
@@ -27,6 +28,12 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 // MEDIATR & FLUENT VALIDATION PIPELINE
 builder.Services.AddApplicationServices();
 
+// suppress model state validation
+builder.Services.Configure<ApiBehaviorOptions>(opts =>
+{
+    opts.SuppressModelStateInvalidFilter = true;
+});
+
 // lower case endpoint
 builder.Services.Configure<RouteOptions>(options => { options.LowercaseUrls = true; });
 
@@ -34,7 +41,9 @@ builder.Services.Configure<RouteOptions>(options => { options.LowercaseUrls = tr
 builder.Host.UseSerilog((ctx, lc) =>
 {
     lc.Enrich.FromLogContext()
-        .WriteTo.Console()
+        .WriteTo.Console(
+            theme: Serilog.Sinks.SystemConsole.Themes.AnsiConsoleTheme.Code,
+            outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
         .WriteTo.Seq("http://localhost:5341");
 });
 
@@ -57,5 +66,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+await app.Services.SeedDataAsync();
 
 app.Run();

@@ -11,6 +11,7 @@ public static class AuthorizationExtension
     public static IServiceCollection AddPermissionPolicy(this IServiceCollection services)
     {
         services.AddScoped<IAuthorizationHandler, RedisPermissionHandler>();
+        services.AddScoped<IAuthorizationHandler, SameUserAuthorizationHandler>();
         
         services.AddAuthorization(options =>
         {
@@ -23,6 +24,7 @@ public static class AuthorizationExtension
             }
             
             options.AddPolicy("AdminOnly", policy => policy.RequireRole(AppRoles.Admin));
+            options.AddPolicy("SameUser", policy => policy.Requirements.Add(new SameUserRequirement()));
         });
 
         return services;
