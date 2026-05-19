@@ -1,0 +1,45 @@
+@model RestaurantApi.Application.Models.MailModels.VerifyMailViewModel
+
+<div style="margin-bottom: 25px;">
+    <h2 style="color: #1a1a1a; font-size: 22px; margin: 0 0 10px 0;">Merhaba @Model.CustomerName,</h2>
+    <p style="color: #555; font-size: 15px; margin: 0;">@Model.RestaurantName ailemize hoş geldin! Hesabını aktifleştirmek ve lezzet dolu bir dünyaya adım atmak için son bir adım kaldı.</p>
+</div>
+
+<div style="background-color: #fff8f3; border: 1px dashed #d4691d; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+    <h3 style="font-size: 13px; color: #d4691d; text-transform: uppercase; margin: 0 0 12px 0; letter-spacing: 1px;">Doğrulama Detayları</h3>
+    
+    <table style="width: 100%; font-size: 14px; color: #444; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 5px 0; font-weight: 600; width: 120px;">Doğrulanacak Hesap:</td>
+            <td style="padding: 5px 0;">@Model.CustomerEmail</td>
+        </tr>
+        <tr>
+            <td style="padding: 5px 0; font-weight: 600;">Güvenlik Notu:</td>
+            <td style="padding: 5px 0; color: #666; font-size: 13px; font-style: italic;">Bu istek sizin tarafınızdan yapılmadıysa bu e-postayı güvenle göz ardı edebilirsiniz.</td>
+        </tr>
+    </table>
+</div>
+
+<div style="margin-bottom: 35px;">
+    <h4 style="font-size: 16px; color: #1a1a1a; margin: 0 0 15px 0;">Hesabını Doğruladığında Neler Olacak?</h4>
+    <div style="font-size: 14px; color: #666;">
+        <div style="margin-bottom: 12px;">🔐 Hesabın tamamen güvenli hale gelecek.</div>
+        <div style="margin-bottom: 12px;">🍕 İlk siparişine özel hoş geldin indirimini kapacaksın.</div>
+        <div style="margin-bottom: 12px;">🚀 Menüleri inceleyip, saniyeler içinde sipariş geçebileceksin.</div>
+    </div>
+</div>
+
+<div style="text-align: center; margin-bottom: 20px;">
+    @if (!string.IsNullOrEmpty(Model.VerifyUrl))
+    {
+        <a href="@Model.VerifyUrl" style="display: inline-block; background-color: #d4691d; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 50px; font-weight: 700; font-size: 15px; transition: background 0.3s ease; box-shadow: 0 4px 10px rgba(212, 105, 29, 0.2);">
+            E-Posta Adresimi Doğrula
+        </a>
+    }
+</div>
+
+<div style="margin-top: 25px; border-top: 1px solid #eee; padding-top: 20px; font-size: 12px; color: #888; text-align: center;">
+    Butona tıklamakta sorun yaşıyorsan, aşağıdaki bağlantıyı kopyalayıp tarayıcına yapıştırabilirsin:
+    <br />
+    <a href="@Model.VerifyUrl" style="color: #d4691d; text-decoration: underline; word-break: break-all;">@Model.VerifyUrl</a>
+</div>

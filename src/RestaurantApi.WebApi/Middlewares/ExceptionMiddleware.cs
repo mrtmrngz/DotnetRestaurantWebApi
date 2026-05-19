@@ -1,7 +1,9 @@
 using System.Net;
+using System.Text.Json;
 using RestaurantApi.Application.Common.Enums;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
+using System.Text.Json.Serialization;
 
 namespace RestaurantApi.WebApi.Middlewares;
 
@@ -15,6 +17,12 @@ public class ExceptionMiddleware
         _next = next;
         _logger = logger;
     }
+    
+    private static readonly JsonSerializerOptions CustomJsonOptions = new()
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        Converters = { new JsonStringEnumConverter() }
+    };
 
     public async Task InvokeAsync(HttpContext context)
     {
@@ -41,7 +49,7 @@ public class ExceptionMiddleware
                 }).ToList()
             };
 
-            await context.Response.WriteAsJsonAsync(response);
+            await context.Response.WriteAsJsonAsync(response, CustomJsonOptions);
         }catch (Exception e)
         {
             await HandleExceptionAsync(context, e, _logger);
@@ -85,6 +93,6 @@ public class ExceptionMiddleware
             statusCode
         };
 
-        return context.Response.WriteAsJsonAsync(response);
+        return context.Response.WriteAsJsonAsync(response, CustomJsonOptions);
     }
 }

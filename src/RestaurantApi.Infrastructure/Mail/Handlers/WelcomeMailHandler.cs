@@ -1,9 +1,9 @@
 using Hangfire;
 using Microsoft.Extensions.Logging;
 using RestaurantApi.Application.Mail;
+using RestaurantApi.Application.Models.MailModels;
 using RestaurantApi.Domain.Enums;
 using RestaurantApi.Infrastructure.Mail.BackgroundJobs;
-using RestaurantApi.Infrastructure.Mail.Templates.ViewModels;
 
 namespace RestaurantApi.Infrastructure.Mail.Handlers;
 

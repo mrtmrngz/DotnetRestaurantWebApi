@@ -9,7 +9,7 @@ public class ValidationErrorResponse
     public int StatusCode { get; set; }
 
     [DefaultValue("Validasyon Hatası.")]
-    public string Message { get; set; } = "Validasyon Hatası.";
+    public string Message { get; set; } = "Validasyon hataları oluştu.";
 
     [DefaultValue(Codes.VALIDATION_ERROR)]
     public Codes Code { get; set; } = Codes.VALIDATION_ERROR;

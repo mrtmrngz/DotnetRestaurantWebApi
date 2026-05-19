@@ -26,6 +26,9 @@ public static class ServiceCollectionExtensions
         // Rules
         services.AddScoped<RefreshTokenRules>();
         services.AddScoped<UserRules>();
+        
+        // Automapper
+        services.AddAutoMapper(cfg => cfg.AddMaps(typeof(ApplicationAssemblyMarker).Assembly));
 
         return services;
     }

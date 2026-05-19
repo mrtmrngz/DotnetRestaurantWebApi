@@ -1,4 +1,4 @@
-namespace RestaurantApi.Infrastructure.Mail.Templates.ViewModels;
+namespace RestaurantApi.Application.Models.MailModels;
 
 public class WelcomeMailViewModel
 {

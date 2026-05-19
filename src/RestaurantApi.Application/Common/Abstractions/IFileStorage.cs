@@ -7,4 +7,5 @@ public interface IFileStorage
 {
     Task<UploadFileResult> UploadAsync(IFormFile file);
     Task DeleteAsync(string key);
+    Task<List<UploadFileResult>> UploadMultipleAsync(List<IFormFile> files);
 }

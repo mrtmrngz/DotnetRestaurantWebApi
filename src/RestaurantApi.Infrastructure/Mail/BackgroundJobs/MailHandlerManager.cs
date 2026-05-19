@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using RestaurantApi.Application.Mail;
+using RestaurantApi.Application.Models.MailModels;
 using RestaurantApi.Domain.Enums;
-using RestaurantApi.Infrastructure.Mail.Templates.ViewModels;
 
 namespace RestaurantApi.Infrastructure.Mail.BackgroundJobs;
 
@@ -32,5 +32,21 @@ public class MailHandlerManager: IMailHandlerManager
         var html = await _renderer.RenderAsync("Layout.cshtml", layout);
         _logger.LogInformation("{To}: Mail gönderiliryor...", to);
         await _mailService.SendAsync(to, "Hoş Geldiniz", html);
+    }
+
+    public async Task ExecuteMailVerifyMailAsync(string to, VerifyMailViewModel model)
+    {
+        _logger.LogInformation("Html basılıyor gönderiliryor...");
+        var body = await _renderer.RenderAsync("VerifyEmail.cshtml", model);
+        var layout = new MailLayoutModel 
+        {
+            Title = "Lütfen email adresinizi doğrulayınız.",
+            RestaurantName = model.RestaurantName,
+            Body = body,
+            Year = DateTime.Now.Year
+        };
+        var html = await _renderer.RenderAsync("Layout.cshtml", layout);
+        _logger.LogInformation("{To}: Mail gönderiliryor...", to);
+        await _mailService.SendAsync(to, "Mail adresinizi doğrulayınız.", html);
     }
 }

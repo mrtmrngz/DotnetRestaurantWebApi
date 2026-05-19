@@ -3,11 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Abstractions.Repositories;
 using RestaurantApi.Domain.Identity;
 using RestaurantApi.Persistence.Context;
 using RestaurantApi.Persistence.Repositories;
 using RestaurantApi.Persistence.Seed;
+using RestaurantApi.Persistence.UOW;
 
 namespace RestaurantApi.Persistence.Extension;
 
@@ -26,19 +28,29 @@ public static class PersistenceServiceRegistration
             {
                 options.Password.RequiredLength = 6;
                 options.Password.RequireNonAlphanumeric = false;
-
                 options.User.RequireUniqueEmail = true;
-
                 options.Lockout.MaxFailedAccessAttempts = 5;
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(2);
+                options.Password.RequireDigit = true;
+                options.Password.RequireUppercase = true;
             })
             .AddEntityFrameworkStores<ApiContext>()
             .AddDefaultTokenProviders();
+
+        // IDENTITY TIMESPAN
+        services.Configure<DataProtectionTokenProviderOptions>(options =>
+        {
+            options.TokenLifespan = TimeSpan.FromMinutes(5);
+        });
         
         // REPOSITORIES
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IPermissionRepository, PermissionRepository>();
+        services.AddScoped<IRoleRepository, RoleRepository>();
+        
+        // UNIT OF WORK
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;
     }

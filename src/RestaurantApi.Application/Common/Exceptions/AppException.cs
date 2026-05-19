@@ -27,3 +27,10 @@ public class NotFoundException : AppException
     {
     }
 }
+
+public class ConflictException : AppException
+{
+    public ConflictException(string message) : base(message, statusCode: 409, code: Codes.CONFLICT)
+    {
+    }
+}

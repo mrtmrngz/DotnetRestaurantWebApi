@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using RestaurantApi.Application.Common.Abstractions;
+using RestaurantApi.Application.Common.Abstractions.Services;
 using RestaurantApi.Application.Mail;
 using RestaurantApi.Infrastructure.Auth;
 using RestaurantApi.Infrastructure.Cache;
@@ -14,6 +15,7 @@ using RestaurantApi.Infrastructure.Mail.BackgroundJobs;
 using RestaurantApi.Infrastructure.Mail.Factory;
 using RestaurantApi.Infrastructure.Mail.Handlers;
 using RestaurantApi.Infrastructure.Security.Authorization.Extension;
+using RestaurantApi.Infrastructure.Services;
 using RestaurantApi.Infrastructure.Settings;
 using RestaurantApi.Infrastructure.Storage;
 
@@ -76,11 +78,15 @@ public static class ServiceRegistration
         
         // mail handlers
         services.AddScoped<IMailHandler, WelcomeMailHandler>();
+        services.AddScoped<IMailHandler, VerifyMailHandler>();
         
         // mail factory
         services.AddScoped<IMailFactory, MailFactory>();
 
         services.AddScoped<IMailHandlerManager, MailHandlerManager>();
+        
+        // Business Services
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }    

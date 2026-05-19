@@ -1,5 +1,6 @@
 using FluentValidation;
 using MediatR;
+using ValidationException = RestaurantApi.Application.Common.Exceptions.ValidationException;
 
 namespace RestaurantApi.Application.Common.Behaviors;
 
