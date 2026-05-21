@@ -23,6 +23,16 @@ public class UserRules
         return Task.CompletedTask;
     }
     
+    public Task UserShouldExist401(AppUser? user)
+    {
+        if (user == null)
+        {
+            throw new UnauthorizedException("Geçersiz kimlik bilgileri.");
+        }
+
+        return Task.CompletedTask;
+    }
+    
     public Task ShouldUserNotExist(AppUser? user)
     {
         if (user is not null)
@@ -32,5 +42,15 @@ public class UserRules
         }
 
         return Task.CompletedTask;
+    }
+
+    public async Task<bool> ShouldUserVerified(AppUser user)
+    {
+        return user.EmailConfirmed;
+    }
+
+    public async Task<bool> ShouldUserTwoFactorEnable(AppUser user)
+    {
+        return user.TwoFactorEnabled;
     }
 }

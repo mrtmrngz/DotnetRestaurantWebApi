@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Enums;
 using RestaurantApi.Application.Features.Auth.Commands.Register;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;

@@ -11,4 +11,5 @@ public interface IUserRepository
     Task<IdentityResult> CreateAsync(AppUser user, string password);
     Task AddToRoleAsync(AppUser user, string roleName);
     Task<string> GenerateEmailConfirmationTokenAsync(AppUser user);
+    Task<string> GenerateTwoFactorTokenAsync(AppUser user);
 }

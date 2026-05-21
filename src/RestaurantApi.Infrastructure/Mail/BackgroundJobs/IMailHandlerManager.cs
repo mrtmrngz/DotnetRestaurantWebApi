@@ -7,4 +7,5 @@ public interface IMailHandlerManager
 {
     Task ExecuteWelcomeMailAsync(string to, WelcomeMailViewModel model);
     Task ExecuteMailVerifyMailAsync(string to, VerifyMailViewModel model);
+    Task ExecuteOtpMailAsync(string to, OtpMailViewModel model);
 }

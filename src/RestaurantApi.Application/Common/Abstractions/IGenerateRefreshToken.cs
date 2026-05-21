@@ -5,4 +5,5 @@ namespace RestaurantApi.Application.Common.Abstractions;
 public interface IGenerateRefreshToken
 {
     Task<GenerateRefreshTokenDto> GenerateRefreshToken(string token);
+    Task<GenerateRefreshTokenDto> CreateRefreshToken(Guid userId);
 }

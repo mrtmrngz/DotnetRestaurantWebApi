@@ -11,6 +11,7 @@
       - '5432:5432'
     profiles:
       - db
+      - dev
     healthcheck:
       test: [ 'CMD-SHELL', 'pg_isready -U user -d token-based-auth-v1' ]
       interval: 10s
@@ -33,6 +34,7 @@
       - redis_data:/data
     profiles:
       - db
+      - dev
   redis_insight:
     image: redislabs/redisinsight:latest
     container_name: redis_insight
@@ -43,6 +45,7 @@
         condition: service_healthy
     profiles:
       - db
+      - dev
   seq:
     image: datalust/seq:latest
     environment:
@@ -54,6 +57,7 @@
       - seq-data:/data
     profiles:
       - logging
+      - dev
   localstack:
     image: localstack/localstack:latest
     container_name: localstack-s3
@@ -72,6 +76,7 @@
       - localstack_data:/var/lib/localstack
     profiles:
       - localstack
+      - dev
     healthcheck:
       test: [ "CMD", "awslocal", "s3", "ls" ]
       interval: 5s

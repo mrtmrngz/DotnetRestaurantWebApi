@@ -63,6 +63,8 @@ public class TestDatabaseFixture : IAsyncLifetime
 
                     services.AddScoped<IMailService, FakeMailService>();
 
+                    services.AddHttpContextAccessor();
+
                 });
             });
 

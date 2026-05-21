@@ -1,0 +1,41 @@
+@model RestaurantApi.Application.Models.MailModels.OtpMailViewModel
+
+<div style="margin-bottom: 25px;">
+    <h2 style="color: #1a1a1a; font-size: 22px; margin: 0 0 10px 0;">Merhaba @Model.CustomerName,</h2>
+    <p style="color: #555; font-size: 15px; margin: 0; line-height: 1.5;">
+        @Model.Description
+    </p>
+</div>
+
+<div style="text-align: center; margin: 30px 0;">
+    <div style="display: inline-block; background-color: #fff8f3; border: 2px dashed #d4691d; border-radius: 12px; padding: 15px 40px;">
+        <span style="font-family: 'Courier New', Courier, monospace; font-size: 36px; font-weight: 800; color: #d4691d; letter-spacing: 6px; display: block;">
+            @Model.OtpCode
+        </span>
+    </div>
+    <p style="color: #888; font-size: 13px; margin: 10px 0 0 0;">
+        ⏳ Bu kod <strong>@Model.ExpireInMinutes dakika</strong> süreyle geçerlidir.
+    </p>
+</div>
+
+<div style="background-color: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+    <h3 style="font-size: 13px; color: #555; text-transform: uppercase; margin: 0 0 12px 0; letter-spacing: 1px;">Güvenlik Bilgileri</h3>
+    
+    <table style="width: 100%; font-size: 14px; color: #444; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 5px 0; font-weight: 600; width: 120px;">İlgili Hesap:</td>
+            <td style="padding: 5px 0;">@Model.CustomerEmail</td>
+        </tr>
+        <tr>
+            <td style="padding: 5px 0; font-weight: 600;">Güvenlik Uyarısı:</td>
+            <td style="padding: 5px 0; color: #666; font-size: 13px; font-style: italic;">
+                Bu işlem sizin tarafınızdan başlatılmadıysa, hesabınızın güvenliği için lütfen şifrenizi değiştirin veya @Model.RestaurantName desteği ile iletişime geçin.
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div style="margin-top: 25px; border-top: 1px solid #eee; padding-top: 20px; font-size: 12px; color: #999; text-align: center;">
+    Bu e-posta güvenliğiniz için otomatik olarak gönderilmiştir. Lütfen bu kodu kimseyle paylaşmayın.<br />
+    <strong>© @DateTime.Now.Year @Model.RestaurantName. All Rights Reserved.</strong>
+</div>

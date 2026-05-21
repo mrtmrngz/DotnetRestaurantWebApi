@@ -21,6 +21,13 @@ public class UnauthorizedException : AppException
     }
 }
 
+public class ForbiddenException : AppException
+{
+    public ForbiddenException(string message) : base(message, statusCode: 403, code: Codes.FORBIDDEN)
+    {
+    }
+}
+
 public class NotFoundException : AppException
 {
     public NotFoundException(string message) : base(message, statusCode: 404, code: Codes.NOT_FOUND)

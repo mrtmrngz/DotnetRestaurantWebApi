@@ -40,21 +40,27 @@ public class RefreshTokenService : IGenerateRefreshToken
 
         await _cacheService.RemoveAsync(CacheKeys.RefreshToken(token));
 
-        var newToken = $"{Guid.NewGuid()}-{Guid.NewGuid()}";
+        var result = await CreateRefreshToken(userId.Value);
 
+        return result;
+    }
+
+    public async Task<GenerateRefreshTokenDto> CreateRefreshToken(Guid userId)
+    {
+        var newToken = $"{Guid.NewGuid()}-{Guid.NewGuid()}";
         var tokenModel = new RefreshToken
         {
             Token = newToken,
             ExpiresAt = DateTime.UtcNow.AddDays(7),
             CreatedAt = DateTime.UtcNow,
-            UserId = userId.Value,
+            UserId = userId,
             IsRevoked = false,
         };
-
+        
         await _refreshTokenRepository.AddAndRotateAsync(tokenModel);
-
+        
         await _cacheService.SetAsync(CacheKeys.RefreshToken(newToken), userId, TimeSpan.FromDays(7));
-
-        return new GenerateRefreshTokenDto { UserId = userId.Value, Token = newToken };
+        
+        return new GenerateRefreshTokenDto { UserId = userId, Token = newToken };
     }
 }

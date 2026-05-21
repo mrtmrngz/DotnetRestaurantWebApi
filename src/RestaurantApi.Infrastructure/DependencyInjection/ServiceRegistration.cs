@@ -79,6 +79,7 @@ public static class ServiceRegistration
         // mail handlers
         services.AddScoped<IMailHandler, WelcomeMailHandler>();
         services.AddScoped<IMailHandler, VerifyMailHandler>();
+        services.AddScoped<IMailHandler, OtpMailHandler>();
         
         // mail factory
         services.AddScoped<IMailFactory, MailFactory>();

@@ -48,4 +48,9 @@ public class UserRepository: IUserRepository
     {
         return await _userManager.GenerateEmailConfirmationTokenAsync(user);
     }
+    
+    public async Task<string> GenerateTwoFactorTokenAsync(AppUser user)
+    {
+        return await _userManager.GenerateTwoFactorTokenAsync(user, "Email");
+    }
 }
