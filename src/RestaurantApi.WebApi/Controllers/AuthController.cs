@@ -1,8 +1,11 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Features.Auth.Commands.Login;
+using RestaurantApi.Application.Features.Auth.Commands.MailVerify;
 using RestaurantApi.Application.Features.Auth.Commands.Register;
+using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
+using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
 using RestaurantApi.WebApi.Swagger.Examples.RequestExamples.AuthExamples;
 using RestaurantApi.WebApi.Swagger.Examples.SuccessExamples;
 using Swashbuckle.AspNetCore.Filters;
@@ -68,5 +71,24 @@ public class AuthController : ControllerBase
             Message = result.Message,
             Code = result.Code,
         });
+    }
+
+    [HttpPost("mail-verify")]
+    [SwaggerRequestExample(typeof(MailVerifyCommand), typeof(MailVerifyExample))]
+    [ProducesResponseType(typeof(BaseResponse), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(MailVerifiedResponseExample))]
+    [ProducesResponseType(typeof(ErrorResponse), 403)]
+    [SwaggerResponseExample(StatusCodes.Status403Forbidden, typeof(ForbiddenErrorExample))]
+    [ProducesResponseType(typeof(ErrorResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    [ProducesResponseType(typeof(ErrorResponse), 409)]
+    [SwaggerResponseExample(StatusCodes.Status409Conflict, typeof(ConflictErrorExample))]
+    [ProducesResponseType(typeof(ErrorResponse), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(BadRequestErrorExample))]
+    public async Task<IActionResult> MailVerify([FromBody] MailVerifyCommand command)
+    {
+        var response = await _mediator.Send(command);
+
+        return Ok(response);
     }
 }

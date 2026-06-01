@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Domain.Identity;
@@ -52,5 +53,28 @@ public class UserRules
     public async Task<bool> ShouldUserTwoFactorEnable(AppUser user)
     {
         return user.TwoFactorEnabled;
+    }
+
+    public Task ShouldUserNotVerified(AppUser user)
+    {
+        if (user!.EmailConfirmed)
+        {
+            _logger.LogInformation("Kullanıcının mail adresi zaten doğrulanmış durumda: {email}", user!.Email);
+            throw new ConflictException("Eposta adresiniz zaten doğrulanmış.");
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task ShouldUserVerifiedSucceded(IdentityResult result)
+    {
+        if (!result.Succeeded)
+        {
+            var firstError = result.Errors.FirstOrDefault()?.Description ?? "Geçersiz veya süresi dolmuş doğrulama kodu.";
+            _logger.LogError("Token doğrulanmadı: {Error}", firstError);
+            throw new BadRequestException(firstError);
+        }
+
+        return Task.CompletedTask;
     }
 }

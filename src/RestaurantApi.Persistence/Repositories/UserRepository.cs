@@ -21,6 +21,11 @@ public class UserRepository: IUserRepository
         return await _userManager.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == userId);
     }
 
+    public async Task<AppUser?> GetByIdTrackingAsync(Guid userId)
+    {
+        return await _userManager.FindByIdAsync(userId.ToString());
+    }
+
     public async Task<IList<string>> GetUserRolesAsync(AppUser user)
     {
         var roles = await _userManager.GetRolesAsync(user);
@@ -52,5 +57,15 @@ public class UserRepository: IUserRepository
     public async Task<string> GenerateTwoFactorTokenAsync(AppUser user)
     {
         return await _userManager.GenerateTwoFactorTokenAsync(user, "Email");
+    }
+
+    public async Task<IdentityResult> ConfirmEmailAsync(AppUser user, string token)
+    {
+        return await _userManager.ConfirmEmailAsync(user, token);
+    }
+
+    public async Task UpdateSecurityStampAsync(AppUser user)
+    {
+        await _userManager.UpdateSecurityStampAsync(user);
     }
 }

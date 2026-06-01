@@ -41,3 +41,10 @@ public class ConflictException : AppException
     {
     }
 }
+
+public class BadRequestException : AppException
+{
+    public BadRequestException(string message) : base(message, statusCode: 400, code: Codes.BAD_REQUEST)
+    {
+    }
+}

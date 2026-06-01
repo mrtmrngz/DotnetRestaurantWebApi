@@ -24,8 +24,4 @@
       <ProjectReference Include="..\..\src\RestaurantApi.Application\RestaurantApi.Application.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Features\Auth\" />
-    </ItemGroup>
-
 </Project>

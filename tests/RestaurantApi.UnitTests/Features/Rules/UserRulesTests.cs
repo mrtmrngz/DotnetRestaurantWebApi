@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using RestaurantApi.Application.Common.Exceptions;
@@ -137,6 +138,59 @@ public class UserRulesTests
         
         var result = await act.Invoke();
         result.Should().BeFalse("Çünkü kullanıcının TwoFactorEnabled değeri false olarak set edildi.");
+    }
+
+    #endregion
+
+    #region ShouldUserNotVerified
+
+    [Fact]
+    public async Task ShouldUserNotVerified_ShouldReturnTrue_WhenUserVerified()
+    {
+        var user = new AppUser() { EmailConfirmed = true };
+
+        Func<Task> act = async () => await _sut.ShouldUserNotVerified(user);
+
+        await act.Should().ThrowAsync<ConflictException>().WithMessage("Eposta adresiniz zaten doğrulanmış.");
+    }
+    
+    [Fact]
+    public async Task ShouldUserNotVerified_ShouldNotThrowAnything_WhenUserNotVerified()
+    {
+        var user = new AppUser() { EmailConfirmed = false };
+
+        Func<Task> act = async () => await _sut.ShouldUserNotVerified(user);
+
+        await act.Should().NotThrowAsync();
+    }
+    
+    #endregion
+
+    #region ShouldUserVerifiedSucceded
+
+    [Fact]
+    public async Task ShouldUserVerifiedSucceded_ShouldThrowBadRequestError_WhenVerificationFailed()
+    {
+        var identityError = new IdentityError 
+        { 
+            Code = "InvalidToken", 
+            Description = "Geçersiz veya süresi dolmuş doğrulama kodu." 
+        };
+        var failedResult = IdentityResult.Failed(identityError);
+
+        Func<Task> act = async () => await _sut.ShouldUserVerifiedSucceded(failedResult);
+
+        await act.Should().ThrowAsync<BadRequestException>().WithMessage("Geçersiz veya süresi dolmuş doğrulama kodu.");
+    }
+    
+    [Fact]
+    public async Task ShouldUserVerifiedSucceded_ShouldCompleteSuccessfully_WhenIdentityResultIsSuccess()
+    {
+        var successResult = IdentityResult.Success;
+
+        Func<Task> act = async () => await _sut.ShouldUserVerifiedSucceded(successResult);
+
+        await act.Should().NotThrowAsync();
     }
 
     #endregion
