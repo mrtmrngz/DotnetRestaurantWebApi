@@ -1,4 +1,5 @@
 
+using Microsoft.AspNetCore.DataProtection.KeyManagement.Internal;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using RestaurantApi.Application.Common.Abstractions.Repositories;
@@ -67,5 +68,29 @@ public class UserRepository: IUserRepository
     public async Task UpdateSecurityStampAsync(AppUser user)
     {
         await _userManager.UpdateSecurityStampAsync(user);
+    }
+
+    public async Task<bool> VerifyTwoFactorTokenAsync(AppUser user, string otp, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return await _userManager.VerifyTwoFactorTokenAsync(user, "Email", otp);
+    }
+
+    public async Task<bool> IsLockedOutAsync(AppUser user, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return await _userManager.IsLockedOutAsync(user);
+    }
+
+    public async Task AccessFailedAsync(AppUser user, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await _userManager.AccessFailedAsync(user);
+    }
+
+    public async Task ResetAccessFailedCountAsync(AppUser user, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await _userManager.ResetAccessFailedCountAsync(user);
     }
 }

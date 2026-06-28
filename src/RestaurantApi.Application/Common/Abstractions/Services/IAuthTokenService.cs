@@ -3,7 +3,7 @@ using RestaurantApi.Domain.Identity;
 
 namespace RestaurantApi.Application.Common.Abstractions.Services;
 
-public interface IAuthService
+public interface IAuthTokenService
 {
-    Task<LoginResponse> HandleSuccessfulLoginAsync(AppUser user, string email);
+    Task<JwtAndRefreshTokenResult> CreateRefreshAndAccessTokenService(AppUser user);
 }

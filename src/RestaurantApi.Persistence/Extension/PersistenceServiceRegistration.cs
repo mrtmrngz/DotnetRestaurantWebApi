@@ -26,6 +26,7 @@ public static class PersistenceServiceRegistration
         // IDENTITY
         services.AddIdentity<AppUser, AppRole>(options =>
             {
+                options.Lockout.AllowedForNewUsers = true;
                 options.Password.RequiredLength = 6;
                 options.Password.RequireNonAlphanumeric = false;
                 options.User.RequireUniqueEmail = true;

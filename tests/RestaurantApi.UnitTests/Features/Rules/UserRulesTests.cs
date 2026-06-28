@@ -194,4 +194,72 @@ public class UserRulesTests
     }
 
     #endregion
+
+    #region ShouldUserIdExistOnCache
+
+    [Fact]
+    public async Task ShouldUserIdExistOnCache_WhenUserIdIsNull_ShouldThrowUnauthorizedException()
+    {
+        Func<Task> act = async () => await _sut.ShouldUserIdExistOnCache(null);
+
+        await act.Should().ThrowAsync<UnauthorizedException>()
+            .WithMessage("İki faktörlü kimlik doğrulama oturum süresi sona erdi, lütfen tekrar giriş yapınız.");
+    }
+    
+    [Fact]
+    public async Task ShouldUserIdExistOnCache_WhenUserIdExistOnCache_ShouldNotThrowAnything()
+    {
+        Func<Task> act = async () => await _sut.ShouldUserIdExistOnCache("test-id");
+
+        await act.Should().NotThrowAsync();
+    }
+
+    #endregion
+
+    #region TwoFactorUserShouldExist
+
+    [Fact]
+    public async Task TwoFactorUserShouldExist_WhenUserNotExist_ShouldThrowUnauthorizedException()
+    {
+        AppUser? user = null;
+        Func<Task> act = async () => await _sut.TwoFactorUserShouldExist(user, "test-id");
+
+        await act.Should().ThrowAsync<UnauthorizedException>()
+            .WithMessage("Kimlik doğrulama oturumu geçersiz veya süresi dolmuş.");
+    }
+    
+    [Fact]
+    public async Task TwoFactorUserShouldExist_WhenUserExist_ShouldNotThrowAnything()
+    {
+        var user = new AppUser()
+        {
+            Email = "test@mail.com"
+        };
+        Func<Task> act = async () => await _sut.TwoFactorUserShouldExist(user, user.Id.ToString());
+
+        await act.Should().NotThrowAsync();
+    }
+
+    #endregion
+
+    #region ShouldUserNotLockedOut
+
+    [Fact]
+    public async Task ShouldUserNotLockedOut_WhenUserLocked_ShouldThrowBadRequestException()
+    {
+        Func<Task> act = async () => await _sut.ShouldUserNotLockedOut(true, "test@mail.com");
+
+        await act.Should().ThrowAsync<BadRequestException>()
+            .WithMessage("Çok fazla hatalı deneme nedeniyle hesabınız geçici olarak kilitlenmiştir.");
+    }
+    
+    [Fact]
+    public async Task ShouldUserNotLockedOut_WhenUserNotLocked_ShouldNotThrowAnything()
+    {
+        Func<Task> act = async () => await _sut.ShouldUserNotLockedOut(false, "test@mail.com");
+
+        await act.Should().NotThrowAsync();
+    }
+
+    #endregion
 }

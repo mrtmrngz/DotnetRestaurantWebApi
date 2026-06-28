@@ -59,7 +59,7 @@ public static class ServiceRegistration
         services.AddJwtAuthenticationConfiguration(configuration);
         services.AddPermissionPolicy();
         
-        // handfire
+        // hangfire
         services.AddHangfire(config => config
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
             .UseSimpleAssemblyNameTypeSerializer()
@@ -88,6 +88,7 @@ public static class ServiceRegistration
         
         // Business Services
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IAuthTokenService, AuthTokenService>();
 
         return services;
     }    

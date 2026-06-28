@@ -23,7 +23,7 @@ public class UserRules
 
         return Task.CompletedTask;
     }
-    
+
     public Task UserShouldExist401(AppUser? user)
     {
         if (user == null)
@@ -33,7 +33,7 @@ public class UserRules
 
         return Task.CompletedTask;
     }
-    
+
     public Task ShouldUserNotExist(AppUser? user)
     {
         if (user is not null)
@@ -70,9 +70,45 @@ public class UserRules
     {
         if (!result.Succeeded)
         {
-            var firstError = result.Errors.FirstOrDefault()?.Description ?? "Geçersiz veya süresi dolmuş doğrulama kodu.";
+            var firstError = result.Errors.FirstOrDefault()?.Description ??
+                             "Geçersiz veya süresi dolmuş doğrulama kodu.";
             _logger.LogError("Token doğrulanmadı: {Error}", firstError);
             throw new BadRequestException(firstError);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task ShouldUserIdExistOnCache(string? userId)
+    {
+        if (string.IsNullOrEmpty(userId))
+        {
+            _logger.LogWarning(
+                "2FA login denemesi başarısız: Sağlanan OTP koduna ait aktif bir oturum Redis'te bulunamadı.");
+            throw new UnauthorizedException("İki faktörlü kimlik doğrulama oturum süresi sona erdi, lütfen tekrar giriş yapınız.");
+        }
+
+        return Task.CompletedTask;
+    }
+    
+    public Task TwoFactorUserShouldExist(AppUser? user, string userId)
+    {
+        if (user == null)
+        {
+            _logger.LogError("❌ 2FA login kritik hata: Redis'te UserId ({UserId}) var ancak veritabanında bu kullanıcı bulunamadı!", userId);
+
+            throw new UnauthorizedException("Kimlik doğrulama oturumu geçersiz veya süresi dolmuş.");
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task ShouldUserNotLockedOut(bool lockStatus, string email)
+    {
+        if (lockStatus)
+        {
+            _logger.LogWarning("❌ Kullanıcı ({Email}) kilitli hesapla 2FA denemesi yaptı.", email);
+            throw new BadRequestException("Çok fazla hatalı deneme nedeniyle hesabınız geçici olarak kilitlenmiştir.");
         }
 
         return Task.CompletedTask;

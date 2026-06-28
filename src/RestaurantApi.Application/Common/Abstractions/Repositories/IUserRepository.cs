@@ -15,4 +15,8 @@ public interface IUserRepository
     Task<string> GenerateTwoFactorTokenAsync(AppUser user);
     Task<IdentityResult> ConfirmEmailAsync(AppUser user, string token);
     Task UpdateSecurityStampAsync(AppUser user);
+    Task<bool> VerifyTwoFactorTokenAsync(AppUser user, string otp, CancellationToken cancellationToken);
+    Task<bool> IsLockedOutAsync(AppUser user, CancellationToken cancellationToken);
+    Task AccessFailedAsync(AppUser user, CancellationToken cancellationToken);
+    Task ResetAccessFailedCountAsync(AppUser user, CancellationToken cancellationToken);
 }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Features.Auth.Commands.Login;
 using RestaurantApi.Application.Features.Auth.Commands.MailVerify;
 using RestaurantApi.Application.Features.Auth.Commands.Register;
+using RestaurantApi.Application.Features.Auth.Commands.TwoFactorLogin;
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
@@ -90,5 +91,47 @@ public class AuthController : ControllerBase
         var response = await _mediator.Send(command);
 
         return Ok(response);
+    }
+
+    [HttpPost("two-factor/login")]
+    [SwaggerRequestExample(typeof(TwoFactorLoginCommand), typeof(TwoFactorLoginExample))]
+    [ProducesResponseType(typeof(BaseResponse), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(LoginExample))]
+    [ProducesResponseType(typeof(ErrorResponse), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(BadRequestErrorExample))]
+    [ProducesResponseType(typeof(ErrorResponse), 401)]
+    [SwaggerResponseExample(StatusCodes.Status401Unauthorized, typeof(UnauthorizedExceptionExample))]
+    public async Task<IActionResult> TwoFactorLogin([FromBody] TwoFactorLoginCommand command)
+    {
+        LoginResponse result = await _mediator.Send(command);
+
+        if (!string.IsNullOrEmpty(result.AccessToken) && !string.IsNullOrEmpty(result.RefreshToken))
+        {
+            var isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = !isDevelopment,
+                SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.None,
+                Expires = DateTime.UtcNow.AddDays(7),
+                Path = "/"
+            };
+
+            Response.Cookies.Append("_session", result.RefreshToken, cookieOptions);
+            
+            return Ok(new LoginControllerResponse
+            {
+                Message = result.Message,
+                Code = result.Code,
+                AccessToken = result.AccessToken,
+            });
+        }
+
+        return Ok(new LoginControllerResponse
+        {
+            Message = result.Message,
+            Code = result.Code,
+        });   
     }
 }
