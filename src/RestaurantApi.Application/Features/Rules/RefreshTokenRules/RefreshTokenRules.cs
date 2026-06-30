@@ -5,7 +5,7 @@ namespace RestaurantApi.Application.Features.Rules.RefreshTokenRules;
 
 public class RefreshTokenRules
 {
-    public Task TokenShouldExist(RefreshToken token)
+    public Task TokenShouldExist(RefreshToken? token)
     {
         if (token == null)
         {

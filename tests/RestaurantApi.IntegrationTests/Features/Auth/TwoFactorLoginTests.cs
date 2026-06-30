@@ -100,6 +100,32 @@ public class TwoFactorLoginTests: BaseIntegrationTest
         }
     }
     
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("123")]
+    [InlineData("abcd12")]
+    public async Task TwoFactorLoginApi_WithInvalidOtpFormat_ShouldReturnBadRequestWithValidationErrors(string invalidOtp)
+    {
+        var command = new TwoFactorLoginCommand(Otp: invalidOtp);
+
+        var response = await Client.PostAsJsonAsync("/api/auth/two-factor/login", command);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        
+        var jsonOptions = new System.Text.Json.JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+        jsonOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+
+        var result = await response.Content.ReadFromJsonAsync<LoginResponse>(jsonOptions);
+
+        result.Should().NotBeNull();
+        result.Code.Should().Be(Codes.VALIDATION_ERROR);
+    }
+    
     // Success TESTS END
     
     // ERROR TESTS START

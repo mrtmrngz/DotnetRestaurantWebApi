@@ -6,4 +6,5 @@ namespace RestaurantApi.Application.Common.Abstractions.Services;
 public interface IAuthTokenService
 {
     Task<JwtAndRefreshTokenResult> CreateRefreshAndAccessTokenService(AppUser user);
+    Task<JwtAndRefreshTokenResult> RefreshTokenAsyncService(string token);
 }

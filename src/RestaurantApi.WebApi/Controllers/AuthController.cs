@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Features.Auth.Commands.Login;
 using RestaurantApi.Application.Features.Auth.Commands.MailVerify;
+using RestaurantApi.Application.Features.Auth.Commands.RefreshToken;
 using RestaurantApi.Application.Features.Auth.Commands.Register;
 using RestaurantApi.Application.Features.Auth.Commands.TwoFactorLogin;
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
@@ -17,7 +18,6 @@ namespace RestaurantApi.WebApi.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-
     private readonly IMediator _mediator;
 
     public AuthController(IMediator mediator)
@@ -58,7 +58,7 @@ public class AuthController : ControllerBase
             };
 
             Response.Cookies.Append("_session", result.RefreshToken, cookieOptions);
-            
+
             return Ok(new LoginControllerResponse
             {
                 Message = result.Message,
@@ -75,6 +75,9 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("mail-verify")]
+
+    #region Swagger Documentation
+
     [SwaggerRequestExample(typeof(MailVerifyCommand), typeof(MailVerifyExample))]
     [ProducesResponseType(typeof(BaseResponse), 200)]
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(MailVerifiedResponseExample))]
@@ -86,6 +89,9 @@ public class AuthController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status409Conflict, typeof(ConflictErrorExample))]
     [ProducesResponseType(typeof(ErrorResponse), 400)]
     [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(BadRequestErrorExample))]
+
+    #endregion
+
     public async Task<IActionResult> MailVerify([FromBody] MailVerifyCommand command)
     {
         var response = await _mediator.Send(command);
@@ -94,13 +100,19 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("two-factor/login")]
+
+    #region SwaggerDocumentation
+
     [SwaggerRequestExample(typeof(TwoFactorLoginCommand), typeof(TwoFactorLoginExample))]
     [ProducesResponseType(typeof(BaseResponse), 200)]
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(LoginExample))]
-    [ProducesResponseType(typeof(ErrorResponse), 400)]
-    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(BadRequestErrorExample))]
+    [ProducesResponseType(typeof(object), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(BadRequestMultipleExamplesProvider))]
     [ProducesResponseType(typeof(ErrorResponse), 401)]
     [SwaggerResponseExample(StatusCodes.Status401Unauthorized, typeof(UnauthorizedExceptionExample))]
+
+    #endregion
+
     public async Task<IActionResult> TwoFactorLogin([FromBody] TwoFactorLoginCommand command)
     {
         LoginResponse result = await _mediator.Send(command);
@@ -119,7 +131,7 @@ public class AuthController : ControllerBase
             };
 
             Response.Cookies.Append("_session", result.RefreshToken, cookieOptions);
-            
+
             return Ok(new LoginControllerResponse
             {
                 Message = result.Message,
@@ -132,6 +144,33 @@ public class AuthController : ControllerBase
         {
             Message = result.Message,
             Code = result.Code,
-        });   
+        });
+    }
+
+    [HttpPost("refresh")]
+    public async Task<IActionResult> RefreshToken()
+    {
+        var token = Request.Cookies["_session"];
+        var result = await _mediator.Send(new RefreshTokenCommand(Token: token));
+
+        var isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = !isDevelopment,
+            SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.None,
+            Expires = DateTime.UtcNow.AddDays(7),
+            Path = "/"
+        };
+
+        Response.Cookies.Append("_session", result.RefreshToken!, cookieOptions);
+
+        return Ok(new LoginControllerResponse
+        {
+            Message = result.Message,
+            Code = result.Code,
+            AccessToken = result.AccessToken,
+        });
     }
 }

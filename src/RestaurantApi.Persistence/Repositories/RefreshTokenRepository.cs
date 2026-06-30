@@ -31,7 +31,7 @@ public class RefreshTokenRepository: IRefreshTokenRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task<RefreshToken> GetAsync(string token)
+    public async Task<RefreshToken?> GetAsync(string token)
     {
         var data = await _context.RefreshTokens
             .Where(x => x.Token == token && x.ExpiresAt > DateTime.UtcNow && !x.IsRevoked)
