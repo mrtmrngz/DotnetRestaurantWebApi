@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using RestaurantApi.Application.Common.Enums;
 using RestaurantApi.Application.Features.Auth.Commands.Login;
+using RestaurantApi.Application.Features.Auth.Commands.Logout;
 using RestaurantApi.Application.Features.Auth.Commands.MailVerify;
 using RestaurantApi.Application.Features.Auth.Commands.RefreshToken;
 using RestaurantApi.Application.Features.Auth.Commands.Register;
@@ -75,7 +77,6 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("mail-verify")]
-
     #region Swagger Documentation
 
     [SwaggerRequestExample(typeof(MailVerifyCommand), typeof(MailVerifyExample))]
@@ -91,7 +92,6 @@ public class AuthController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(BadRequestErrorExample))]
 
     #endregion
-
     public async Task<IActionResult> MailVerify([FromBody] MailVerifyCommand command)
     {
         var response = await _mediator.Send(command);
@@ -100,7 +100,6 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("two-factor/login")]
-
     #region SwaggerDocumentation
 
     [SwaggerRequestExample(typeof(TwoFactorLoginCommand), typeof(TwoFactorLoginExample))]
@@ -112,7 +111,6 @@ public class AuthController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status401Unauthorized, typeof(UnauthorizedExceptionExample))]
 
     #endregion
-
     public async Task<IActionResult> TwoFactorLogin([FromBody] TwoFactorLoginCommand command)
     {
         LoginResponse result = await _mediator.Send(command);
@@ -148,6 +146,14 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("refresh")]
+    #region Swagger Documentation
+    [ProducesResponseType(typeof(LoginControllerResponse), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(RefreshTokenExample))]
+    [ProducesResponseType(typeof(ErrorResponse), 401)]
+    [SwaggerResponseExample(StatusCodes.Status401Unauthorized, typeof(UnauthorizedExceptionExample))]
+    [ProducesResponseType(typeof(ErrorResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    #endregion
     public async Task<IActionResult> RefreshToken()
     {
         var token = Request.Cookies["_session"];
@@ -172,5 +178,39 @@ public class AuthController : ControllerBase
             Code = result.Code,
             AccessToken = result.AccessToken,
         });
+    }
+
+    [HttpPost("logout")]
+    [ProducesResponseType(typeof(BaseResponse), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(LogoutExample))]
+    public async Task<IActionResult> Logout()
+    {
+        var token = Request.Cookies["_session"];
+
+        if (!string.IsNullOrEmpty(token))
+        {
+            var command = new LogoutCommand(token);
+            await _mediator.Send(command);
+            
+            var isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+        
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = !isDevelopment,
+                SameSite = isDevelopment ? SameSiteMode.Lax : SameSiteMode.None,
+                Path = "/"
+            };
+
+            Response.Cookies.Delete("_session", cookieOptions);
+        }
+        
+        var baseResponse = new BaseResponse
+        {
+            Code = Codes.LOGOUT_SUCCESS,
+            Message = "Başarıyla çıkış yapıldı."
+        };
+
+        return Ok(baseResponse);
     }
 }

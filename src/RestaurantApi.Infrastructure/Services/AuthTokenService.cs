@@ -60,7 +60,7 @@ public class AuthTokenService: IAuthTokenService
         // find roles
         var roleExistInCache = await _cacheService.GetOrInternalSetAsync(roleUserRoleCacheKey, async () =>
         { 
-            IList<String> roles = await _userRepository.GetUserRolesAsync(user);
+            IList<string> roles = await _userRepository.GetUserRolesAsync(user);
             return roles;
         }, TimeSpan.FromDays(7));
 

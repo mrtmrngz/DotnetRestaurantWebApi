@@ -39,4 +39,11 @@ public class RefreshTokenRepository: IRefreshTokenRepository
 
         return data;
     }
+
+    public async Task RevokeRefreshToken(string token)
+    {
+        await _context.RefreshTokens
+            .Where(rt => rt.Token == token)
+            .ExecuteUpdateAsync(s => s.SetProperty(r => r.IsRevoked, true));
+    }
 }
