@@ -8,4 +8,5 @@ public static class CacheKeys
     public static string MailVerificationToken(string token) => $"auth:mailVerify:{token}";
     public static string OtpToken(string otp, string type) => $"auth:otp:{type}:{otp}";
     public static string UserRoles(string userId) => $"roles:{userId}";
+    public static string GetMeKey(string userId) => $"user:{userId}";
 }

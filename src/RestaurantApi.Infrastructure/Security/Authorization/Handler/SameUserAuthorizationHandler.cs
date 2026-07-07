@@ -11,8 +11,14 @@ public class SameUserAuthorizationHandler : AuthorizationHandler<SameUserRequire
 {
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, SameUserRequirement requirement)
     {
-        var userIdClaim = context.User.FindFirst("Id")?.Value;
+        var userIdClaim = context.User.FindFirst("Id")?.Value 
+                          ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            return Task.CompletedTask;
+        }
+        
         if (context.User.IsInRole(AppRoles.Admin))
         {
             context.Succeed(requirement);
@@ -23,10 +29,13 @@ public class SameUserAuthorizationHandler : AuthorizationHandler<SameUserRequire
         {
             var routeUserId = httpContext.GetRouteValue("id")?.ToString();
 
-            if (
-                !string.IsNullOrEmpty(routeUserId) &&
-                routeUserId.Equals(userIdClaim, StringComparison.OrdinalIgnoreCase)
-            )
+            if (string.IsNullOrEmpty(routeUserId))
+            {
+                context.Succeed(requirement);
+                return Task.CompletedTask;
+            }
+
+            if (routeUserId.Equals(userIdClaim, StringComparison.OrdinalIgnoreCase))
             {
                 context.Succeed(requirement);
             }

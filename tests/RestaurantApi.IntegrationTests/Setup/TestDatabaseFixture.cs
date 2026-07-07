@@ -1,6 +1,7 @@
 using System.Data.Common;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Respawn;
@@ -53,6 +54,19 @@ public class TestDatabaseFixture : IAsyncLifetime
             .WithWebHostBuilder(builder =>
             {
                 builder.UseEnvironment("Testing");
+                
+                builder.ConfigureAppConfiguration((context, config) =>
+                {
+                    var testJwtSettings = new Dictionary<string, string>
+                    {
+                        {"JwtSettings:SecretKey", "test-ortami-icin-en-az-32-karakterli-gizli-key-123!"},
+                        {"JwtSettings:Issuer", "restaurant-api"},
+                        {"JwtSettings:Audience", "restaurant-api-client"},
+                        {"JwtSettings:AccessTokenExpirationMinutes", "60"}
+                    };
+
+                    config.AddInMemoryCollection(testJwtSettings!);
+                });
 
                 builder.ConfigureServices(services =>
                 {
@@ -64,7 +78,6 @@ public class TestDatabaseFixture : IAsyncLifetime
                     services.AddScoped<IMailService, FakeMailService>();
 
                     services.AddHttpContextAccessor();
-
                 });
             });
 

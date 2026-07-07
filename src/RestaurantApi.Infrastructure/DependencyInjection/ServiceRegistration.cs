@@ -89,6 +89,7 @@ public static class ServiceRegistration
         // Business Services
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAuthTokenService, AuthTokenService>();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
 
         return services;
     }    
