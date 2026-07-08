@@ -270,12 +270,14 @@ public class LoginTests : BaseIntegrationTest
     [Fact]
     public async Task LoginAsync_WhenInvalidPassword_ShouldReturnUnauthorized()
     {
+        var uniqueEmail = $"login_fail_{Guid.NewGuid().ToString()[..8]}@mail.com";
+        
         var command = new LoginCommand(
-            Email: "test@mail.com",
-            Password: "Secret123"
+            Email: uniqueEmail,
+            Password: "WrongPass123"
         );
 
-        await SeedUserAsync(command.Email, "WrongPassword123");
+        await SeedUserAsync(uniqueEmail, "Secret123");
 
         var response = await Client.PostAsJsonAsync("/api/auth/login", command);
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized, "Unauthorized hata kodu dönmeli.");
@@ -309,6 +311,8 @@ public class LoginTests : BaseIntegrationTest
 
         dbContext.Users.Add(user);
         await dbContext.SaveChangesAsync();
+
+        dbContext.Entry(user).State = EntityState.Detached;
 
         return user;
     }

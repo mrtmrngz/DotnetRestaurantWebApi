@@ -253,7 +253,7 @@ public class TwoFactorLoginTests : BaseIntegrationTest
     private async Task<TwoFactorCreateUserAndTokenDto> CreateUser(Action<AppUser>? customConfig = null,
         string? customOtp = null)
     {
-        var scope = Factory.Services.CreateScope();
+        using var scope = Factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApiContext>();
         var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<AppUser>>();
         var userRepo = scope.ServiceProvider.GetRequiredService<IUserRepository>();
@@ -287,6 +287,8 @@ public class TwoFactorLoginTests : BaseIntegrationTest
 
         var cacheKey = CacheKeys.OtpToken(otp, "twoFactorAuth");
         await cacheService.SetAsync(cacheKey, user.Id.ToString(), TimeSpan.FromMinutes(5));
+
+        dbContext.Entry(user).State = Microsoft.EntityFrameworkCore.EntityState.Detached;
 
         return new TwoFactorCreateUserAndTokenDto { User = user, Otp = otp };
     }
