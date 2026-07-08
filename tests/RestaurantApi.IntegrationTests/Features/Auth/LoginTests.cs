@@ -275,10 +275,10 @@ public class LoginTests : BaseIntegrationTest
             Password: "Secret123"
         );
 
-        await SeedUserAsync(command.Email, "invalid-password");
+        await SeedUserAsync(command.Email, "WrongPassword123");
 
         var response = await Client.PostAsJsonAsync("/api/auth/login", command);
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized, "Unauthorized hata kodu dönmeli.");
     }
 
     // ERROR TESTS END
