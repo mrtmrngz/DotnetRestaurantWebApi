@@ -92,3 +92,5 @@ logs/
 # Temporary files
 tmp/
 temp/
+
+test.dockerfile

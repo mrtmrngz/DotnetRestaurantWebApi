@@ -51,7 +51,7 @@ public class TwoFactorLoginCommandHandler: IRequestHandler<TwoFactorLoginCommand
 
         await _userRules.ShouldUserIdExistOnCache(userId);
 
-        var user = await _userRepository.GetByIdAsync(Guid.Parse(userId!));
+        var user = await _userRepository.GetByIdTrackingAsync(Guid.Parse(userId!));
 
         await _userRules.TwoFactorUserShouldExist(user, userId!);
 
