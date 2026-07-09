@@ -42,7 +42,7 @@ public class UserRepository: IUserRepository
     
     public async Task<AppUser?> FindByEmailAsyncTracking(string email, CancellationToken cancellationToken)
     {
-        return await _userManager.Users.AsNoTracking()
+        return await _userManager.Users
             .FirstOrDefaultAsync(u => u.Email == email || u.NormalizedEmail == email, cancellationToken);
     }
 
