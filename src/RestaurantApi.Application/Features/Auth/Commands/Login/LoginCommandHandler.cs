@@ -33,7 +33,7 @@ public class LoginCommandHandler: IRequestHandler<LoginCommand, LoginResponse>
 
     public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.FindByEmailAsync(request.Email, cancellationToken);
+        var user = await _userRepository.FindByEmailAsyncTracking(request.Email, cancellationToken);
         await _userRules.UserShouldExist401(user);
 
         // check lockout

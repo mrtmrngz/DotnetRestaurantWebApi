@@ -39,6 +39,12 @@ public class UserRepository: IUserRepository
         return await _userManager.Users.AsNoTracking()
             .FirstOrDefaultAsync(u => u.Email == email || u.NormalizedEmail == email, cancellationToken);
     }
+    
+    public async Task<AppUser?> FindByEmailAsyncTracking(string email, CancellationToken cancellationToken)
+    {
+        return await _userManager.Users.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Email == email || u.NormalizedEmail == email, cancellationToken);
+    }
 
     public async Task<IdentityResult> CreateAsync(AppUser user, string password)
     {
