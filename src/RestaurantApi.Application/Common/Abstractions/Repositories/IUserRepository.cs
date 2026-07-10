@@ -20,4 +20,5 @@ public interface IUserRepository
     Task<bool> IsLockedOutAsync(AppUser user, CancellationToken cancellationToken);
     Task AccessFailedAsync(AppUser user, CancellationToken cancellationToken);
     Task ResetAccessFailedCountAsync(AppUser user, CancellationToken cancellationToken);
+    Task<string> GeneratePasswordResetTokenAsync(AppUser user, CancellationToken cancellationToken);
 }

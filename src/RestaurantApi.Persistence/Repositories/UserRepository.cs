@@ -99,4 +99,10 @@ public class UserRepository: IUserRepository
         cancellationToken.ThrowIfCancellationRequested();
         await _userManager.ResetAccessFailedCountAsync(user);
     }
+
+    public async Task<string> GeneratePasswordResetTokenAsync(AppUser user, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return await _userManager.GeneratePasswordResetTokenAsync(user);
+    }
 }

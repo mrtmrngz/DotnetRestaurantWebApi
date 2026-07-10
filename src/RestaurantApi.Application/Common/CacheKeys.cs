@@ -9,4 +9,5 @@ public static class CacheKeys
     public static string OtpToken(string otp, string type) => $"auth:otp:{type}:{otp}";
     public static string UserRoles(string userId) => $"roles:{userId}";
     public static string GetMeKey(string userId) => $"user:{userId}";
+    public static string ForgotPasswordKey(string token) => $"auth:forgotPassword:{token}";
 }

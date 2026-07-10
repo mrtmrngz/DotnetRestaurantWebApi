@@ -65,4 +65,22 @@ public class MailHandlerManager: IMailHandlerManager
         _logger.LogInformation("{To}: Mail gönderiliryor...", to);
         await _mailService.SendAsync(to, model.Title, html);
     }
+
+    public async Task ExecuteForgotPasswordMailAsync(string to, ForgotPasswordViewModel model)
+    {
+        _logger.LogInformation("Html basılıyor gönderiliryor...");
+        var body = await _renderer.RenderAsync("ForgotPasswordMail.cshtml", model);
+
+        var layout = new MailLayoutModel
+        {
+            Title = model.Title,
+            RestaurantName = model.RestaurantName,
+            Body = body,
+            Year = DateTime.Now.Year
+        };
+
+        var html = await _renderer.RenderAsync("Layout.cshtml", layout);
+
+        await _mailService.SendAsync(to, model.Title, html);
+    }
 }

@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Enums;
+using RestaurantApi.Application.Features.Auth.Commands.ForgotPasswordVerify;
 using RestaurantApi.Application.Features.Auth.Commands.Login;
 using RestaurantApi.Application.Features.Auth.Commands.Logout;
 using RestaurantApi.Application.Features.Auth.Commands.MailVerify;
@@ -101,7 +102,6 @@ public class AuthController : ControllerBase
 
     [HttpPost("two-factor/login")]
     #region SwaggerDocumentation
-
     [SwaggerRequestExample(typeof(TwoFactorLoginCommand), typeof(TwoFactorLoginExample))]
     [ProducesResponseType(typeof(BaseResponse), 200)]
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(LoginExample))]
@@ -109,7 +109,6 @@ public class AuthController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(BadRequestMultipleExamplesProvider))]
     [ProducesResponseType(typeof(ErrorResponse), 401)]
     [SwaggerResponseExample(StatusCodes.Status401Unauthorized, typeof(UnauthorizedExceptionExample))]
-
     #endregion
     public async Task<IActionResult> TwoFactorLogin([FromBody] TwoFactorLoginCommand command)
     {
@@ -178,6 +177,21 @@ public class AuthController : ControllerBase
             Code = result.Code,
             AccessToken = result.AccessToken,
         });
+    }
+
+    [HttpPost("forgot-password/verify")]
+    #region Swagger Examples
+    [SwaggerRequestExample(typeof(ForgotPasswordVerifyCommand), typeof(ForgotPasswordVerifyExample))]
+    [ProducesResponseType(typeof(BaseResponse), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(MailSentResponseExample))]
+    [ProducesResponseType(typeof(ValidationErrorResponse), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
+    #endregion
+    public async Task<IActionResult> ForgotPasswordVerify([FromBody] ForgotPasswordVerifyCommand command)
+    {
+        var response = await _mediator.Send(command);
+        
+        return Ok(response);
     }
 
     [HttpPost("logout")]

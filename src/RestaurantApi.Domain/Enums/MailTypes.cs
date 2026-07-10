@@ -4,5 +4,6 @@ public enum MailTypes
 {
     Welcome,
     Verify,
-    Otp
+    Otp,
+    ForgotPassword
 }
