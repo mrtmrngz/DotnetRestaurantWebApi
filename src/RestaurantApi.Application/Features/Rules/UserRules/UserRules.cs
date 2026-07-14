@@ -113,4 +113,29 @@ public class UserRules
 
         return Task.CompletedTask;
     }
+    
+    public Task ShouldUserIdExistOnCacheForgotPasswordApply(string? userId)
+    {
+        if (string.IsNullOrEmpty(userId))
+        {
+            _logger.LogWarning(
+                "Parola Değiştirme başarısız: Sağlanan token'a ait aktif bir oturum Redis'te bulunamadı.");
+            throw new UnauthorizedException("Parola değiştirmek için size sağlanan token süresi sona erdi, lütfen tekrar deneyiniz.");
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task ShouldUserPasswordChangedSuccessfully(IdentityResult result)
+    {
+        if (!result.Succeeded)
+        {
+            var firstError = result.Errors.FirstOrDefault()?.Description ??
+                             "Geçersiz veya süresi dolmuş parola resetleme kodu.";
+            _logger.LogError("Token doğrulanmadı: {Error}", firstError);
+            throw new BadRequestException(firstError);
+        }
+
+        return Task.CompletedTask;
+    } 
 }

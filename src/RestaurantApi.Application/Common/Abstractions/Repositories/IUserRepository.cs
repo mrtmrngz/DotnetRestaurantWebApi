@@ -21,4 +21,5 @@ public interface IUserRepository
     Task AccessFailedAsync(AppUser user, CancellationToken cancellationToken);
     Task ResetAccessFailedCountAsync(AppUser user, CancellationToken cancellationToken);
     Task<string> GeneratePasswordResetTokenAsync(AppUser user, CancellationToken cancellationToken);
+    Task<IdentityResult> ResetPasswordAsync(AppUser user, string token, string newPassword, CancellationToken cancellationToken);
 }

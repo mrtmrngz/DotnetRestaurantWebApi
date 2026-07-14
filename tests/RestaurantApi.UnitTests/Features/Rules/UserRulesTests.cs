@@ -262,4 +262,54 @@ public class UserRulesTests
     }
 
     #endregion
+
+    #region ShouldUserIdExistOnCacheForgotPasswordApply
+
+    [Fact]
+    public async Task ShouldUserIdExistOnCacheForgotPasswordApply_WhenUserIdNotExist_ShouldThrowUnauthorizedException()
+    {
+        Func<Task> act = async () => await _sut.ShouldUserIdExistOnCacheForgotPasswordApply(null);
+
+        await act.Should().ThrowAsync<UnauthorizedException>()
+            .WithMessage("Parola değiştirmek için size sağlanan token süresi sona erdi, lütfen tekrar deneyiniz.");
+    }
+    
+    [Fact]
+    public async Task ShouldUserIdExistOnCacheForgotPasswordApply_WhenUserIdNotExist_ShouldNotThrowAnything()
+    {
+        Func<Task> act = async () => await _sut.ShouldUserIdExistOnCacheForgotPasswordApply(Guid.NewGuid().ToString());
+
+        await act.Should().NotThrowAsync();
+    }
+
+    #endregion
+
+    #region ShouldUserPasswordChangedSuccessfully
+
+    [Fact]
+    public async Task ShouldUserPasswordChangedSuccessfully_WhenPasswordResetFailed_ShouldThrowBadRequest()
+    {
+        var identityError = new IdentityError 
+        { 
+            Code = "InvalidPassword", 
+            Description = "Geçersiz parola." 
+        };
+        var failedResult = IdentityResult.Failed(identityError);
+
+        Func<Task> act = async () => await _sut.ShouldUserPasswordChangedSuccessfully(failedResult);
+
+        await act.Should().ThrowAsync<BadRequestException>().WithMessage("Geçersiz parola.");
+    }
+    
+    [Fact]
+    public async Task ShouldUserPasswordChangedSuccessfully_WhenPasswordResetSuccess_ShouldNotThrowAnything()
+    {
+        var successResult = IdentityResult.Success;
+
+        Func<Task> act = async () => await _sut.ShouldUserPasswordChangedSuccessfully(successResult);
+
+        await act.Should().NotThrowAsync();
+    }
+
+    #endregion
 }

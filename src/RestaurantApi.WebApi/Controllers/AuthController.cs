@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Enums;
+using RestaurantApi.Application.Features.Auth.Commands.ForgotPasswordApply;
 using RestaurantApi.Application.Features.Auth.Commands.ForgotPasswordVerify;
 using RestaurantApi.Application.Features.Auth.Commands.Login;
 using RestaurantApi.Application.Features.Auth.Commands.Logout;
@@ -191,6 +192,23 @@ public class AuthController : ControllerBase
     {
         var response = await _mediator.Send(command);
         
+        return Ok(response);
+    }
+
+    [HttpPost("forgot-password/apply")]
+    #region Swagger Docs
+    [SwaggerRequestExample(typeof(ForgotPasswordApplyCommand), typeof(ForgotPasswordApplyRequestExample))]
+    [ProducesResponseType(typeof(BaseResponse), 200)]
+    [ProducesResponseType(typeof(object), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(BadRequestMultipleExamplesProvider))]
+    [ProducesResponseType(typeof(ErrorResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    [ProducesResponseType(typeof(ErrorResponse), 401)]
+    [SwaggerResponseExample(StatusCodes.Status401Unauthorized, typeof(UnauthorizedExceptionExample))]
+    #endregion
+    public async Task<IActionResult> ForgotPasswordApply([FromBody] ForgotPasswordApplyCommand command)
+    {
+        var response = await _mediator.Send(command);
         return Ok(response);
     }
 

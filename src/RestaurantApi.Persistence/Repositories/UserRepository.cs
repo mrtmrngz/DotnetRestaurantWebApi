@@ -105,4 +105,11 @@ public class UserRepository: IUserRepository
         cancellationToken.ThrowIfCancellationRequested();
         return await _userManager.GeneratePasswordResetTokenAsync(user);
     }
+
+    public async Task<IdentityResult> ResetPasswordAsync(AppUser user, string token, string newPassword, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        return await _userManager.ResetPasswordAsync(user, token, newPassword);
+    }
 }
