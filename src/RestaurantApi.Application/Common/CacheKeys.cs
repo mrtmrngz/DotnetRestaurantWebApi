@@ -10,4 +10,5 @@ public static class CacheKeys
     public static string UserRoles(string userId) => $"roles:{userId}";
     public static string GetMeKey(string userId) => $"user:{userId}";
     public static string ForgotPasswordKey(string token) => $"auth:forgotPassword:{token}";
+    public static string ProfileInfoKey(string userId) => $"profile:info:{userId}";
 }

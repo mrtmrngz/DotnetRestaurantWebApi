@@ -137,5 +137,5 @@ public class UserRules
         }
 
         return Task.CompletedTask;
-    } 
+    }
 }
