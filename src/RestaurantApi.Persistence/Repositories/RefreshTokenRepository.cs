@@ -46,4 +46,9 @@ public class RefreshTokenRepository: IRefreshTokenRepository
             .Where(rt => rt.Token == token)
             .ExecuteUpdateAsync(s => s.SetProperty(r => r.IsRevoked, true));
     }
+
+    public async Task<RefreshToken?> GetUserActiveToken(Guid userId)
+    {
+        return await _context.RefreshTokens.FirstOrDefaultAsync(x => x.UserId == userId && !x.IsRevoked);
+    }
 }

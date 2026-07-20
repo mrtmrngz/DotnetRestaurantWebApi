@@ -3,6 +3,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using RestaurantApi.Application.Common.Behaviors;
+using RestaurantApi.Application.Features.Rules.ProfileRules;
 using RestaurantApi.Application.Features.Rules.RefreshTokenRules;
 using RestaurantApi.Application.Features.Rules.UserRules;
 
@@ -26,6 +27,7 @@ public static class ServiceCollectionExtensions
         // Rules
         services.AddScoped<RefreshTokenRules>();
         services.AddScoped<UserRules>();
+        services.AddScoped<ProfileRules>();
         
         // Automapper
         services.AddAutoMapper(cfg => cfg.AddMaps(typeof(ApplicationAssemblyMarker).Assembly));

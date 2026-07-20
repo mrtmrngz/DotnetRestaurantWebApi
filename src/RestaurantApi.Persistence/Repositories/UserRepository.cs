@@ -112,4 +112,9 @@ public class UserRepository: IUserRepository
 
         return await _userManager.ResetPasswordAsync(user, token, newPassword);
     }
+
+    public async Task<IdentityResult> ChangePasswordAsync(AppUser user, string oldPassword, string newPassword, CancellationToken cancellationToken)
+    {
+        return await _userManager.ChangePasswordAsync(user, oldPassword, newPassword);
+    }
 }

@@ -8,4 +8,5 @@ public interface IRefreshTokenRepository
     Task AddAndRotateAsync(RefreshToken token);
     Task<RefreshToken?> GetAsync(string token);
     Task RevokeRefreshToken(string token);
+    Task<RefreshToken?> GetUserActiveToken(Guid userId);
 }
