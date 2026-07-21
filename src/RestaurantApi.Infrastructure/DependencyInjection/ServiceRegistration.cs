@@ -91,6 +91,7 @@ public static class ServiceRegistration
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAuthTokenService, AuthTokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IAddressService, AddressService>();
 
         return services;
     }    

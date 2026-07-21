@@ -117,4 +117,9 @@ public class UserRepository: IUserRepository
     {
         return await _userManager.ChangePasswordAsync(user, oldPassword, newPassword);
     }
+
+    public async Task<bool> AnyUserExistAsync(Guid userId, CancellationToken ctx)
+    {
+        return await _userManager.Users.AnyAsync(x => x.Id == userId, ctx);
+    }
 }

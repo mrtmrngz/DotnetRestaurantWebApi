@@ -23,4 +23,5 @@ public interface IUserRepository
     Task<string> GeneratePasswordResetTokenAsync(AppUser user, CancellationToken cancellationToken);
     Task<IdentityResult> ResetPasswordAsync(AppUser user, string token, string newPassword, CancellationToken cancellationToken);
     Task<IdentityResult> ChangePasswordAsync(AppUser user, string oldPassword, string newPassword, CancellationToken cancellationToken);
+    Task<bool> AnyUserExistAsync(Guid userId, CancellationToken ctx);
 }

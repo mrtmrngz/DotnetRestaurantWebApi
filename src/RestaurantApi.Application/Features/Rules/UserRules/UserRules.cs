@@ -138,4 +138,15 @@ public class UserRules
 
         return Task.CompletedTask;
     }
+
+    public Task ShouldUserExistBool404(bool isExist)
+    {
+        if (!isExist)
+        {
+            _logger.LogError("❌ Kullanıcı bulunamadı.");
+            throw new NotFoundException("Kullanıcı bulunamadı.");
+        }
+
+        return Task.CompletedTask;
+    }
 }

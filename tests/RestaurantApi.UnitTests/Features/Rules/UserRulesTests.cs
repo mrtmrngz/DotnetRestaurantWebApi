@@ -312,4 +312,25 @@ public class UserRulesTests
     }
 
     #endregion
+
+    #region ShouldUserExistBool404
+
+    [Fact]
+    public async Task ShouldUserExistBool404_WhenUserNotExist_ShouldThrowNotFoundException()
+    {
+        Func<Task> act = async () => await _sut.ShouldUserExistBool404(false);
+
+        await act.Should().ThrowAsync<NotFoundException>()
+            .WithMessage("Kullanıcı bulunamadı.");
+    }
+    
+    [Fact]
+    public async Task ShouldUserExistBool404_WhenUserExist_ShouldNotThrowAsync()
+    {
+        Func<Task> act = async () => await _sut.ShouldUserExistBool404(true);
+
+        await act.Should().NotThrowAsync();
+    }
+
+    #endregion
 }
