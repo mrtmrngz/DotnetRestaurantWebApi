@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Address.Commands;
+using RestaurantApi.Application.Features.Address.Queries.GetUserAddressQuery;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
 using RestaurantApi.WebApi.Swagger.Examples.RequestExamples.AddressExamples;
@@ -46,5 +47,23 @@ public class AddressController: ControllerBase
         var response = await _mediator.Send(updatedCommand);
 
         return StatusCode(StatusCodes.Status201Created, response);
+    }
+
+    [HttpGet]
+
+    #region Swagger Documentation
+    [ProducesResponseType(401)]
+    [ProducesResponseType(typeof(BaseResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<IReadOnlyList<GetUserAddressQueryResult>>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(UserAddressListResponseExample))]
+    #endregion
+    [Authorize(Policy = "SameUser")]
+    public async Task<IActionResult> GetUserAddress()
+    {
+        var userId = _currentUserService.GetRequiredUserId();
+        var command = new GetUserAddressQuery(userId);
+        var response = await _mediator.Send(command);
+        return Ok(response);
     }
 }

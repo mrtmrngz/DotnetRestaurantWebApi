@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Org.BouncyCastle.Security;
+using RestaurantApi.Application.Common;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Abstractions.Repositories;
 using RestaurantApi.Application.Common.Abstractions.Services;
@@ -17,15 +18,17 @@ public class AddressService : IAddressService
     private readonly IAddressRepository _addressRepository;
     private readonly UserRules _userRules;
     private readonly IUnitOfWork _uow;
+    private readonly ICacheService _cacheService;
 
     public AddressService(ILogger<AddressService> logger, IUserRepository userRepository,
-        IAddressRepository addressRepository, UserRules userRules, IUnitOfWork uow)
+        IAddressRepository addressRepository, UserRules userRules, IUnitOfWork uow, ICacheService cacheService)
     {
         _logger = logger;
         _userRepository = userRepository;
         _addressRepository = addressRepository;
         _userRules = userRules;
         _uow = uow;
+        _cacheService = cacheService;
     }
 
     public async Task<BaseResponse> CreateAddressAsyncService(Address dto, CancellationToken ctx)
@@ -58,6 +61,8 @@ public class AddressService : IAddressService
         await _uow.CommitTransactionAsync(ctx);
         
         _logger.LogInformation("Adres başarıyla oluşturuldu ve kaydedildi. AddressId: {AddressId}, UserId: {UserId}", dto.Id, dto.UserId);
+
+        await _cacheService.RemoveAsync(CacheKeys.UserAddressList(dto.UserId.ToString()));
 
         return new BaseResponse
         {

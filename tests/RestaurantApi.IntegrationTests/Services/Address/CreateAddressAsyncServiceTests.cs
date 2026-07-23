@@ -1,9 +1,12 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using RestaurantApi.Application.Common;
+using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Abstractions.Services;
 using RestaurantApi.Application.Common.Enums;
 using RestaurantApi.Application.Common.Exceptions;
+using RestaurantApi.Application.Features.Address.Queries.GetUserAddressQuery;
 using RestaurantApi.IntegrationTests.Setup;
 using RestaurantApi.Persistence.Context;
 

@@ -30,4 +30,14 @@ public class AddressRepository: IAddressRepository
             .Where(add => add.UserId == userId && add.IsDefault)
             .ExecuteUpdateAsync(s => s.SetProperty(r => r.IsDefault, false), ctx);
     }
+
+    public async Task<IReadOnlyList<Address>> GetUserAddressList(Guid userId, CancellationToken ctx)
+    {
+        return await _context.Addresses
+            .AsNoTracking()
+            .Where(add => add.UserId == userId && !add.IsDeleted)
+            .OrderByDescending(add => add.IsDefault)
+            .ThenByDescending(add => add.CreatedAt)
+            .ToListAsync(ctx);
+    }
 }
