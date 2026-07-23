@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RestaurantApi.Application.Common.Abstractions.Repositories;
+using RestaurantApi.Application.Models.Dtos.AddressDtos;
 using RestaurantApi.Domain.Entities;
 using RestaurantApi.Persistence.Context;
 
@@ -39,5 +40,11 @@ public class AddressRepository: IAddressRepository
             .OrderByDescending(add => add.IsDefault)
             .ThenByDescending(add => add.CreatedAt)
             .ToListAsync(ctx);
+    }
+
+    public async Task<Address?> FindUserActiveAddress(Guid userId, Guid addressId, CancellationToken ctx)
+    {
+        return await _context.Addresses
+            .FirstOrDefaultAsync(add => add.UserId == userId && add.Id == addressId && !add.IsDeleted, ctx);
     }
 }
