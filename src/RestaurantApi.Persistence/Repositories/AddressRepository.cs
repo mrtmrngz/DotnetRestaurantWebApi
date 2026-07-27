@@ -70,12 +70,4 @@ public class AddressRepository: IAddressRepository
                 .ExecuteUpdateAsync(s => s.SetProperty(add => add.IsDefault, true), ctx);
         }
     }
-
-    public Task RemoveAddress(Address address, CancellationToken ctx)
-    {
-        ctx.ThrowIfCancellationRequested();
-        _context.Addresses.Remove(address);
-
-        return Task.CompletedTask;
-    }
 }

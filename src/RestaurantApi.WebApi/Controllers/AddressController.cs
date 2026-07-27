@@ -4,9 +4,11 @@ using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Address.Commands;
+using RestaurantApi.Application.Features.Address.Commands.RemoveAddressCommand;
 using RestaurantApi.Application.Features.Address.Commands.UpdateAddressCommand;
 using RestaurantApi.Application.Features.Address.Queries.GetUserAddressByIdQuery;
 using RestaurantApi.Application.Features.Address.Queries.GetUserAddressQuery;
+using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
 using RestaurantApi.WebApi.Swagger.Examples.RequestExamples.AddressExamples;
@@ -89,6 +91,8 @@ public class AddressController: ControllerBase
     [ProducesResponseType(401)]
     [ProducesResponseType(typeof(object), 404)]
     [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundMultipleExamplesProvider))]
+    [ProducesResponseType(typeof(ErrorResponse), 422)]
+    [SwaggerResponseExample(StatusCodes.Status422UnprocessableEntity, typeof(UnproccesableEntityErrorExample))]
     [ProducesResponseType(typeof(BaseResponse), 200)]
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentUpdatedResponseExample))]
     #endregion
@@ -100,6 +104,25 @@ public class AddressController: ControllerBase
         var updatedCommand = command with { UserId = userId, AddressId = addressId };
 
         var response = await _mediator.Send(updatedCommand);
+
+        return Ok(response);
+    }
+
+    [HttpDelete("{addressId:guid}")]
+    #region Swagger Documentation
+    [ProducesResponseType(401)]
+    [ProducesResponseType(typeof(object), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundMultipleExamplesProvider))]
+    [ProducesResponseType(typeof(BaseResponse), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentDeletedSuccessResponseExample))]
+    #endregion
+    [Authorize(Policy = "SameUser")]
+    public async Task<IActionResult> RemoveAddress([FromRoute] Guid addressId)
+    {
+        var userId = _currentUserService.GetRequiredUserId();
+        var command = new RemoveAddressCommand() { UserId = userId, AddressId = addressId };
+
+        var response = await _mediator.Send(command);
 
         return Ok(response);
     }

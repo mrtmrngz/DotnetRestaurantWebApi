@@ -12,5 +12,4 @@ public interface IAddressRepository
     Task<Address?> FindUserActiveAddress(Guid userId, Guid addressId, CancellationToken ctx);
     Task<Address?> FindUserActiveAddressByIdTracking(Guid userId, Guid addressId, CancellationToken ctx);
     Task UpdateOtherLeastAddressToDefault(Guid userId, Guid addressId, CancellationToken ctx);
-    Task RemoveAddress(Address address, CancellationToken ctx);
 }

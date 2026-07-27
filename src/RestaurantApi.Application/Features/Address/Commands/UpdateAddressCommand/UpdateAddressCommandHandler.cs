@@ -11,12 +11,6 @@ using RestaurantApi.Application.Models.Responses.SuccessResponse;
 
 namespace RestaurantApi.Application.Features.Address.Commands.UpdateAddressCommand;
 
-public class AddressValidateDto
-{
-    public Domain.Entities.Address Address { get; set; } = null!;
-    public int Count { get; set; }
-}
-
 public class UpdateAddressCommandHandler : IRequestHandler<UpdateAddressCommand, BaseResponse>
 {
     private readonly ILogger<UpdateAddressCommandHandler> _logger;
@@ -82,7 +76,7 @@ public class UpdateAddressCommandHandler : IRequestHandler<UpdateAddressCommand,
 
     #region Update Address Helper Methods
 
-    private async Task<AddressValidateDto> ValidateAddress(UpdateAddressCommand request, CancellationToken ctx)
+    private async Task<(Domain.Entities.Address Address, int Count)> ValidateAddress(UpdateAddressCommand request, CancellationToken ctx)
     {
         await _userRules.ShouldUserExistBool404(
             await _userRepository.AnyUserExistAsync(request.UserId, ctx)
@@ -100,7 +94,7 @@ public class UpdateAddressCommandHandler : IRequestHandler<UpdateAddressCommand,
             addressCount, request.IsDefault, targetAddress!.IsDefault, request.UserId, request.AddressId
         );
 
-        return new AddressValidateDto { Address = targetAddress, Count = addressCount };
+        return (targetAddress!, addressCount);
     }
 
     private async Task ManageDefaultAddressStateAsync(
