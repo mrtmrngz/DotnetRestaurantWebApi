@@ -48,3 +48,10 @@ public class BadRequestException : AppException
     {
     }
 }
+
+public class UnprocessableEntityError : AppException
+{
+    public UnprocessableEntityError(string message) : base(message, statusCode: 422, code: Codes.UNPROCESSABLE_ENTITY)
+    {
+    }
+}

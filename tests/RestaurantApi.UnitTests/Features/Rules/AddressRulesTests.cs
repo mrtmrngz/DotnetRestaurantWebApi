@@ -29,11 +29,11 @@ public class AddressRulesTests
         await act.Should().ThrowAsync<NotFoundException>()
             .WithMessage("Adres bulunamadı.");
     }
-    
+
     [Fact]
     public async Task ShouldAddressExist_WhenAddressExist_ShouldNotThrowAsync()
     {
-        Domain.Entities.Address add = new Domain.Entities.Address{ Id = Guid.NewGuid()};
+        Domain.Entities.Address add = new Domain.Entities.Address { Id = Guid.NewGuid() };
 
         var act = async () => await _sut.ShouldAddressExist(add, Guid.NewGuid(), Guid.NewGuid());
 
@@ -41,7 +41,7 @@ public class AddressRulesTests
     }
 
     #endregion
-    
+
     #region ShouldAddressExistInCache TESTS
 
     [Fact]
@@ -54,7 +54,7 @@ public class AddressRulesTests
         await act.Should().ThrowAsync<NotFoundException>()
             .WithMessage("Adres bulunamadı.");
     }
-    
+
     [Fact]
     public async Task ShouldAddressExistInCache_WhenAddressExistInCache_ShouldNotThrowAsync()
     {
@@ -74,6 +74,31 @@ public class AddressRulesTests
         );
 
         var act = async () => await _sut.ShouldAddressExistInCache(add, Guid.NewGuid(), Guid.NewGuid());
+
+        await act.Should().NotThrowAsync();
+    }
+
+    #endregion
+
+    #region ShouldUserHasAnotherAddress TESTS
+
+    [Fact]
+    public async Task
+        ShouldUserHasAnotherAddress_WhenCountLT0AndRQIsDefaultFalseAndTGAddressIsDefaultTrue_ShouldThrowUnprocessableEntityError()
+    {
+        Func<Task> act = async () =>
+            await _sut.ShouldUserHasAnotherAddress(1, false, true, Guid.NewGuid(), Guid.NewGuid());
+
+        await act.Should().ThrowAsync<UnprocessableEntityError>()
+            .WithMessage("Kullanıcının en az 1 adet varsayılan adresi bulunmalıdır.");
+    }
+    
+    [Fact]
+    public async Task
+        ShouldUserHasAnotherAddress_WhenEverythingOk_ShouldNotThrowAsync()
+    {
+        Func<Task> act = async () =>
+            await _sut.ShouldUserHasAnotherAddress(1, true, false, Guid.NewGuid(), Guid.NewGuid());
 
         await act.Should().NotThrowAsync();
     }

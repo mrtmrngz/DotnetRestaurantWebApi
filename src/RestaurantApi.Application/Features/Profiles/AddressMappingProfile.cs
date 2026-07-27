@@ -1,5 +1,6 @@
 using AutoMapper;
 using RestaurantApi.Application.Features.Address.Commands;
+using RestaurantApi.Application.Features.Address.Commands.UpdateAddressCommand;
 using RestaurantApi.Application.Features.Address.Queries.GetUserAddressByIdQuery;
 using RestaurantApi.Application.Features.Address.Queries.GetUserAddressQuery;
 
@@ -13,5 +14,6 @@ public class AddressMappingProfile: Profile
         CreateMap<Domain.Entities.Address, GetUserAddressQueryResult>();
         CreateMap<Domain.Entities.Address, GetUserAddressByIdQueryResult>();
         CreateMap<GetUserAddressQueryResult, GetUserAddressByIdQueryResult>();
+        CreateMap<UpdateAddressCommand, Domain.Entities.Address>();
     }
 }

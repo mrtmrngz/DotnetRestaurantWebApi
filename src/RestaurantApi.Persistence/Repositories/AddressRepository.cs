@@ -45,6 +45,37 @@ public class AddressRepository: IAddressRepository
     public async Task<Address?> FindUserActiveAddress(Guid userId, Guid addressId, CancellationToken ctx)
     {
         return await _context.Addresses
+            .AsNoTracking()
             .FirstOrDefaultAsync(add => add.UserId == userId && add.Id == addressId && !add.IsDeleted, ctx);
+    }
+    
+    public async Task<Address?> FindUserActiveAddressByIdTracking(Guid userId, Guid addressId, CancellationToken ctx)
+    {
+        return await _context.Addresses
+            .FirstOrDefaultAsync(add => add.UserId == userId && add.Id == addressId && !add.IsDeleted, ctx);
+    }
+
+    public async Task UpdateOtherLeastAddressToDefault(Guid userId, Guid addressId, CancellationToken ctx)
+    {
+        var targetAddressId = await _context.Addresses
+            .Where(add => add.UserId == userId && add.Id != addressId && !add.IsDeleted)
+            .OrderByDescending(add => add.CreatedAt)
+            .Select(add => add.Id)
+            .FirstOrDefaultAsync(ctx);
+
+        if (targetAddressId != Guid.Empty)
+        {
+            await _context.Addresses
+                .Where(add => add.Id == targetAddressId)
+                .ExecuteUpdateAsync(s => s.SetProperty(add => add.IsDefault, true), ctx);
+        }
+    }
+
+    public Task RemoveAddress(Address address, CancellationToken ctx)
+    {
+        ctx.ThrowIfCancellationRequested();
+        _context.Addresses.Remove(address);
+
+        return Task.CompletedTask;
     }
 }

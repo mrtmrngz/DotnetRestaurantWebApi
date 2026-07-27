@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Address.Commands;
+using RestaurantApi.Application.Features.Address.Commands.UpdateAddressCommand;
 using RestaurantApi.Application.Features.Address.Queries.GetUserAddressByIdQuery;
 using RestaurantApi.Application.Features.Address.Queries.GetUserAddressQuery;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
@@ -80,6 +81,26 @@ public class AddressController: ControllerBase
         var userId = _currentUserService.GetRequiredUserId();
         var query = new GetUserAddressByIdQuery(UserId: userId, AddressId: addressId);
         var response = await _mediator.Send(query);
+        return Ok(response);
+    }
+
+    [HttpPatch("{addressId:guid}")]
+    #region Swagger Documentation
+    [ProducesResponseType(401)]
+    [ProducesResponseType(typeof(object), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundMultipleExamplesProvider))]
+    [ProducesResponseType(typeof(BaseResponse), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentUpdatedResponseExample))]
+    #endregion
+    [Authorize(Policy = "SameUser")]
+    public async Task<IActionResult> UpdateAddress([FromBody] UpdateAddressCommand command, [FromRoute] Guid addressId)
+    {
+        var userId = _currentUserService.GetRequiredUserId();
+
+        var updatedCommand = command with { UserId = userId, AddressId = addressId };
+
+        var response = await _mediator.Send(updatedCommand);
+
         return Ok(response);
     }
 }
