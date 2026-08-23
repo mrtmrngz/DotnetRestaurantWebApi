@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Respawn;
+using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Mail;
 using RestaurantApi.Persistence.Extension;
 using StackExchange.Redis;
@@ -76,6 +77,10 @@ public class TestDatabaseFixture : IAsyncLifetime
                     if (descriptor != null) services.Remove(descriptor);
 
                     services.AddScoped<IMailService, FakeMailService>();
+                    
+                    var storageDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IFileStorage));
+                    if (storageDescriptor != null) services.Remove(storageDescriptor);
+                    services.AddScoped<IFileStorage, FakeFileStorage>();
 
                     services.AddHttpContextAccessor();
                 });

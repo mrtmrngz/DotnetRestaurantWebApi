@@ -73,4 +73,57 @@ public class BaseIntegrationTest : IAsyncLifetime
 
         return new VanillaUserSetupDto { User = user, AccessToken = accessToken };
     }
+    
+    protected async Task<VanillaUserSetupDto> CreateAdminUserAsync(Action<AppUser>? customConfig = null)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApiContext>();
+        var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<AppUser>>();
+        var jwtTokenService = scope.ServiceProvider.GetRequiredService<ITokenService>();
+
+        var email = $"admin_{Guid.NewGuid().ToString()[..8]}@gmail.com";
+        var password = "AdminPassword123!";
+
+        var adminUser = new AppUser
+        {
+            Email = email,
+            NormalizedEmail = email.ToUpper(),
+            UserName = email,
+            NormalizedUserName = email.ToUpper(),
+            Name = "Admin",
+            Surname = "User",
+            EmailConfirmed = true,
+            SecurityStamp = Guid.NewGuid().ToString(),
+            ConcurrencyStamp = Guid.NewGuid().ToString()
+        };
+
+        customConfig?.Invoke(adminUser);
+
+        adminUser.PasswordHash = passwordHasher.HashPassword(adminUser, password);
+
+        dbContext.Users.Add(adminUser);
+        await dbContext.SaveChangesAsync();
+        
+        var adminRole = await dbContext.Roles.FirstOrDefaultAsync(r => r.Name == "ADMIN");
+        
+        if (adminRole is not null)
+        {
+            dbContext.UserRoles.Add(new IdentityUserRole<Guid>
+            {
+                UserId = adminUser.Id,
+                RoleId = adminRole.Id
+            });
+            await dbContext.SaveChangesAsync();
+        }
+        
+        var roles = new List<string> { "ADMIN" };
+    
+        var accessToken = await jwtTokenService.CreateAccessToken(adminUser, roles);
+
+        return new VanillaUserSetupDto 
+        { 
+            User = adminUser, 
+            AccessToken = accessToken 
+        };
+    }
 }

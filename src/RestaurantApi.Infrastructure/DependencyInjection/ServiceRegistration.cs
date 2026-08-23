@@ -41,7 +41,10 @@ public static class ServiceRegistration
             {
                 ServiceURL = aws.ServiceUrl,
                 ForcePathStyle = true,
-                RegionEndpoint = RegionEndpoint.GetBySystemName(aws.Region)
+                AuthenticationRegion = aws.Region,
+                UseAccelerateEndpoint = false,
+                UseDualstackEndpoint = false,
+                UseFIPSEndpoint = false
             };
 
             return new AmazonS3Client(
@@ -92,6 +95,7 @@ public static class ServiceRegistration
         services.AddScoped<IAuthTokenService, AuthTokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IAddressService, AddressService>();
+        services.AddScoped<ISlugService, SlugService>();
 
         return services;
     }    

@@ -51,6 +51,8 @@ public static class PersistenceServiceRegistration
         services.AddScoped<IRoleRepository, RoleRepository>();
         services.AddScoped<ISigninManager, SigninManagerRepository>();
         services.AddScoped<IAddressRepository, AddressRepository>();
+        services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IMediaRepository, MediaRepository>();
         
         // UNIT OF WORK
         services.AddScoped<IUnitOfWork, UnitOfWork>();

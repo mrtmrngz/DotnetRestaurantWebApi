@@ -15,4 +15,16 @@ public static class Permissions
         [Description("Kullanıcı silme yetkisi verir.")]
         public const string Delete = "user:delete";
     }
+    
+    public static class CategoryPermissions
+    {
+        [Description("Kategorileri görüntüleme yetkisi verir.")]
+        public const string View = "category:view";
+        [Description("Kategori oluşturma yetkisi verir.")]
+        public const string Create = "category:create";
+        [Description("Kategori güncelleme yetkisi verir.")]
+        public const string Update = "category:update";
+        [Description("Kategori silme yetkisi verir.")]
+        public const string Delete = "category:delete";
+    }
 }
