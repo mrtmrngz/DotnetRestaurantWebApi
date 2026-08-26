@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Category.Commands.CreateCategoryCommand;
+using RestaurantApi.Application.Features.Category.Queries.GetCategoriesQuery;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
 using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
@@ -40,5 +41,17 @@ public class CategoriesController : ControllerBase
         var response = await _mediator.Send(command);
         
         return StatusCode(StatusCodes.Status201Created, response);
+    }
+
+    [HttpGet]
+    #region Swagger Documentation
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<IReadOnlyList<GetCategoriesQueryResult>>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(PublicCategoryListExample))]
+    #endregion
+    public async Task<IActionResult> GetCategories()
+    {
+        var response = await _mediator.Send(new GetCategoryQuery());
+
+        return Ok(response);
     }
 }

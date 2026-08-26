@@ -49,7 +49,7 @@ public class TestDatabaseFixture : IAsyncLifetime
         Environment.SetEnvironmentVariable("MailSettings__Email", "test@gmail.com");
         Environment.SetEnvironmentVariable("MailSettings__Password", "secret");
     
-        Environment.SetEnvironmentVariable("AWS__ServiceUrl", "http://localhost:4566");
+        Environment.SetEnvironmentVariable("AWS__ServiceUrl", "http://localhost:9000");
 
         Factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>

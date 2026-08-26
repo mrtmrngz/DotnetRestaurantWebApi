@@ -58,34 +58,45 @@
     profiles:
       - logging
       - dev
-  localstack:
-    image: localstack/localstack:latest
-    container_name: localstack-s3
+  minio:
+    image: minio/minio:latest
+    container_name: minio-s3
     ports:
-      - "4566:4566"
+      - "9000:9000" 
+      - "9001:9001" 
     environment:
-      - DEBUG=1
-      - SERVICES=s3
-      - AWS_DEFAULT_REGION=eu-west-1
-      - AWS_ACCESS_KEY_ID=test
-      - AWS_SECRET_ACCESS_KEY=test
-      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN}
+      MINIO_ROOT_USER: test
+      MINIO_ROOT_PASSWORD: testpassword
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./docker/localstack/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh
-      - localstack_data:/var/lib/localstack
+      - minio_data:/data
+    command: server /data --console-address ":9001"
     profiles:
       - localstack
       - dev
     healthcheck:
-      test: [ "CMD", "awslocal", "s3", "ls" ]
+      test: [ "CMD", "mc", "ready", "local" ]
       interval: 5s
-      timeout: 10s
+      timeout: 5s
       retries: 5
-  
+  createbuckets:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 test testpassword;
+      /usr/bin/mc mb myminio/images-bucket;
+      /usr/bin/mc anonymous set download myminio/images-bucket;
+      exit 0;
+      "
+    profiles:
+      - localstack
+      - dev
 
 volumes:
   postgres_data:
   redis_data:
   seq-data:
-  localstack_data:
+  minio_data:
+    driver: local
