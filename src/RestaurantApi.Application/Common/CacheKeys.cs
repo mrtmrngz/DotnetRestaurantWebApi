@@ -13,4 +13,5 @@ public static class CacheKeys
     public static string ProfileInfoKey(string userId) => $"profile:info:{userId}";
     public static string UserAddressList(string userId) => $"address:list:{userId}";
     public static string Categories() => "categories";
+    public static string AdminCategories() => "admin:categories";
 }

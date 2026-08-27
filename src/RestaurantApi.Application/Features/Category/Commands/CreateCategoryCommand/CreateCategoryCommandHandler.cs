@@ -51,6 +51,10 @@ public class CreateCategoryCommandHandler : IRequestHandler<CreateCategoryComman
             await _cacheService.RemoveAsync(CacheKeys.Categories());
             _logger.LogInformation("Kategori önbelleği (cache) temizlendi. CacheKey: {CacheKey}",
                 CacheKeys.Categories());
+            
+            await _cacheService.RemoveAsync(CacheKeys.AdminCategories());
+            _logger.LogInformation("Admin Kategori önbelleği (cache) temizlendi. CacheKey: {CacheKey}",
+                CacheKeys.AdminCategories());
 
             _logger.LogInformation(
                 "Kategori oluşturma işlemi başarıyla tamamlandı. CategoryTitle: {CategoryTitle}, Slug: {Slug}",

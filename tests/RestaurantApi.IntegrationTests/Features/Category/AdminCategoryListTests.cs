@@ -1,9 +1,10 @@
 using System.Net;
+using System.Net.Http.Headers;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using RestaurantApi.Application.Common;
 using RestaurantApi.Application.Common.Abstractions;
-using RestaurantApi.Application.Features.Category.Queries.GetCategoriesQuery;
+using RestaurantApi.Application.Features.Category.Queries.AdminCategoryListQuery;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Entities;
 using RestaurantApi.IntegrationTests.Extension;
@@ -12,9 +13,9 @@ using RestaurantApi.Persistence.Context;
 
 namespace RestaurantApi.IntegrationTests.Features.Category;
 
-public class GetCategoriesTests: BaseIntegrationTest
+public class AdminCategoryListTests: BaseIntegrationTest
 {
-    public GetCategoriesTests(TestDatabaseFixture fixture) : base(fixture)
+    public AdminCategoryListTests(TestDatabaseFixture fixture) : base(fixture)
     {
     }
     
@@ -22,39 +23,45 @@ public class GetCategoriesTests: BaseIntegrationTest
     // SUCCESS TESTS START
 
     [Fact]
-    public async Task GetCategories_WhenCategoriesOnRedis_ShouldReturnCategories()
+    public async Task GetAdminCategories_WhenCategoriesOnRedis_ShouldReturnCategories()
     {
         using (var scope = Factory.Services.CreateScope())
         {
             var cacheService = scope.ServiceProvider.GetRequiredService<ICacheService>();
 
-            var categories = new List<GetCategoriesQueryResult>()
+            var categories = new List<AdminCategoryListQueryResult>()
             {
-                new GetCategoriesQueryResult()
+                new AdminCategoryListQueryResult()
                 {
                     Id = Guid.NewGuid(),
                     Title = "Category 1",
                     Slug = "category-1",
-                    ImageUrl = "cat1.png"
+                    ImageUrl = "cat1.png",
+                    IsDeleted = false
                 },
-                new GetCategoriesQueryResult()
+                new AdminCategoryListQueryResult()
                 {
                     Id = Guid.NewGuid(),
                     Title = "Category 2",
                     Slug = "category-2",
-                    ImageUrl = "cat2.png"
+                    ImageUrl = "cat2.png",
+                    IsDeleted = true
                 }
             };
 
-            await cacheService.SetAsync(CacheKeys.Categories(), categories, TimeSpan.FromHours(1));
+            await cacheService.SetAsync(CacheKeys.AdminCategories(), categories, TimeSpan.FromHours(1));
         }
+        
+        var setupResult = await CreateAdminUserAsync();
 
-        var response = await Client.GetAsync("/api/categories/public");
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", setupResult.AccessToken);
+
+        var response = await Client.GetAsync("/api/categories/admin");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response
-            .ReadContentAsAsync<GeneralSuccessResponseWithData<IReadOnlyList<GetCategoriesQueryResult>>>();
+            .ReadContentAsAsync<GeneralSuccessResponseWithData<IReadOnlyList<AdminCategoryListQueryResult>>>();
 
         result.Should().NotBeNull("Response body boş gelmemeliydi.");
         result.Data.Should().HaveCount(2, "2 adet kategori dönmeliydi.");
@@ -65,23 +72,25 @@ public class GetCategoriesTests: BaseIntegrationTest
     }
     
     [Fact]
-    public async Task GetCategories_WhenCategoriesNotExistOnRedisShouldFetchDbAndSetRedis_ShouldReturn200()
+    public async Task GetAdminCategories_WhenCategoriesNotExistOnRedisShouldFetchDbAndSetRedis_ShouldReturn200()
     {
-        var categories = new List<GetCategoriesQueryResult>()
+        var categories = new List<AdminCategoryListQueryResult>()
         {
-            new GetCategoriesQueryResult()
+            new AdminCategoryListQueryResult()
             {
                 Id = Guid.NewGuid(),
                 Title = "Category 1",
                 Slug = "category-1",
-                ImageUrl = "cat1.png"
+                ImageUrl = "cat1.png",
+                IsDeleted = false,
             },
-            new GetCategoriesQueryResult()
+            new AdminCategoryListQueryResult()
             {
                 Id = Guid.NewGuid(),
                 Title = "Category 2",
                 Slug = "category-2",
-                ImageUrl = "cat2.png"
+                ImageUrl = "cat2.png",
+                IsDeleted = true,
             }
         };
         
@@ -109,11 +118,12 @@ public class GetCategoriesTests: BaseIntegrationTest
             {
                 new Domain.Entities.Category()
                 {
-                    Id = categories[0].Id, Title = categories[0].Title, Slug = categories[0].Slug, MediaId = media[0].Id
+                    Id = categories[0].Id, Title = categories[0].Title, Slug = categories[0].Slug, MediaId = media[0].Id,
+                    IsDeleted = categories[0].IsDeleted
                 },
                 new Domain.Entities.Category()
                 {
-                    Id = categories[1].Id, Title = categories[1].Title, Slug = categories[1].Slug, MediaId = media[1].Id
+                    Id = categories[1].Id, Title = categories[1].Title, Slug = categories[1].Slug, MediaId = media[1].Id,IsDeleted = categories[1].IsDeleted
                 }
             };
             
@@ -121,12 +131,16 @@ public class GetCategoriesTests: BaseIntegrationTest
             await apiContext.SaveChangesAsync();
         }
 
-        var response = await Client.GetAsync("/api/categories/public");
+        var setupResult = await CreateAdminUserAsync();
+
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", setupResult.AccessToken);
+
+        var response = await Client.GetAsync("/api/categories/admin");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response
-            .ReadContentAsAsync<GeneralSuccessResponseWithData<IReadOnlyList<GetCategoriesQueryResult>>>();
+            .ReadContentAsAsync<GeneralSuccessResponseWithData<IReadOnlyList<AdminCategoryListQueryResult>>>();
 
         result.Should().NotBeNull("Response body boş gelmemeliydi.");
         result.Data.Should().HaveCount(2, "2 adet kategori dönmeliydi.");
@@ -140,7 +154,7 @@ public class GetCategoriesTests: BaseIntegrationTest
         {
             var cacheService = scope.ServiceProvider.GetRequiredService<ICacheService>();
 
-            var cats = await cacheService.GetAsync<IReadOnlyList<GetCategoriesQueryResult>>(CacheKeys.Categories());
+            var cats = await cacheService.GetAsync<IReadOnlyList<AdminCategoryListQueryResult>>(CacheKeys.AdminCategories());
 
             cats.Should().NotBeNull("Kategoriler redise kaydedilmeliydi.");
             cats.Should().HaveCount(2, "Rediste 2 adet kategori olmalydı.");
@@ -150,4 +164,30 @@ public class GetCategoriesTests: BaseIntegrationTest
     }
     
     // SUCCESS TESTS END
+    
+    // ERROR TESTS START
+
+    [Fact]
+    public async Task GetAdminCategories_WhenUserNotAuthorize_ShouldReturn401()
+    {
+        var response = await Client.GetAsync("/api/categories/admin");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized, "Kullanıcı giriş yapmadığı için 401 hata kodu dönmeliydi.");
+    }
+    
+    [Fact]
+    public async Task GetAdminCategories_WhenUserNotAdmin_ShouldReturn403()
+    {
+        var setupResult = await CreateVanillaUserAsync();
+
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", setupResult.AccessToken);
+        
+        var response = await Client.GetAsync("/api/categories/admin");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, 
+            "Kullanıcı bu işlemi yapmak için yetkili olmadığı için 403 FORBIDDEN hatası dönmeliydi.");
+    }
+    
+    // ERROR TESTS END
+    
 }

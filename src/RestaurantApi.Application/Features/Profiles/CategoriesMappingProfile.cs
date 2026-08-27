@@ -1,4 +1,5 @@
 using AutoMapper;
+using RestaurantApi.Application.Features.Category.Queries.AdminCategoryListQuery;
 using RestaurantApi.Application.Features.Category.Queries.GetCategoriesQuery;
 
 namespace RestaurantApi.Application.Features.Profiles;
@@ -17,6 +18,21 @@ public class CategoriesMappingProfile : Profile
                 opt.MapFrom(src => src.Slug))
             .ForMember(dest => dest.ImageUrl, opt =>
                 opt.MapFrom(src => src.Media != null ? src.Media.Url : string.Empty)
+            );
+
+        // Get categories for admin route
+        CreateMap<Domain.Entities.Category, AdminCategoryListQueryResult>()
+            .ForMember(dest => dest.Id, opt =>
+                opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.Title, opt =>
+                opt.MapFrom(src => src.Title))
+            .ForMember(dest => dest.Slug, opt =>
+                opt.MapFrom(src => src.Slug))
+            .ForMember(dest => dest.ImageUrl, opt =>
+                opt.MapFrom(src => src.Media != null ? src.Media.Url : string.Empty)
+            )
+            .ForMember(dest => dest.IsDeleted, opt =>
+                opt.MapFrom(src => src.IsDeleted)
             );
     }
 }

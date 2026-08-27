@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Category.Commands.CreateCategoryCommand;
+using RestaurantApi.Application.Features.Category.Queries.AdminCategoryListQuery;
 using RestaurantApi.Application.Features.Category.Queries.GetCategoriesQuery;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
@@ -43,7 +44,7 @@ public class CategoriesController : ControllerBase
         return StatusCode(StatusCodes.Status201Created, response);
     }
 
-    [HttpGet]
+    [HttpGet("public")]
     #region Swagger Documentation
     [ProducesResponseType(typeof(GeneralSuccessResponseWithData<IReadOnlyList<GetCategoriesQueryResult>>), 200)]
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(PublicCategoryListExample))]
@@ -51,6 +52,21 @@ public class CategoriesController : ControllerBase
     public async Task<IActionResult> GetCategories()
     {
         var response = await _mediator.Send(new GetCategoryQuery());
+
+        return Ok(response);
+    }
+    
+    [HttpGet("admin")]
+    #region Swagger Documentation
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<IReadOnlyList<GetCategoriesQueryResult>>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(AdminCategoryListResponseExample))]
+    #endregion
+    [Authorize(Policy = Permissions.CategoryPermissions.View)]
+    public async Task<IActionResult> GetAdminCategories()
+    {
+        var response = await _mediator.Send(new AdminCategoryListQuery());
 
         return Ok(response);
     }
