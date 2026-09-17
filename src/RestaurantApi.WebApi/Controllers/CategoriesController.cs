@@ -5,6 +5,7 @@ using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Category.Commands.CreateCategoryCommand;
 using RestaurantApi.Application.Features.Category.Queries.AdminCategoryListQuery;
+using RestaurantApi.Application.Features.Category.Queries.CategoryDetailQuery;
 using RestaurantApi.Application.Features.Category.Queries.GetCategoriesQuery;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
@@ -67,6 +68,24 @@ public class CategoriesController : ControllerBase
     public async Task<IActionResult> GetAdminCategories()
     {
         var response = await _mediator.Send(new AdminCategoryListQuery());
+
+        return Ok(response);
+    }
+
+    [HttpGet("{categoryId:guid}")]
+    #region MyRegion
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<CategoryDetailQueryResult>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(CategoryDetailResponseExample))]
+    [ProducesResponseType(typeof(NotFoundException), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    #endregion
+    [Authorize(Policy = Permissions.CategoryPermissions.View)]
+    public async Task<IActionResult> GetCategoryDetail([FromRoute] Guid categoryId)
+    {
+
+        var response = await _mediator.Send(new CategoryDetailQuery(CategoryId: categoryId));
 
         return Ok(response);
     }
