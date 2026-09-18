@@ -73,4 +73,72 @@ public class CategoryRulesTests
     }
 
     #endregion
+    
+    #region ShouldBeValidForDeletion Tests
+
+    [Fact]
+    public async Task ShouldBeValidForDeletion_WhenCategoryNotExist_ShouldThrowNotFoundException()
+    {
+        Domain.Entities.Category? detail = null;
+
+        // Act
+        Action act = () => _sut.ShouldBeValidForDeletion(detail);
+
+        // Assert
+        act.Should().Throw<NotFoundException>()
+            .WithMessage("Kategori bulunamadı.");
+    }
+    
+    [Fact]
+    public async Task ShouldBeValidForDeletion_WhenCategoryAlreadyDeleted_ShouldThrowNotFoundException()
+    {
+        Domain.Entities.Category? detail = new Domain.Entities.Category(){IsDeleted = true};
+
+        // Act
+        Action act = () => _sut.ShouldBeValidForDeletion(detail);
+
+        // Assert
+        act.Should().Throw<NotFoundException>()
+            .WithMessage("Kategori bulunamadı.");
+    }
+    
+    [Fact]
+    public async Task ShouldBeValidForDeletion_WhenCategoryCanDeleted_ShouldNotThrowAnything()
+    {
+        Domain.Entities.Category? detail = new Domain.Entities.Category{IsDeleted = false};
+
+        // Act
+        Action act = () => _sut.ShouldBeValidForDeletion(detail);
+
+        // Assert
+        act.Should().NotThrow();
+    }
+
+    #endregion
+    
+    #region ShouldNotHasAnyActiveProduct Tests
+
+    [Fact]
+    public async Task ShouldNotHasAnyActiveProduct_WhenCategoryHasActiveProduct_ShouldThrowUnprocessableEntityError()
+    {
+        // Act
+        Action act = () => _sut.ShouldNotHasAnyActiveProduct(true, Guid.NewGuid());
+
+        // Assert
+        act.Should().Throw<UnprocessableEntityError>()
+            .WithMessage("Bu kategoriye bağlı aktif ürünler bulunmaktadır. Lütfen önce ürünleri silin veya başka bir kategoriye taşıyın.");
+    }
+    
+    
+    [Fact]
+    public async Task ShouldNotHasAnyActiveProduct_WhenCategoryHasNotActiveProduct_ShouldNotThrowAnything()
+    {
+        // Act
+        Action act = () => _sut.ShouldNotHasAnyActiveProduct(false, Guid.NewGuid());
+
+        // Assert
+        act.Should().NotThrow();
+    }
+
+    #endregion
 }

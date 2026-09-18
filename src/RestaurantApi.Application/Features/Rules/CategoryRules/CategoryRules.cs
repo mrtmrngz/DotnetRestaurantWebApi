@@ -35,4 +35,29 @@ public class CategoryRules
 
         return Task.CompletedTask;
     }
+
+    public void ShouldBeValidForDeletion(Domain.Entities.Category? category)
+    {
+        if (category is null)
+        {
+            _logger.LogWarning("Aranılan category bulunamadı.");
+            throw new NotFoundException("Kategori bulunamadı.");
+        }
+
+        if (category.IsDeleted)
+        {
+            _logger.LogWarning("Aranılan category silinmiş. CategoryId: {CategoryId}", category.Id);
+            throw new NotFoundException("Kategori bulunamadı.");
+        }
+    }
+
+    public void ShouldNotHasAnyActiveProduct(bool hasAny, Guid id)
+    {
+        if (hasAny)
+        {
+            _logger.LogWarning("İçerisinde aktif ürün bulunan kategori silinemez. CategoryId: {CategoryId}", id);
+            throw new UnprocessableEntityError(
+                "Bu kategoriye bağlı aktif ürünler bulunmaktadır. Lütfen önce ürünleri silin veya başka bir kategoriye taşıyın.");
+        }
+    }
 }

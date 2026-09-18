@@ -14,4 +14,6 @@ public static class CacheKeys
     public static string UserAddressList(string userId) => $"address:list:{userId}";
     public static string Categories() => "categories";
     public static string AdminCategories() => "admin:categories";
+    public static string AdminProducts() => "admin:products";
+    public static string PublicProducts() => "products";
 }

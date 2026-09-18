@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Category.Commands.CreateCategoryCommand;
+using RestaurantApi.Application.Features.Category.Commands.DeleteCategoryCommand;
 using RestaurantApi.Application.Features.Category.Commands.UpdateCategoryCommand;
 using RestaurantApi.Application.Features.Category.Queries.AdminCategoryListQuery;
 using RestaurantApi.Application.Features.Category.Queries.CategoryDetailQuery;
@@ -107,6 +108,16 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPatch("{categoryId:guid}")]
+    #region Swagger Documantation
+    [ProducesResponseType(typeof(BadRequestException), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
+    [ProducesResponseType( 401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(NotFoundException), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    [ProducesResponseType(typeof(BaseResponse), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentUpdatedResponseExample))]
+    #endregion
     [Authorize(Policy = Permissions.CategoryPermissions.Update)]
     public async Task<IActionResult> UpdateCategory([FromRoute] Guid categoryId,
         [FromForm] UpdateCategoryCommand command)
@@ -116,6 +127,27 @@ public class CategoriesController : ControllerBase
         var commandToSend = command with { CategoryId = categoryId };
         
         var response = await _mediator.Send(commandToSend);
+
+        return Ok(response);
+    }
+
+    [HttpDelete("{categoryId:guid}")]
+    #region 
+    [ProducesResponseType( 401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(BaseResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    [ProducesResponseType(typeof(BaseResponse), 422)]
+    [SwaggerResponseExample(StatusCodes.Status422UnprocessableEntity, typeof(UnproccesableEntityErrorExample))]
+    [ProducesResponseType(typeof(BaseResponse), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentDeletedSuccessResponseExample))]
+    #endregion
+    [Authorize(Policy = Permissions.CategoryPermissions.Delete)]
+    public async Task<IActionResult> DeleteCategory([FromRoute] Guid categoryId)
+    {
+        var command = new DeleteCategoryCommand(categoryId);
+
+        var response = await _mediator.Send(command);
 
         return Ok(response);
     }

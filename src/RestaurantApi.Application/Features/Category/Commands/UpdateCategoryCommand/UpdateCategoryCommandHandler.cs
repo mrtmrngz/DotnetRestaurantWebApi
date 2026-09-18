@@ -59,6 +59,7 @@ public class UpdateCategoryCommandHandler: IRequestHandler<UpdateCategoryCommand
             // clear cache
             _logger.LogInformation("Kategoriler redisten temizleniyor.");
             await _cacheService.RemoveAsync(CacheKeys.Categories());
+            await _cacheService.RemoveAsync(CacheKeys.AdminCategories());
             
             // remove old file if new image uploaded.
             if (oldMediaPublicId is not null)
