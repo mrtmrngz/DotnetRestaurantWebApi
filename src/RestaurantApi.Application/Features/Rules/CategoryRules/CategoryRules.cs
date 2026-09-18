@@ -24,4 +24,15 @@ public class CategoryRules
 
         return Task.CompletedTask;
     }
+
+    public Task ShouldCategoryEntityExist(Domain.Entities.Category? category)
+    {
+        if (category is null)
+        {
+            _logger.LogWarning("Aranılan category bulunamadı.");
+            throw new NotFoundException("Kategori bulunamadı.");
+        }
+
+        return Task.CompletedTask;
+    }
 }

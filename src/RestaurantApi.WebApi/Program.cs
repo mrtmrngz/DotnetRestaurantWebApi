@@ -62,6 +62,7 @@ builder.Services.AddSwaggerExamplesFromAssemblyOf<Program>();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo{Title = "Restaurant Api", Version = "v1"});
+    c.OperationFilter<SwaggerIgnoreBindNeverFilter>();
     c.ExampleFilters();
     
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme

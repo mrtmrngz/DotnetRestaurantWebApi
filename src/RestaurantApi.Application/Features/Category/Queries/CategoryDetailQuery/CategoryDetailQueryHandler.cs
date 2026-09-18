@@ -30,6 +30,7 @@ public class CategoryDetailQueryHandler : IRequestHandler<CategoryDetailQuery,
     {
         var category = await _categoryRepository.GetAllAsQueryable()
             .IgnoreQueryFilters()
+            .AsNoTracking()
             .Where(c => c.Id == request.CategoryId)
             .ProjectTo<CategoryDetailQueryResult>(_mapper.ConfigurationProvider)
             .FirstOrDefaultAsync(cancellationToken);
