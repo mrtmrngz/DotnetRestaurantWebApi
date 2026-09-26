@@ -54,6 +54,7 @@ public static class PersistenceServiceRegistration
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IMediaRepository, MediaRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IProductMediaRepository, ProductMediaRepository>();
         
         // UNIT OF WORK
         services.AddScoped<IUnitOfWork, UnitOfWork>();

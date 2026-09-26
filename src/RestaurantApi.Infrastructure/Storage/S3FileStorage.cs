@@ -73,7 +73,7 @@ public class S3FileStorage: IFileStorage
         }
     }
 
-    public async Task<List<UploadFileResult>> UploadMultipleAsync(List<IFormFile> files)
+    public async Task<List<UploadFileResult>> UploadMultipleAsync(IFormFileCollection files)
     {
         var uploadedResults = new List<UploadFileResult>();
         
@@ -87,29 +87,41 @@ public class S3FileStorage: IFileStorage
 
             return uploadedResults;
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogError("🔥 [S3Storage] Toplu yükleme sırasında hata oluştu! Hata: {message}", ex.Message);
-            if (uploadedResults.Any())
+            if (uploadedResults.Count > 0)
             {
-                _logger.LogWarning("🧹 [Rollback] Kısmi yüklenen {count} adet dosya temizleniyor...", uploadedResults.Count);
-            
-                foreach (var result in uploadedResults)
-                {
-                    try 
-                    {
-                        await DeleteAsync(result.PublicId);
-                        _logger.LogInformation("🗑️ [Deleted] Çöp dosya silindi: {key}", result.PublicId);
-                    }
-                    catch (Exception deleteEx)
-                    {
-                        _logger.LogCritical("⚠️ [CRITICAL] Rollback sırasında dosya silinemedi! Manuel müdahale gerekebilir: {key}. Hata: {err}", result.PublicId, deleteEx.Message);
-                    }
-                }
-            
-                _logger.LogWarning("✅ [Rollback] Temizlik operasyonu tamamlandı. Ortam tertemiz!");
+                _logger.LogWarning(
+                    "Kısmi yüklenen {Count} adet dosya temizleniyor...",
+                    uploadedResults.Count);
+
+                await SafeDeleteMultipleFilesAsync(
+                    uploadedResults.Select(x => x.PublicId).ToList());
             }
+
             throw;
+        }
+    }
+    
+    public async Task SafeDeleteMultipleFilesAsync(IReadOnlyList<string> publicIds)
+    {
+        foreach (var publicId in publicIds)
+        {
+            try
+            {
+                await DeleteAsync(publicId);
+
+                _logger.LogInformation(
+                    "Hata sonrası dosya depolama servisinden başarıyla silindi. PublicId: {PublicId}",
+                    publicId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(
+                    ex,
+                    "KRİTİK HATA: Dosya depolama servisinden silinemedi. Yetim dosya kaldı. PublicId: {PublicId}",
+                    publicId);
+            }
         }
     }
 }

@@ -31,18 +31,14 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPost]
-
     #region Swagger Documentation
-
     [ProducesResponseType(typeof(ValidationException), 400)]
     [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
     [ProducesResponseType(401)]
     [ProducesResponseType(403)]
     [ProducesResponseType(typeof(BaseResponse), 201)]
     [SwaggerResponseExample(StatusCodes.Status201Created, typeof(ContentCreatedExample))]
-
     #endregion
-
     [Authorize(Policy = Permissions.CategoryPermissions.Create)]
     public async Task<IActionResult> CreateCategory([FromForm] CreateCategoryCommand command)
     {
@@ -52,14 +48,10 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpGet("public")]
-
     #region Swagger Documentation
-
     [ProducesResponseType(typeof(GeneralSuccessResponseWithData<IReadOnlyList<GetCategoriesQueryResult>>), 200)]
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(PublicCategoryListExample))]
-
     #endregion
-
     public async Task<IActionResult> GetCategories()
     {
         var response = await _mediator.Send(new GetCategoryQuery());
@@ -68,16 +60,12 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpGet("admin")]
-
     #region Swagger Documentation
-
     [ProducesResponseType(401)]
     [ProducesResponseType(403)]
     [ProducesResponseType(typeof(GeneralSuccessResponseWithData<IReadOnlyList<GetCategoriesQueryResult>>), 200)]
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(AdminCategoryListResponseExample))]
-
     #endregion
-
     [Authorize(Policy = Permissions.CategoryPermissions.View)]
     public async Task<IActionResult> GetAdminCategories()
     {
@@ -87,18 +75,14 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpGet("{categoryId:guid}")]
-
     #region MyRegion
-
     [ProducesResponseType(401)]
     [ProducesResponseType(403)]
     [ProducesResponseType(typeof(GeneralSuccessResponseWithData<CategoryDetailQueryResult>), 200)]
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(CategoryDetailResponseExample))]
     [ProducesResponseType(typeof(NotFoundException), 404)]
     [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
-
     #endregion
-
     [Authorize(Policy = Permissions.CategoryPermissions.View)]
     public async Task<IActionResult> GetCategoryDetail([FromRoute] Guid categoryId)
     {

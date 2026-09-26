@@ -20,6 +20,11 @@ public class MediaRepository: IMediaRepository
         _context.Media.Add(media);
     }
 
+    public void AddRange(List<Media> medias, CancellationToken ctx)
+    {
+        _context.Media.AddRange(medias);
+    }
+
     public async Task<Media?> GetMedia(Guid? mediaId, CancellationToken ctx)
     {
         return await _context.Media.FirstOrDefaultAsync(m => m.Id == mediaId, ctx);

@@ -4,23 +4,18 @@ using RestaurantApi.Persistence.Context;
 
 namespace RestaurantApi.Persistence.Repositories;
 
-public class ProductRepository: IProductRepository
+public class ProductMediaRepository: IProductMediaRepository
 {
     private readonly ApiContext _context;
 
-    public ProductRepository(ApiContext context)
+    public ProductMediaRepository(ApiContext context)
     {
         _context = context;
     }
 
-    public IQueryable<Product> GetAllAsQueryable()
-    {
-        return _context.Products.AsQueryable();
-    }
-
-    public void Add(Product product, CancellationToken ctx)
+    public void AddRange(List<ProductMedia> productMedia, CancellationToken ctx)
     {
         ctx.ThrowIfCancellationRequested();
-        _context.Products.Add(product);
+        _context.ProductMedias.AddRange(productMedia);
     }
 }

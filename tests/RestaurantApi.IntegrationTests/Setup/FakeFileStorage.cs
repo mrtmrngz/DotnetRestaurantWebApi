@@ -20,9 +20,14 @@ public class FakeFileStorage : IFileStorage
 
     public Task DeleteAsync(string key) => Task.CompletedTask;
 
-    public Task<List<UploadFileResult>> UploadMultipleAsync(List<IFormFile> files)
+    public Task<List<UploadFileResult>> UploadMultipleAsync(IFormFileCollection files)
     {
         var results = files.Select(f => UploadAsync(f).Result).ToList();
         return Task.FromResult(results);
+    }
+
+    public Task SafeDeleteMultipleFilesAsync(IReadOnlyList<string> publicIds)
+    {
+        return Task.CompletedTask;
     }
 }
