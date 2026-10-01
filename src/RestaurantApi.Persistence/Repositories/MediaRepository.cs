@@ -29,4 +29,14 @@ public class MediaRepository: IMediaRepository
     {
         return await _context.Media.FirstOrDefaultAsync(m => m.Id == mediaId, ctx);
     }
+
+    public void DeleteMultipleMedia(IList<Media> medias)
+    {
+        _context.Media.RemoveRange(medias);
+    }
+
+    public IQueryable<Media> GetAllAsQueryable()
+    {
+        return _context.Media.AsQueryable();
+    }
 }

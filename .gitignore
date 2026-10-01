@@ -21,6 +21,7 @@ bld/
 *.user
 *.userosscache
 *.sln.docstates
+.clinerules
 
 .env
 

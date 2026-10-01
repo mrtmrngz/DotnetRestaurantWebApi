@@ -18,4 +18,14 @@ public class ProductMediaRepository: IProductMediaRepository
         ctx.ThrowIfCancellationRequested();
         _context.ProductMedias.AddRange(productMedia);
     }
+
+    public IQueryable<ProductMedia> GetAllAsQueryable()
+    {
+        return _context.ProductMedias.AsQueryable();
+    }
+
+    public void UpdateRange(List<ProductMedia> productMedias)
+    {
+        _context.ProductMedias.UpdateRange(productMedias);
+    }
 }

@@ -16,4 +16,6 @@ public static class CacheKeys
     public static string AdminCategories() => "admin:categories";
     public static string AdminProducts() => "admin:products";
     public static string PublicProducts() => "products";
+    public static string PublicProductDetail(Guid id) => $"products:{id}";
+    public static string AdminProductDetail(Guid id) => $"admin:products:{id}";
 }

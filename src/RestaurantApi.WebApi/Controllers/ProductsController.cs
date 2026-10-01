@@ -1,7 +1,9 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Products.Commands.CreateProductCommand;
+using RestaurantApi.Application.Features.Products.Commands.UpdateProductCommand;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
 using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
@@ -35,5 +37,30 @@ public class ProductsController : ControllerBase
     {
         var response = await _mediator.Send(command);
         return StatusCode(StatusCodes.Status201Created, response);
+    }
+
+    [HttpPatch("{productId:guid}")]
+    #region SwaggerDocumentation
+    [ProducesResponseType(typeof(BadRequestException), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(NotFoundException), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    [ProducesResponseType(typeof(BaseResponse), 422)]
+    [SwaggerResponseExample(StatusCodes.Status422UnprocessableEntity, typeof(UnproccesableEntityErrorExample))]
+    [ProducesResponseType(typeof(BaseResponse), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentUpdatedResponseExample))]
+    #endregion
+    [Authorize(Policy = Permissions.ProductPermissions.Update)]
+    public async Task<IActionResult> UpdateProduct([FromForm] UpdateProductCommand command, Guid productId)
+    {
+        command ??= new UpdateProductCommand();
+
+        var commandToSend = command with { ProductId = productId };
+
+        var response = await _mediator.Send(commandToSend);
+
+        return Ok(response);
     }
 }

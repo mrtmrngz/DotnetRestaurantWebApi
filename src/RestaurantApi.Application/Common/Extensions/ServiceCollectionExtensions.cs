@@ -6,6 +6,7 @@ using RestaurantApi.Application.Common.Behaviors;
 using RestaurantApi.Application.Features.Rules.AddressRules;
 using RestaurantApi.Application.Features.Rules.CategoryRules;
 using RestaurantApi.Application.Features.Rules.MediaRules;
+using RestaurantApi.Application.Features.Rules.ProductMediaRules;
 using RestaurantApi.Application.Features.Rules.ProductRules;
 using RestaurantApi.Application.Features.Rules.ProfileRules;
 using RestaurantApi.Application.Features.Rules.RefreshTokenRules;
@@ -36,6 +37,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<CategoryRules>();
         services.AddScoped<MediaRules>();
         services.AddScoped<ProductRules>();
+        services.AddScoped<ProductMediaRules>();
         
         // Automapper
         services.AddAutoMapper(cfg => cfg.AddMaps(typeof(ApplicationAssemblyMarker).Assembly));
