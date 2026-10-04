@@ -27,6 +27,8 @@ public class PublicProductsListQueryHandler: IRequestHandler<PublicProductsListQ
 
     public async Task<GeneralSuccessResponseWithData<IReadOnlyList<PublicProductsListQueryResult>>> Handle(PublicProductsListQuery request, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Public ürün listesi getiriliyor...");
+        
         string cacheKey = CacheKeys.PublicProducts();
         IReadOnlyList<PublicProductsListQueryResult> products = await _cacheService.GetOrInternalSetAsync(cacheKey, async () =>
         {
@@ -35,6 +37,8 @@ public class PublicProductsListQueryHandler: IRequestHandler<PublicProductsListQ
                 .ProjectTo<PublicProductsListQueryResult>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
         }, TimeSpan.FromHours(1));
+        
+        _logger.LogInformation("Public ürün listesi bulundu. Count:{Count}", products.Count());
 
         return new GeneralSuccessResponseWithData<IReadOnlyList<PublicProductsListQueryResult>>(data: products);
     }

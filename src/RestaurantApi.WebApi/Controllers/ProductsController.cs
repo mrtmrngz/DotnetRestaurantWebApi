@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Products.Commands.CreateProductCommand;
 using RestaurantApi.Application.Features.Products.Commands.UpdateProductCommand;
+using RestaurantApi.Application.Features.Products.Queries.AdminProductListQuery;
 using RestaurantApi.Application.Features.Products.Queries.PublicProductsListQuery;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
@@ -33,6 +34,21 @@ public class ProductsController : ControllerBase
     {
         PublicProductsListQuery query = new PublicProductsListQuery();
         GeneralSuccessResponseWithData<IReadOnlyList<PublicProductsListQueryResult>> response = await _mediator.Send(query);
+        return Ok(response);
+    }
+    
+    [HttpGet("admin")]
+    #region SwaggerDocumentation
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<IReadOnlyList<AdminProductListQueryResult>>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(AdminProductListResponseExample))]
+    #endregion
+    [Authorize(Policy = Permissions.ProductPermissions.View)]
+    public async Task<IActionResult> ProductsListForAdmin()
+    {
+        AdminProductListQuery query = new AdminProductListQuery();
+        GeneralSuccessResponseWithData<IReadOnlyList<AdminProductListQueryResult>> response = await _mediator.Send(query);
         return Ok(response);
     }
 
