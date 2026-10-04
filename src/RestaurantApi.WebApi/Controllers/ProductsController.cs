@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Products.Commands.CreateProductCommand;
 using RestaurantApi.Application.Features.Products.Commands.UpdateProductCommand;
+using RestaurantApi.Application.Features.Products.Queries.PublicProductsListQuery;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
 using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
@@ -21,6 +22,18 @@ public class ProductsController : ControllerBase
     public ProductsController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    [HttpGet("public")]
+    #region SwaggerDocumentation
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<IReadOnlyList<PublicProductsListQueryResult>>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(PublicProductListExample))]
+    #endregion
+    public async Task<IActionResult> ProductsListForPublic()
+    {
+        PublicProductsListQuery query = new PublicProductsListQuery();
+        GeneralSuccessResponseWithData<IReadOnlyList<PublicProductsListQueryResult>> response = await _mediator.Send(query);
+        return Ok(response);
     }
 
     [HttpPost]
