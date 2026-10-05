@@ -1,5 +1,6 @@
 using AutoMapper;
 using RestaurantApi.Application.Features.Products.Queries.AdminProductListQuery;
+using RestaurantApi.Application.Features.Products.Queries.PublicProductDetailQuery;
 using RestaurantApi.Application.Features.Products.Queries.PublicProductsListQuery;
 using RestaurantApi.Domain.Entities;
 
@@ -40,6 +41,31 @@ public class ProductProfile: Profile
             .ForMember(dest => dest.Discount, opt =>
                 opt.MapFrom(src => src.Discounts
                     .Where(d => d.IsActive && d.EndDate > DateTime.UtcNow)
+                    .Select(d => new ProductActiveDiscount
+                    {
+                        Id = d.Id,
+                        DiscountRate = d.Rate
+                    })
+                    .FirstOrDefault()));
+        
+        // Public Product Detail Profile
+        CreateMap<Product, PublicProductDetailQueryResult>()
+            .ForMember(dest => dest.CategoryName, opt =>
+                opt.MapFrom(src => src.Category.Title))
+            .ForMember(dest => dest.Images, opt =>
+                opt.MapFrom(src => src.ProductMedias
+                    .OrderBy(pm => pm.SortOrder)
+                    .Select(pm => new ProductDetailImageList
+                    {
+                        Id = pm.Media.Id,
+                        Url = pm.Media.Url,     
+                        IsMain = pm.IsMain,
+                        SortOrder = pm.SortOrder,
+                        PublicId = pm.Media.PublicId
+                    })))
+            .ForMember(dest => dest.Discount, opt =>
+                opt.MapFrom(src => src.Discounts
+                    .Where(d => d.IsActive && d.StartDate <= DateTime.UtcNow && d.EndDate >= DateTime.UtcNow)
                     .Select(d => new ProductActiveDiscount
                     {
                         Id = d.Id,

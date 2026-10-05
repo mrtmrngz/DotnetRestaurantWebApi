@@ -65,6 +65,8 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
 
         var product = await ValidateProductAndCategory(request.ProductId, request.CategoryId, cancellationToken);
 
+        string oldSlug = product.Slug;
+        
         List<UploadFileResult> fileResult = new List<UploadFileResult>();
         string? slug = null;
 
@@ -128,7 +130,7 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
             await _cacheService.RemoveAsync(CacheKeys.PublicProducts());
             await _cacheService.RemoveAsync(CacheKeys.AdminProducts());
             await _cacheService.RemoveAsync(CacheKeys.AdminProductDetail(request.ProductId));
-            await _cacheService.RemoveAsync(CacheKeys.PublicProductDetail(request.ProductId));
+            await _cacheService.RemoveAsync(CacheKeys.PublicProductDetail(oldSlug));
             
             _logger.LogInformation("Ürünler redisten silindi...");
             

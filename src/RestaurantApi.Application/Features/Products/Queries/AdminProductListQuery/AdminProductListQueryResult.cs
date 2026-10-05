@@ -10,6 +10,7 @@ public record AdminProductListQueryResult()
     public decimal Price { get; init; }
     public int CommentCount { get; init; }
     public double AvgRate { get; init; }
+    public int TotalSold { get; init; }
     public string CategoryName { get; init; } = null!;
     public string Banner { get; init; } = null!;
     public ProductActiveDiscount? Discount { get; init; }

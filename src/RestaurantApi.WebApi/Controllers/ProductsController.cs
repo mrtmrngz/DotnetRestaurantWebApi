@@ -5,6 +5,7 @@ using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Products.Commands.CreateProductCommand;
 using RestaurantApi.Application.Features.Products.Commands.UpdateProductCommand;
 using RestaurantApi.Application.Features.Products.Queries.AdminProductListQuery;
+using RestaurantApi.Application.Features.Products.Queries.PublicProductDetailQuery;
 using RestaurantApi.Application.Features.Products.Queries.PublicProductsListQuery;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
@@ -49,6 +50,21 @@ public class ProductsController : ControllerBase
     {
         AdminProductListQuery query = new AdminProductListQuery();
         GeneralSuccessResponseWithData<IReadOnlyList<AdminProductListQueryResult>> response = await _mediator.Send(query);
+        return Ok(response);
+    }
+    
+    [HttpGet("public/{slug:required}")]
+    #region SwaggerDocumentation
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<PublicProductDetailQueryResult>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(PublicProductDetailExample))]
+    [ProducesResponseType(typeof(NotFoundException), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    #endregion
+    public async Task<IActionResult> ProductDetailForPublic([FromRoute] string slug)
+    {
+        PublicProductDetailQuery command = new PublicProductDetailQuery() with { Slug = slug };
+        GeneralSuccessResponseWithData<PublicProductDetailQueryResult> response = await _mediator.Send(command);
+
         return Ok(response);
     }
 

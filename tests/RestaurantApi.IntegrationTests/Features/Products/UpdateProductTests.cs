@@ -58,7 +58,7 @@ public class UpdateProductTests : BaseIntegrationTest
 
             var publicProducts = await cache.GetAsync<string>(CacheKeys.PublicProducts());
             var adminProducts = await cache.GetAsync<string>(CacheKeys.AdminProducts());
-            var publicProductDetail = await cache.GetAsync<string>(CacheKeys.PublicProductDetail(product.Id));
+            var publicProductDetail = await cache.GetAsync<string>(CacheKeys.PublicProductDetail(product.Slug));
             var adminProductDetail = await cache.GetAsync<string>(CacheKeys.AdminProductDetail(product.Id));
 
             publicProducts.Should().BeNull("Güncelleme sonrası public ürün listesi redisten temizlenmeliydi.");
@@ -530,7 +530,7 @@ public class UpdateProductTests : BaseIntegrationTest
         await cache.SetAsync(CacheKeys.AdminProducts(), "prd", TimeSpan.FromHours(1));
         await cache.SetAsync(CacheKeys.PublicProducts(), "prd", TimeSpan.FromHours(1));
         await cache.SetAsync(CacheKeys.AdminProductDetail(prd.Id), "prd", TimeSpan.FromHours(1));
-        await cache.SetAsync(CacheKeys.PublicProductDetail(prd.Id), "prd", TimeSpan.FromHours(1));
+        await cache.SetAsync(CacheKeys.PublicProductDetail(prd.Slug), "prd", TimeSpan.FromHours(1));
 
         return (prd, cat.Id, prdm);
     }
