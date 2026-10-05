@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using RestaurantApi.Application.Common.Exceptions;
+using RestaurantApi.Application.Features.Products.Queries.AdminProductDetailQuery;
 using RestaurantApi.Application.Features.Products.Queries.PublicProductDetailQuery;
 using RestaurantApi.Domain.Entities;
 
@@ -28,6 +29,15 @@ public class ProductRules
         if (result is null)
         {
             _logger.LogWarning("Aranılan ürün veritabanında bulunamadı. Slug:{Slug}", slug);
+            throw new NotFoundException("Ürün bulunamadı.");
+        }
+    }
+    
+    public void ShouldAdminProductDetailExist(AdminProductDetailQueryResult? result, Guid prdId)
+    {
+        if (result is null)
+        {
+            _logger.LogWarning("Aranılan ürün veritabanında bulunamadı. Id:{Slug}", prdId);
             throw new NotFoundException("Ürün bulunamadı.");
         }
     }

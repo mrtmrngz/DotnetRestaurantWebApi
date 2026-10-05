@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using RestaurantApi.Application.Common.Exceptions;
+using RestaurantApi.Application.Features.Products.Queries.AdminProductDetailQuery;
 using RestaurantApi.Application.Features.Products.Queries.PublicProductDetailQuery;
 using RestaurantApi.Application.Features.Rules.ProductRules;
 
@@ -61,6 +62,31 @@ public class ProductRulesTests
         PublicProductDetailQueryResult? result = new PublicProductDetailQueryResult();
 
         Action act = () => _sut.ShouldPublicProductDetailExist(result, "izgara-tavuk");
+
+        act.Should().NotThrow();
+    }
+
+    #endregion
+
+    #region ShouldAdminProductDetailExist Tests
+
+    [Fact]
+    public async Task ShouldAdminProductDetailExist_WhenResultNotExist_ShouldThrowNotFoundException()
+    {
+        AdminProductDetailQueryResult? result = null;
+
+        Action act = () => _sut.ShouldAdminProductDetailExist(result, Guid.NewGuid());
+
+        act.Should().Throw<NotFoundException>()
+            .WithMessage("Ürün bulunamadı.");
+    }
+
+    [Fact]
+    public async Task ShouldAdminProductDetailExist_WhenResultExist_ShouldNotThrowAnything()
+    {
+        AdminProductDetailQueryResult? result = new AdminProductDetailQueryResult();
+
+        Action act = () => _sut.ShouldAdminProductDetailExist(result, Guid.NewGuid());
 
         act.Should().NotThrow();
     }

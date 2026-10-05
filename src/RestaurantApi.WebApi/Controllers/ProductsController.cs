@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Products.Commands.CreateProductCommand;
 using RestaurantApi.Application.Features.Products.Commands.UpdateProductCommand;
+using RestaurantApi.Application.Features.Products.Queries.AdminProductDetailQuery;
 using RestaurantApi.Application.Features.Products.Queries.AdminProductListQuery;
 using RestaurantApi.Application.Features.Products.Queries.PublicProductDetailQuery;
 using RestaurantApi.Application.Features.Products.Queries.PublicProductsListQuery;
@@ -64,6 +65,24 @@ public class ProductsController : ControllerBase
     {
         PublicProductDetailQuery command = new PublicProductDetailQuery() with { Slug = slug };
         GeneralSuccessResponseWithData<PublicProductDetailQueryResult> response = await _mediator.Send(command);
+
+        return Ok(response);
+    }
+    
+    [HttpGet("admin/{productId:guid}")]
+    #region SwaggerDocumentation
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<AdminProductDetailQueryResult>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(AdminProductDetailResponseExample))]
+    [ProducesResponseType(typeof(NotFoundException), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    #endregion
+    [Authorize(Policy = Permissions.ProductPermissions.View)]
+    public async Task<IActionResult> ProductDetailForAdmin([FromRoute] Guid productId)
+    {
+        AdminProductDetailQuery command = new AdminProductDetailQuery { ProductId = productId};
+        GeneralSuccessResponseWithData<AdminProductDetailQueryResult> response = await _mediator.Send(command);
 
         return Ok(response);
     }
