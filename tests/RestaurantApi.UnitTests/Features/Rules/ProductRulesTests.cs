@@ -92,4 +92,40 @@ public class ProductRulesTests
     }
 
     #endregion
+
+    #region ShouldBeValidForDelete Tests
+
+    [Fact]
+    public async Task ShouldBeValidForDelete_WhenProductNotExist_ShouldThrowNotFoundException()
+    {
+        Domain.Entities.Product? product = null;
+
+        Action act = () => _sut.ShouldBeValidForDelete(product, Guid.NewGuid());
+
+        act.Should().Throw<NotFoundException>()
+            .WithMessage("Ürün bulunamadı.");
+    }
+
+    [Fact]
+    public async Task ShouldBeValidForDelete_WhenProductAlreadyDeleted_ShouldThrowNotFoundException()
+    {
+        Domain.Entities.Product? product = new Domain.Entities.Product { IsDeleted = true };
+
+        Action act = () => _sut.ShouldBeValidForDelete(product, Guid.NewGuid());
+
+        act.Should().Throw<NotFoundException>()
+            .WithMessage("Ürün bulunamadı.");
+    }
+
+    [Fact]
+    public async Task ShouldBeValidForDelete_WhenProductCanBeDeleted_ShouldNotThrowAnything()
+    {
+        Domain.Entities.Product? product = new Domain.Entities.Product { IsDeleted = false };
+
+        Action act = () => _sut.ShouldBeValidForDelete(product, Guid.NewGuid());
+
+        act.Should().NotThrow();
+    }
+
+    #endregion
 }

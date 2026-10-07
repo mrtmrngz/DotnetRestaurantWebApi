@@ -41,4 +41,19 @@ public class ProductRules
             throw new NotFoundException("Ürün bulunamadı.");
         }
     }
+
+    public void ShouldBeValidForDelete(Product? product, Guid prdId)
+    {
+        if (product is null)
+        {
+            _logger.LogWarning("Silinmek istenen ürün veritabanında bulunamadı. ProductId:{PrdId}", prdId);
+            throw new NotFoundException("Ürün bulunamadı.");
+        }
+
+        if (product.IsDeleted)
+        {
+            _logger.LogWarning("Silinmek istenen ürün zaten silinmiş durumda. ProductId:{PrdId}", prdId);
+            throw new NotFoundException("Ürün bulunamadı.");
+        }
+    }
 }
