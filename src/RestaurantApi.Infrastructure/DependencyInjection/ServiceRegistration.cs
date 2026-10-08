@@ -10,6 +10,7 @@ using RestaurantApi.Application.Common.Abstractions.Services;
 using RestaurantApi.Application.Mail;
 using RestaurantApi.Infrastructure.Auth;
 using RestaurantApi.Infrastructure.Cache;
+using RestaurantApi.Infrastructure.Discount;
 using RestaurantApi.Infrastructure.Mail;
 using RestaurantApi.Infrastructure.Mail.BackgroundJobs;
 using RestaurantApi.Infrastructure.Mail.Factory;
@@ -96,6 +97,10 @@ public static class ServiceRegistration
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IAddressService, AddressService>();
         services.AddScoped<ISlugService, SlugService>();
+
+        // Discount scheduling (zamanlanmış işler)
+        services.AddScoped<IDiscountScheduler, DiscountScheduler>();
+        services.AddScoped<DiscountStatusJob>();
 
         return services;
     }    

@@ -39,4 +39,16 @@ public static class Permissions
         [Description("Ürün silme yetkisi verir.")]
         public const string Delete = "product:delete";
     }
+
+    public static class DiscountPermissions
+    {
+        [Description("İndirimleri görüntüleme yetkisi verir.")]
+        public const string View = "discount:view";
+        [Description("İndirim oluşturma yetkisi verir.")]
+        public const string Create = "discount:create";
+        [Description("İndirim güncelleme yetkisi verir.")]
+        public const string Update = "discount:update";
+        [Description("İndirim silme yetkisi verir.")]
+        public const string Delete = "discount:delete";
+    }
 }

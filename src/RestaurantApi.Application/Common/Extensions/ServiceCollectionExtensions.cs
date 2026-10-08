@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using RestaurantApi.Application.Common.Behaviors;
 using RestaurantApi.Application.Features.Rules.AddressRules;
 using RestaurantApi.Application.Features.Rules.CategoryRules;
+using RestaurantApi.Application.Features.Rules.DiscountRules;
 using RestaurantApi.Application.Features.Rules.MediaRules;
 using RestaurantApi.Application.Features.Rules.ProductMediaRules;
 using RestaurantApi.Application.Features.Rules.ProductRules;
@@ -38,6 +39,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<MediaRules>();
         services.AddScoped<ProductRules>();
         services.AddScoped<ProductMediaRules>();
+        services.AddScoped<DiscountRules>();
         
         // Automapper
         services.AddAutoMapper(cfg => cfg.AddMaps(typeof(ApplicationAssemblyMarker).Assembly));
