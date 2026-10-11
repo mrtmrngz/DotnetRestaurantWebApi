@@ -69,7 +69,7 @@ public class AddDiscountCommandHandler: IRequestHandler<AddDiscountCommand, Base
             discount.Id, discount.IsActive);
 
 
-        await InvalidateProductCachesAsync(product);
+        await InvalidateCachesAsync(product);
         ScheduleDiscountJobs(discount, now);
 
         return new BaseResponse
@@ -102,13 +102,14 @@ public class AddDiscountCommandHandler: IRequestHandler<AddDiscountCommand, Base
         return product!;
     }
 
-    private async Task InvalidateProductCachesAsync(Domain.Entities.Product product)
+    private async Task InvalidateCachesAsync(Domain.Entities.Product product)
     {
-        // indirim, ürün listesi/detayını etkilediği için ilgili cache'ler temizlenir
+        // indirim; ürün listesi/detayını ve admin indirim listesini etkilediği için ilgili cache'ler temizlenir
         await _cacheService.RemoveAsync(CacheKeys.PublicProducts());
         await _cacheService.RemoveAsync(CacheKeys.AdminProducts());
         await _cacheService.RemoveAsync(CacheKeys.PublicProductDetail(product.Slug));
         await _cacheService.RemoveAsync(CacheKeys.AdminProductDetail(product.Id));
+        await _cacheService.RemoveAsync(CacheKeys.AdminDiscounts());
     }
 
     private void ScheduleDiscountJobs(Domain.Entities.Discount discount, DateTime now)

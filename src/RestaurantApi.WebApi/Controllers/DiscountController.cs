@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Discount.Commands.AddDiscountCommand;
+using RestaurantApi.Application.Features.Discount.Queries.GetDiscountListQuery;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
+using RestaurantApi.Domain.Enums;
 using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
 using RestaurantApi.WebApi.Swagger.Examples.SuccessExamples;
 using Swashbuckle.AspNetCore.Filters;
@@ -20,6 +22,24 @@ public class DiscountController : ControllerBase
     public DiscountController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    [HttpGet]
+    #region SwaggerDocumentation
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<IReadOnlyList<GetDiscountListQueryResult>>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(AdminDiscountListResponseExample))]
+    #endregion
+    [Authorize(Policy = Permissions.DiscountPermissions.View)]
+    public async Task<IActionResult> GetDiscounts([FromQuery] DiscountStatus? status)
+    {
+        GetDiscountListQuery query = new GetDiscountListQuery(status);
+
+        GeneralSuccessResponseWithData<IReadOnlyList<GetDiscountListQueryResult>> response =
+            await _mediator.Send(query);
+
+        return Ok(response);
     }
 
     [HttpPost]

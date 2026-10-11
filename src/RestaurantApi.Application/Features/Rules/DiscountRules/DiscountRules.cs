@@ -62,7 +62,6 @@ public class DiscountRules
         }
     }
 
-    // İndirimin şu anki zaman aralığında olup olmadığını (IsActive) hesaplar.
     public bool CalculateIsActive(DateTime startDate, DateTime endDate, DateTime now)
     {
         return startDate <= now && now <= endDate;

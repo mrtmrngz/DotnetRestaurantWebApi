@@ -60,6 +60,7 @@ public class DiscountStatusJob
 
         await _cacheService.RemoveAsync(CacheKeys.PublicProducts());
         await _cacheService.RemoveAsync(CacheKeys.AdminProducts());
+        await _cacheService.RemoveAsync(CacheKeys.AdminDiscounts());
 
         var product = await _productRepository.GetAllAsQueryable()
             .IgnoreQueryFilters()
