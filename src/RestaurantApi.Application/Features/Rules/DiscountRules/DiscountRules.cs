@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
 using RestaurantApi.Application.Common.Exceptions;
+using RestaurantApi.Application.Features.Discount.Queries.GetDiscountDetailQuery;
 using RestaurantApi.Domain.Entities;
+using RestaurantApi.Domain.Enums;
 
 namespace RestaurantApi.Application.Features.Rules.DiscountRules;
 
@@ -65,5 +67,25 @@ public class DiscountRules
     public bool CalculateIsActive(DateTime startDate, DateTime endDate, DateTime now)
     {
         return startDate <= now && now <= endDate;
+    }
+
+    public void ShouldDiscountExist(GetDiscountDetailQueryResult? result, Guid discountId)
+    {
+        if (result is null)
+        {
+            _logger.LogWarning("Aranılan indirim bulunamadı. DiscountId:{DiscountId}", discountId);
+            throw new NotFoundException("İndirim bulunamadı.");
+        }
+    }
+
+    public DiscountStatus ResolveStatus(DateTime startDate, DateTime endDate, DateTime now)
+    {
+        if (now < startDate)
+            return DiscountStatus.Upcoming;
+
+        if (now > endDate)
+            return DiscountStatus.Passive;
+
+        return DiscountStatus.Active;
     }
 }

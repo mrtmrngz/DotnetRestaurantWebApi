@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using RestaurantApi.Application.Common;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Abstractions.Repositories;
+using RestaurantApi.Application.Features.Rules.DiscountRules;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Enums;
 
@@ -17,14 +18,16 @@ public class GetDiscountListQueryHandler: IRequestHandler<GetDiscountListQuery, 
     private readonly ILogger<GetDiscountListQueryHandler> _logger;
     private readonly IDiscountRepository _discountRepository;
     private readonly IMapper _mapper;
+    private readonly DiscountRules _discountRules;
 
     public GetDiscountListQueryHandler(ICacheService cacheService, ILogger<GetDiscountListQueryHandler> logger,
-        IDiscountRepository discountRepository, IMapper mapper)
+        IDiscountRepository discountRepository, IMapper mapper, DiscountRules discountRules)
     {
         _cacheService = cacheService;
         _logger = logger;
         _discountRepository = discountRepository;
         _mapper = mapper;
+        _discountRules = discountRules;
     }
 
     #region Handle
@@ -61,21 +64,10 @@ public class GetDiscountListQueryHandler: IRequestHandler<GetDiscountListQuery, 
 
         foreach (var discount in discounts)
         {
-            discount.Status = ResolveStatus(discount.StartDate, discount.EndDate, now);
+            discount.Status = _discountRules.ResolveStatus(discount.StartDate, discount.EndDate, now);
         }
 
         return discounts;
-    }
-
-    private static DiscountStatus ResolveStatus(DateTime startDate, DateTime endDate, DateTime now)
-    {
-        if (now < startDate)
-            return DiscountStatus.Upcoming;
-
-        if (now > endDate)
-            return DiscountStatus.Passive;
-
-        return DiscountStatus.Active;
     }
 
     #endregion

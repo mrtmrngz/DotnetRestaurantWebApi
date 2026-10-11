@@ -2,8 +2,10 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using RestaurantApi.Application.Common.Exceptions;
+using RestaurantApi.Application.Features.Discount.Queries.GetDiscountDetailQuery;
 using RestaurantApi.Application.Features.Rules.DiscountRules;
 using RestaurantApi.Application.Features.Rules.ProductRules;
+using RestaurantApi.Domain.Enums;
 
 namespace RestaurantApi.UnitTests.Features.Rules;
 
@@ -151,6 +153,65 @@ public class DiscountRulesTests
         var result = _sut.CalculateIsActive(now.AddDays(-3), now.AddDays(-1), now);
 
         result.Should().BeFalse("İndirim sona erdiği için pasif olmalıydı.");
+    }
+
+    #endregion
+
+    #region ShouldDiscountExist Tests
+
+    [Fact]
+    public async Task ShouldDiscountExist_WhenDiscountNotExist_ShouldThrowNotFoundException()
+    {
+        GetDiscountDetailQueryResult? result = null;
+
+        Action act = () => _sut.ShouldDiscountExist(result, Guid.NewGuid());
+
+        act.Should().Throw<NotFoundException>()
+            .WithMessage("İndirim bulunamadı.");
+    }
+
+    [Fact]
+    public async Task ShouldDiscountExist_WhenDiscountExists_ShouldNotThrowAnything()
+    {
+        GetDiscountDetailQueryResult? result = new GetDiscountDetailQueryResult();
+
+        Action act = () => _sut.ShouldDiscountExist(result, Guid.NewGuid());
+
+        act.Should().NotThrow();
+    }
+
+    #endregion
+
+    #region ResolveStatus Tests
+
+    [Fact]
+    public void ResolveStatus_WhenNowIsBeforeStart_ShouldReturnUpcoming()
+    {
+        var now = DateTime.UtcNow;
+
+        var result = _sut.ResolveStatus(now.AddDays(1), now.AddDays(3), now);
+
+        result.Should().Be(DiscountStatus.Upcoming);
+    }
+
+    [Fact]
+    public void ResolveStatus_WhenNowIsWithinRange_ShouldReturnActive()
+    {
+        var now = DateTime.UtcNow;
+
+        var result = _sut.ResolveStatus(now.AddDays(-1), now.AddDays(1), now);
+
+        result.Should().Be(DiscountStatus.Active);
+    }
+
+    [Fact]
+    public void ResolveStatus_WhenNowIsAfterEnd_ShouldReturnPassive()
+    {
+        var now = DateTime.UtcNow;
+
+        var result = _sut.ResolveStatus(now.AddDays(-3), now.AddDays(-1), now);
+
+        result.Should().Be(DiscountStatus.Passive);
     }
 
     #endregion

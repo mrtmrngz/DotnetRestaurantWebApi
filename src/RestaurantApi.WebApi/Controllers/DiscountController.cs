@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Discount.Commands.AddDiscountCommand;
+using RestaurantApi.Application.Features.Discount.Queries.GetDiscountDetailQuery;
 using RestaurantApi.Application.Features.Discount.Queries.GetDiscountListQuery;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
@@ -38,6 +39,25 @@ public class DiscountController : ControllerBase
 
         GeneralSuccessResponseWithData<IReadOnlyList<GetDiscountListQueryResult>> response =
             await _mediator.Send(query);
+
+        return Ok(response);
+    }
+
+    [HttpGet("{discountId:guid}")]
+    #region SwaggerDocumentation
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<GetDiscountDetailQueryResult>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(AdminDiscountDetailResponseExample))]
+    [ProducesResponseType(typeof(NotFoundException), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    #endregion
+    [Authorize(Policy = Permissions.DiscountPermissions.View)]
+    public async Task<IActionResult> GetDiscountDetail([FromRoute] Guid discountId)
+    {
+        GetDiscountDetailQuery query = new GetDiscountDetailQuery(discountId);
+
+        GeneralSuccessResponseWithData<GetDiscountDetailQueryResult> response = await _mediator.Send(query);
 
         return Ok(response);
     }
