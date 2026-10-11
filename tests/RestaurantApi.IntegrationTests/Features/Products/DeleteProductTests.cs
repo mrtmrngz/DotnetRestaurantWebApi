@@ -67,6 +67,32 @@ public class DeleteProductTests : BaseIntegrationTest
     }
 
     [Fact]
+    public async Task DeleteProduct_WhenProductHasDiscount_ShouldPassivateDiscountAndClearDiscountCache()
+    {
+        var product = await Setup(withDiscount: true);
+        var setupResult = await CreateAdminUserAsync();
+
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", setupResult.AccessToken);
+
+        var response = await Client.DeleteAsync($"/api/products/{product.Id}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK, "Ürün başarılı bir şekilde silinmeliydi.");
+
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<ApiContext>();
+            var cache = scope.ServiceProvider.GetRequiredService<ICacheService>();
+
+            var discount = await context.Discounts.FirstOrDefaultAsync(d => d.ProductId == product.Id);
+            discount.Should().NotBeNull("Ürünün indirimi veritabanında bulunmalıydı.");
+            discount!.IsActive.Should().BeFalse("Ürün silindiği için indirim pasife alınmalıydı.");
+
+            (await cache.GetAsync<string>(CacheKeys.AdminDiscounts())).Should().BeNull(
+                "Ürünün indirimi pasife alındığı için indirim listesi redisten silinmeliydi.");
+        }
+    }
+
+    [Fact]
     public async Task DeleteProduct_WhenProductNotExist_ShouldReturn404()
     {
         var setupResult = await CreateAdminUserAsync();
@@ -132,7 +158,7 @@ public class DeleteProductTests : BaseIntegrationTest
     // ERROR TESTS END
 
     // SETUP
-    private async Task<Product> Setup(bool isDeleted = false)
+    private async Task<Product> Setup(bool isDeleted = false, bool withDiscount = false)
     {
         using var scope = Factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApiContext>();
@@ -177,10 +203,26 @@ public class DeleteProductTests : BaseIntegrationTest
         context.Products.Add(product);
         await context.SaveChangesAsync();
 
+        if (withDiscount)
+        {
+            context.Discounts.Add(new Domain.Entities.Discount
+            {
+                Id = Guid.NewGuid(),
+                ProductId = product.Id,
+                Rate = 10,
+                StartDate = DateTime.UtcNow.AddDays(-1),
+                EndDate = DateTime.UtcNow.AddDays(2),
+                IsActive = true
+            });
+
+            await context.SaveChangesAsync();
+        }
+
         await cache.SetAsync(CacheKeys.PublicProducts(), "prd", TimeSpan.FromHours(1));
         await cache.SetAsync(CacheKeys.AdminProducts(), "prd", TimeSpan.FromHours(1));
         await cache.SetAsync(CacheKeys.PublicProductDetail(product.Slug), "prd", TimeSpan.FromHours(1));
         await cache.SetAsync(CacheKeys.AdminProductDetail(product.Id), "prd", TimeSpan.FromHours(1));
+        await cache.SetAsync(CacheKeys.AdminDiscounts(), "prd", TimeSpan.FromHours(1));
 
         return product;
     }

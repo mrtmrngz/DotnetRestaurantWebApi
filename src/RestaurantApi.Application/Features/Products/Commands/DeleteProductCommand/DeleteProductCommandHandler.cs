@@ -5,6 +5,7 @@ using RestaurantApi.Application.Common;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Abstractions.Repositories;
 using RestaurantApi.Application.Common.Enums;
+using RestaurantApi.Application.Features.Products.Events.DeleteProductEvent;
 using RestaurantApi.Application.Features.Rules.ProductRules;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 
@@ -16,14 +17,16 @@ public class DeleteProductCommandHandler: IRequestHandler<DeleteProductCommand, 
     private readonly IProductRepository _productRepository;
     private readonly ProductRules _productRules;
     private readonly ICacheService _cacheService;
+    private readonly IMediator _mediator;
 
     public DeleteProductCommandHandler(ILogger<DeleteProductCommandHandler> logger, IProductRepository productRepository,
-        ProductRules productRules, ICacheService cacheService)
+        ProductRules productRules, ICacheService cacheService, IMediator mediator)
     {
         _logger = logger;
         _productRepository = productRepository;
         _productRules = productRules;
         _cacheService = cacheService;
+        _mediator = mediator;
     }
 
     public async Task<BaseResponse> Handle(DeleteProductCommand request, CancellationToken cancellationToken)
@@ -55,6 +58,8 @@ public class DeleteProductCommandHandler: IRequestHandler<DeleteProductCommand, 
         await _cacheService.RemoveAsync(CacheKeys.AdminProductDetail(request.ProductId));
 
         _logger.LogInformation("Ürünler redisten temizlendi...");
+
+        await _mediator.Publish(new DeleteProductEvent(request.ProductId), cancellationToken);
 
         return new BaseResponse
         {
