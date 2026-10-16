@@ -85,17 +85,14 @@ public class AddDiscountCommandHandler: IRequestHandler<AddDiscountCommand, Base
 
     private async Task<Domain.Entities.Product> ValidateProductForDiscountAsync(Guid productId, CancellationToken ctx)
     {
-        // IgnoreQueryFilters => soft-deleted ürün de tespit edilebilsin
         var product = await _productRepository.GetAllAsQueryable()
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(x => x.Id == productId, ctx);
 
         _discountRules.ShouldProductBeEligibleForDiscount(product, productId);
 
-        // her ürünün yalnızca bir indirimi olabilir
-
         var hasDiscount = await _discountRepository.GetAllAsQueryable()
-            .AnyAsync(d => d.ProductId == productId, ctx);
+            .AnyAsync(d => d.ProductId == productId && d.IsActive, ctx);
 
         _discountRules.ShouldProductNotHaveDiscount(hasDiscount, productId);
 
@@ -104,7 +101,6 @@ public class AddDiscountCommandHandler: IRequestHandler<AddDiscountCommand, Base
 
     private async Task InvalidateCachesAsync(Domain.Entities.Product product)
     {
-        // indirim; ürün listesi/detayını ve admin indirim listesini etkilediği için ilgili cache'ler temizlenir
         await _cacheService.RemoveAsync(CacheKeys.PublicProducts());
         await _cacheService.RemoveAsync(CacheKeys.AdminProducts());
         await _cacheService.RemoveAsync(CacheKeys.PublicProductDetail(product.Slug));
@@ -114,7 +110,6 @@ public class AddDiscountCommandHandler: IRequestHandler<AddDiscountCommand, Base
 
     private void ScheduleDiscountJobs(Domain.Entities.Discount discount, DateTime now)
     {
-        // indirim başlangıç/bitiş tarihlerinde çalışacak zamanlanmış işler
 
         if (discount.StartDate > now)
             _discountScheduler.ScheduleActivation(discount.Id, discount.StartDate);

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Discount.Commands.AddDiscountCommand;
+using RestaurantApi.Application.Features.Discount.Commands.UpdateDiscountCommand;
 using RestaurantApi.Application.Features.Discount.Queries.GetDiscountDetailQuery;
 using RestaurantApi.Application.Features.Discount.Queries.GetDiscountListQuery;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
@@ -58,6 +59,30 @@ public class DiscountController : ControllerBase
         GetDiscountDetailQuery query = new GetDiscountDetailQuery(discountId);
 
         GeneralSuccessResponseWithData<GetDiscountDetailQueryResult> response = await _mediator.Send(query);
+
+        return Ok(response);
+    }
+
+    [HttpPatch("{discountId:guid}")]
+    #region SwaggerDocumentation
+    [ProducesResponseType(typeof(BadRequestException), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(NotFoundException), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    [ProducesResponseType(typeof(ConflictException), 409)]
+    [SwaggerResponseExample(StatusCodes.Status409Conflict, typeof(ConflictErrorExample))]
+    [ProducesResponseType(typeof(BaseResponse), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentUpdatedResponseExample))]
+    #endregion
+    [Authorize(Policy = Permissions.DiscountPermissions.Update)]
+    public async Task<IActionResult> UpdateDiscount([FromRoute] Guid discountId,
+        [FromBody] UpdateDiscountCommand command)
+    {
+        var commandToSend = command with { DiscountId = discountId };
+
+        BaseResponse response = await _mediator.Send(commandToSend);
 
         return Ok(response);
     }

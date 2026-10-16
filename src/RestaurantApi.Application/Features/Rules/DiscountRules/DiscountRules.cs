@@ -17,10 +17,8 @@ public class DiscountRules
         _productRules = productRules;
     }
 
-    // İndirim oluşturulacak ürün yoksa veya soft-delete edilmişse indirim oluşturulamaz.
     public void ShouldProductBeEligibleForDiscount(Product? product, Guid productId)
     {
-        // Ürün yoksa "Ürün bulunamadı." ile NotFoundException fırlatır (ProductRules).
         _productRules.ValidateExistProductEntity(product, productId);
 
         if (product!.IsDeleted)
@@ -30,7 +28,6 @@ public class DiscountRules
         }
     }
 
-    // Bir ürünün yalnızca bir adet indirimi olabilir.
     public void ShouldProductNotHaveDiscount(bool hasDiscount, Guid productId)
     {
         if (hasDiscount)
@@ -41,7 +38,6 @@ public class DiscountRules
         }
     }
 
-    // Başlangıç ve bitiş tarihleri bugünden önce olamaz; bitiş, başlangıçtan sonra olmalıdır.
     public void ShouldDiscountDatesBeValid(DateTime startDate, DateTime endDate, DateTime now)
     {
         if (startDate.Date < now.Date)
@@ -75,6 +71,33 @@ public class DiscountRules
         {
             _logger.LogWarning("Aranılan indirim bulunamadı. DiscountId:{DiscountId}", discountId);
             throw new NotFoundException("İndirim bulunamadı.");
+        }
+    }
+
+    public void ShouldDiscountExist(Domain.Entities.Discount? discount, Guid discountId)
+    {
+        if (discount is null)
+        {
+            _logger.LogWarning("Aranılan indirim bulunamadı. DiscountId:{DiscountId}", discountId);
+            throw new NotFoundException("İndirim bulunamadı.");
+        }
+    }
+
+    public void ShouldDiscountNotBeEnded(DateTime endDate, DateTime now)
+    {
+        if (now > endDate)
+        {
+            _logger.LogWarning("Bitmiş indirim güncellenemez. EndDate:{EndDate}", endDate);
+            throw new ConflictException("Bitmiş indirim güncellenemez.");
+        }
+    }
+
+    public void ShouldDiscountNotBeStarted(DateTime startDate, DateTime now)
+    {
+        if (now >= startDate)
+        {
+            _logger.LogWarning("Başlamış indirim güncellenemez. StartDate:{StartDate}", startDate);
+            throw new ConflictException("Başlamış indirim güncellenemez.");
         }
     }
 

@@ -12,7 +12,6 @@ public record GetDiscountDetailQueryResult
     public Guid ProductId { get; init; }
     public string ProductName { get; init; } = null!;
 
-    // Bu iki alan yalnızca indirim bitmemişse VE ürün silinmemişse doldurulur.
     public decimal? ProductPrice { get; set; }
     public decimal? DiscountedPrice { get; set; }
 }

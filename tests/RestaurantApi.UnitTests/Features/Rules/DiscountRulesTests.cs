@@ -215,4 +215,100 @@ public class DiscountRulesTests
     }
 
     #endregion
+
+    #region ShouldDiscountExist (Entity) Tests
+
+    [Fact]
+    public async Task ShouldDiscountExist_WhenDiscountEntityNotExist_ShouldThrowNotFoundException()
+    {
+        Domain.Entities.Discount? discount = null;
+
+        Action act = () => _sut.ShouldDiscountExist(discount, Guid.NewGuid());
+
+        act.Should().Throw<NotFoundException>()
+            .WithMessage("İndirim bulunamadı.");
+    }
+
+    [Fact]
+    public async Task ShouldDiscountExist_WhenDiscountEntityExists_ShouldNotThrowAnything()
+    {
+        Domain.Entities.Discount? discount = new Domain.Entities.Discount { Id = Guid.NewGuid() };
+
+        Action act = () => _sut.ShouldDiscountExist(discount, discount.Id);
+
+        act.Should().NotThrow();
+    }
+
+    #endregion
+
+    #region ShouldDiscountNotBeEnded Tests
+
+    [Fact]
+    public async Task ShouldDiscountNotBeEnded_WhenDiscountIsEnded_ShouldThrowConflictException()
+    {
+        var now = DateTime.UtcNow;
+
+        Action act = () => _sut.ShouldDiscountNotBeEnded(now.AddDays(-1), now);
+
+        act.Should().Throw<ConflictException>()
+            .WithMessage("Bitmiş indirim güncellenemez.");
+    }
+
+    [Fact]
+    public async Task ShouldDiscountNotBeEnded_WhenNowEqualsEndDate_ShouldNotThrowAnything()
+    {
+        var now = DateTime.UtcNow;
+
+        Action act = () => _sut.ShouldDiscountNotBeEnded(now, now);
+
+        act.Should().NotThrow("Bitiş tarihi henüz geçmediği için indirim güncellenebilir olmalıydı.");
+    }
+
+    [Fact]
+    public async Task ShouldDiscountNotBeEnded_WhenDiscountStillContinues_ShouldNotThrowAnything()
+    {
+        var now = DateTime.UtcNow;
+
+        Action act = () => _sut.ShouldDiscountNotBeEnded(now.AddDays(1), now);
+
+        act.Should().NotThrow();
+    }
+
+    #endregion
+
+    #region ShouldDiscountNotBeStarted Tests
+
+    [Fact]
+    public async Task ShouldDiscountNotBeStarted_WhenDiscountIsStarted_ShouldThrowConflictException()
+    {
+        var now = DateTime.UtcNow;
+
+        Action act = () => _sut.ShouldDiscountNotBeStarted(now.AddDays(-1), now);
+
+        act.Should().Throw<ConflictException>()
+            .WithMessage("Başlamış indirim güncellenemez.");
+    }
+
+    [Fact]
+    public async Task ShouldDiscountNotBeStarted_WhenNowEqualsStartDate_ShouldThrowConflictException()
+    {
+        var now = DateTime.UtcNow;
+
+        Action act = () => _sut.ShouldDiscountNotBeStarted(now, now);
+
+        act.Should().Throw<ConflictException>()
+            .WithMessage("Başlamış indirim güncellenemez.");
+    }
+
+    [Fact]
+    public async Task ShouldDiscountNotBeStarted_WhenDiscountHasNotStarted_ShouldNotThrowAnything()
+    {
+        var now = DateTime.UtcNow;
+
+        Action act = () => _sut.ShouldDiscountNotBeStarted(now.AddDays(1), now);
+
+        act.Should().NotThrow();
+    }
+
+    #endregion
 }
