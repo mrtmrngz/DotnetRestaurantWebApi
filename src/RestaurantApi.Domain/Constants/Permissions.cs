@@ -51,4 +51,16 @@ public static class Permissions
         [Description("İndirim silme yetkisi verir.")]
         public const string Delete = "discount:delete";
     }
+
+    public static class TablePermissions
+    {
+        [Description("Masaları görüntüleme yetkisi verir.")]
+        public const string View = "table:view";
+        [Description("Masa oluşturma yetkisi verir.")]
+        public const string Create = "table:create";
+        [Description("Masa güncelleme yetkisi verir.")]
+        public const string Update = "table:update";
+        [Description("Masa silme yetkisi verir.")]
+        public const string Delete = "table:delete";
+    }
 }
