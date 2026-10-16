@@ -20,4 +20,14 @@ public class RestaurantTableRules
             throw new ConflictException("Bu masa numarası zaten kullanılmaktadır.");
         }
     }
+
+    public void ShouldTableBeValidForDeletion(Domain.Entities.RestaurantTable? table)
+    {
+        if (table is null || !table.IsActive)
+        {
+            _logger.LogWarning("Silinmek istenen masa bulunamadı veya zaten pasif durumda. TableId:{TableId}",
+                table?.Id);
+            throw new NotFoundException("Masa bulunamadı.");
+        }
+    }
 }

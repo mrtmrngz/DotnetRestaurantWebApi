@@ -35,4 +35,40 @@ public class RestaurantTableRulesTests
     }
 
     #endregion
+
+    #region ShouldTableBeValidForDeletion Tests
+
+    [Fact]
+    public async Task ShouldTableBeValidForDeletion_WhenTableNotExist_ShouldThrowNotFoundException()
+    {
+        Domain.Entities.RestaurantTable? table = null;
+
+        Action act = () => _sut.ShouldTableBeValidForDeletion(table);
+
+        act.Should().Throw<NotFoundException>()
+            .WithMessage("Masa bulunamadı.");
+    }
+
+    [Fact]
+    public async Task ShouldTableBeValidForDeletion_WhenTableIsPassive_ShouldThrowNotFoundException()
+    {
+        Domain.Entities.RestaurantTable? table = new Domain.Entities.RestaurantTable { IsActive = false };
+
+        Action act = () => _sut.ShouldTableBeValidForDeletion(table);
+
+        act.Should().Throw<NotFoundException>()
+            .WithMessage("Masa bulunamadı.");
+    }
+
+    [Fact]
+    public async Task ShouldTableBeValidForDeletion_WhenTableIsActive_ShouldNotThrowAnything()
+    {
+        Domain.Entities.RestaurantTable? table = new Domain.Entities.RestaurantTable { IsActive = true };
+
+        Action act = () => _sut.ShouldTableBeValidForDeletion(table);
+
+        act.Should().NotThrow();
+    }
+
+    #endregion
 }
