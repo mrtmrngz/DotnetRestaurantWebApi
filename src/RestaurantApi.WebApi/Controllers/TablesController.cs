@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.RestaurantTable.Commands.CreateRestaurantTableCommand;
 using RestaurantApi.Application.Features.RestaurantTable.Commands.DeleteRestaurantTableCommand;
+using RestaurantApi.Application.Features.RestaurantTable.Queries.GetRestaurantTableListQuery;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
 using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
@@ -23,6 +24,24 @@ public class TablesController : ControllerBase
         _mediator = mediator;
     }
 
+
+    [HttpGet]
+    #region SwaggerDocumentation
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<IReadOnlyList<GetRestaurantTableListQueryResult>>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(AdminRestaurantTableListResponseExample))]
+    [ProducesResponseType(typeof(BaseResponse), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
+    #endregion
+    [Authorize(Policy = Permissions.TablePermissions.View)]
+    public async Task<IActionResult> GetTables([FromQuery] GetRestaurantTableListQuery query)
+    {
+        GeneralSuccessResponseWithData<IReadOnlyList<GetRestaurantTableListQueryResult>> response =
+            await _mediator.Send(query);
+
+        return Ok(response);
+    }
 
     [HttpPost]
     #region SwaggerDocumentation
