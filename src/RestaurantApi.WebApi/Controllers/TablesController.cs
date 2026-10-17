@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.RestaurantTable.Commands.CreateRestaurantTableCommand;
 using RestaurantApi.Application.Features.RestaurantTable.Commands.DeleteRestaurantTableCommand;
+using RestaurantApi.Application.Features.RestaurantTable.Commands.UpdateRestaurantTableCommand;
 using RestaurantApi.Application.Features.RestaurantTable.Queries.GetRestaurantTableDetailQuery;
 using RestaurantApi.Application.Features.RestaurantTable.Queries.GetRestaurantTableListQuery;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
@@ -83,6 +84,30 @@ public class TablesController : ControllerBase
         BaseResponse response = await _mediator.Send(command);
 
         return StatusCode(StatusCodes.Status201Created, response);
+    }
+
+    [HttpPatch("{tableId:guid}")]
+    #region SwaggerDocumentation
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(BaseResponse), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
+    [ProducesResponseType(typeof(NotFoundException), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    [ProducesResponseType(typeof(ConflictException), 409)]
+    [SwaggerResponseExample(StatusCodes.Status409Conflict, typeof(ConflictErrorExample))]
+    [ProducesResponseType(typeof(BaseResponse), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentUpdatedResponseExample))]
+    #endregion
+    [Authorize(Policy = Permissions.TablePermissions.Update)]
+    public async Task<IActionResult> UpdateRestaurantTable([FromRoute] Guid tableId,
+        [FromBody] UpdateRestaurantTableCommand command)
+    {
+        UpdateRestaurantTableCommand commandToSend = command with { TableId = tableId };
+
+        BaseResponse response = await _mediator.Send(commandToSend);
+
+        return Ok(response);
     }
 
     [HttpDelete("{tableId:guid}")]

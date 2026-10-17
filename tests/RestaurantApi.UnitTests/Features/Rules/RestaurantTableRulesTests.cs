@@ -61,6 +61,57 @@ public class RestaurantTableRulesTests
 
     #endregion
 
+    #region ShouldTableBeUpdatableWithReservations Tests
+
+    [Fact]
+    public void ShouldTableBeUpdatableWithReservations_WhenNoActiveReservation_ShouldNotThrowAnything()
+    {
+        Action act = () => _sut.ShouldTableBeUpdatableWithReservations(false, 0, requestedCapacity: 1,
+            requestedIsActive: false);
+
+        act.Should().NotThrow("Aktif rezervasyon bulunmadığı için tüm güncellemeler serbest olmalıydı.");
+    }
+
+    [Fact]
+    public void ShouldTableBeUpdatableWithReservations_WhenDeactivatingTableWithActiveReservation_ShouldThrowConflictException()
+    {
+        Action act = () => _sut.ShouldTableBeUpdatableWithReservations(true, 2, requestedCapacity: null,
+            requestedIsActive: false);
+
+        act.Should().Throw<ConflictException>()
+            .WithMessage("Aktif rezervasyonu bulunan masa pasife alınamaz.");
+    }
+
+    [Fact]
+    public void ShouldTableBeUpdatableWithReservations_WhenCapacityIsBelowActiveReservation_ShouldThrowConflictException()
+    {
+        Action act = () => _sut.ShouldTableBeUpdatableWithReservations(true, 6, requestedCapacity: 5,
+            requestedIsActive: null);
+
+        act.Should().Throw<ConflictException>()
+            .WithMessage("*6*");
+    }
+
+    [Fact]
+    public void ShouldTableBeUpdatableWithReservations_WhenCapacityEqualsActiveReservation_ShouldNotThrowAnything()
+    {
+        Action act = () => _sut.ShouldTableBeUpdatableWithReservations(true, 6, requestedCapacity: 6,
+            requestedIsActive: null);
+
+        act.Should().NotThrow("Kapasite aktif rezervasyonun misafir sayısına eşit olduğu için güncellenebilir.");
+    }
+
+    [Fact]
+    public void ShouldTableBeUpdatableWithReservations_WhenCapacityIsAboveActiveReservation_ShouldNotThrowAnything()
+    {
+        Action act = () => _sut.ShouldTableBeUpdatableWithReservations(true, 6, requestedCapacity: 8,
+            requestedIsActive: true);
+
+        act.Should().NotThrow();
+    }
+
+    #endregion
+
     #region ShouldTableBeValidForDeletion Tests
 
     [Fact]

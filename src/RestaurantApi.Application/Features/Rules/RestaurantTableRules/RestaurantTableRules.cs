@@ -30,6 +30,38 @@ public class RestaurantTableRules
         }
     }
 
+    public void ShouldTableBeUpdatableWithReservations(bool hasActiveReservation, int maxActiveGuestCount,
+        int? requestedCapacity, bool? requestedIsActive)
+    {
+        if (!hasActiveReservation)
+            return;
+
+        if (requestedIsActive is false)
+        {
+            _logger.LogWarning("Aktif rezervasyonu bulunan masa pasife alınamaz. MaxGuestCount:{MaxGuestCount}",
+                maxActiveGuestCount);
+            throw new ConflictException("Aktif rezervasyonu bulunan masa pasife alınamaz.");
+        }
+
+        if (requestedCapacity.HasValue && requestedCapacity.Value < maxActiveGuestCount)
+        {
+            _logger.LogWarning(
+                "Masa kapasitesi aktif rezervasyonlardaki en yüksek misafir sayısının altına düşürülemez. Capacity:{Capacity}, MaxGuestCount:{MaxGuestCount}",
+                requestedCapacity, maxActiveGuestCount);
+            throw new ConflictException(
+                $"Masa kapasitesi, aktif rezervasyonlardaki en yüksek misafir sayısından ({maxActiveGuestCount}) küçük olamaz.");
+        }
+    }
+
+    public void ShouldTableNotHaveActiveReservationForDeletion(bool hasActiveReservation, Guid tableId)
+    {
+        if (!hasActiveReservation)
+            return;
+
+        _logger.LogWarning("Aktif rezervasyonu bulunan masa silinemez. TableId:{TableId}", tableId);
+        throw new ConflictException("Aktif rezervasyonu bulunan masa silinemez.");
+    }
+
     public void ShouldTableBeValidForDeletion(Domain.Entities.RestaurantTable? table)
     {
         if (table is null || !table.IsActive)

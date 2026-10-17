@@ -8,6 +8,7 @@ using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Enums;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
+using RestaurantApi.Domain.Entities;
 using RestaurantApi.IntegrationTests.Extension;
 using RestaurantApi.IntegrationTests.Setup;
 using RestaurantApi.Persistence.Context;
@@ -34,6 +35,44 @@ public class DeleteTableTests: BaseIntegrationTest
         var response = await Client.DeleteAsync($"/api/tables/{table.Id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK, "Masa başarılı bir şekilde silinmeliydi.");
+
+        var body = await response.ReadContentAsAsync<BaseResponse>();
+
+        body.Should().NotBeNull("Response body null olmamalıydı.");
+        body!.Code.Should().Be(Codes.CONTENT_DELETED_SUCCESS,
+            "Silme işlemi sonucunda CONTENT_DELETED_SUCCESS kodu dönmeliydi.");
+
+        using var scope = Factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApiContext>();
+        var cache = scope.ServiceProvider.GetRequiredService<ICacheService>();
+
+        var deletedTable = await context.RestaurantTables.FirstOrDefaultAsync(t => t.Id == table.Id);
+
+        deletedTable.Should().NotBeNull("Masa veritabanında bulunmalıydı (soft delete).");
+        deletedTable!.IsActive.Should().BeFalse("Masa silindiği için IsActive=false olarak işaretlenmeliydi.");
+
+        (await cache.GetAsync<string>(CacheKeys.AdminRestaurantTables())).Should().BeNull(
+            "Masa silindiği için admin masa listesi redisten silinmeliydi.");
+    }
+
+    [Fact]
+    public async Task DeleteTable_WhenReservationIsExpired_ShouldReturn200AndSoftDelete()
+    {
+        var now = DateTime.UtcNow;
+
+        var table = await SeedTableAsync(number: 5);
+        await SeedReservationAsync(table.Id, ReservationStatus.Confirmed,
+            startTime: now.AddHours(-3), endTime: now.AddHours(-1));
+        await SeedCachesAsync();
+
+        var setupResult = await CreateAdminUserAsync();
+
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", setupResult.AccessToken);
+
+        var response = await Client.DeleteAsync($"/api/tables/{table.Id}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK,
+            "Bitiş zamanı geçmiş rezervasyon aktif sayılmadığı için masa silinebilmeliydi.");
 
         var body = await response.ReadContentAsAsync<BaseResponse>();
 
@@ -98,6 +137,31 @@ public class DeleteTableTests: BaseIntegrationTest
             "Kullanıcı admin olmadığı için 403 FORBIDDEN dönmeliydi.");
     }
 
+    [Fact]
+    public async Task DeleteTable_WhenActiveReservationExists_ShouldReturn409()
+    {
+        var now = DateTime.UtcNow;
+
+        var table = await SeedTableAsync(number: 5);
+        await SeedReservationAsync(table.Id, ReservationStatus.Pending,
+            startTime: now.AddHours(-1), endTime: now.AddHours(1));
+
+        var setupResult = await CreateAdminUserAsync();
+
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", setupResult.AccessToken);
+
+        var response = await Client.DeleteAsync($"/api/tables/{table.Id}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict,
+            "Aktif rezervasyonu bulunan masa silinemeyeceği için 409 CONFLICT dönmeliydi.");
+
+        var body = await response.ReadContentAsAsync<ConflictException>();
+
+        body.Should().NotBeNull("Response body null olmamalıydı.");
+        body!.Code.Should().Be(Codes.CONFLICT, "CONFLICT kodu dönmeliydi.");
+        body.Message.Should().Be("Aktif rezervasyonu bulunan masa silinemez.");
+    }
+
     // ERROR TESTS END
 
     // SETUP
@@ -128,5 +192,28 @@ public class DeleteTableTests: BaseIntegrationTest
         var cache = scope.ServiceProvider.GetRequiredService<ICacheService>();
 
         await cache.SetAsync(CacheKeys.AdminRestaurantTables(), "tables", TimeSpan.FromHours(1));
+    }
+
+    private async Task SeedReservationAsync(Guid tableId, string status, DateTime startTime, DateTime endTime)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApiContext>();
+
+        context.Reservations.Add(new Reservation
+        {
+            Id = Guid.NewGuid(),
+            RestaurantTableId = tableId,
+            GuestCount = 4,
+            Status = status,
+            FullName = "Test User",
+            PhoneNumber = "5551112233",
+            Email = "test@test.com",
+            Note = "test",
+            StartTime = startTime,
+            EndTime = endTime,
+            IsDeleted = false
+        });
+
+        await context.SaveChangesAsync();
     }
 }
