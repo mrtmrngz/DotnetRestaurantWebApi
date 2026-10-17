@@ -21,6 +21,15 @@ public class RestaurantTableRules
         }
     }
 
+    public void ShouldTableExist(Domain.Entities.RestaurantTable? table, Guid tableId)
+    {
+        if (table is null)
+        {
+            _logger.LogWarning("Aranılan masa bulunamadı. TableId:{TableId}", tableId);
+            throw new NotFoundException("Masa bulunamadı.");
+        }
+    }
+
     public void ShouldTableBeValidForDeletion(Domain.Entities.RestaurantTable? table)
     {
         if (table is null || !table.IsActive)

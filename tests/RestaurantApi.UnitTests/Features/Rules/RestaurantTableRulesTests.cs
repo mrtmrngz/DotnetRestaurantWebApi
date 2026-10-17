@@ -36,6 +36,31 @@ public class RestaurantTableRulesTests
 
     #endregion
 
+    #region ShouldTableExist Tests
+
+    [Fact]
+    public async Task ShouldTableExist_WhenTableNotExist_ShouldThrowNotFoundException()
+    {
+        Domain.Entities.RestaurantTable? table = null;
+
+        Action act = () => _sut.ShouldTableExist(table, Guid.NewGuid());
+
+        act.Should().Throw<NotFoundException>()
+            .WithMessage("Masa bulunamadı.");
+    }
+
+    [Fact]
+    public async Task ShouldTableExist_WhenTableExists_ShouldNotThrowAnything()
+    {
+        Domain.Entities.RestaurantTable? table = new Domain.Entities.RestaurantTable { IsActive = false };
+
+        Action act = () => _sut.ShouldTableExist(table, table.Id);
+
+        act.Should().NotThrow("Pasif masa da veritabanında bulunduğu için hata fırlatılmamalıydı.");
+    }
+
+    #endregion
+
     #region ShouldTableBeValidForDeletion Tests
 
     [Fact]
