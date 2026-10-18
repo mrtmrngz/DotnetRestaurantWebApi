@@ -13,7 +13,7 @@
       - db
       - dev
     healthcheck:
-      test: [ 'CMD-SHELL', 'pg_isready -U user -d token-based-auth-v1' ]
+      test: [ 'CMD-SHELL', 'pg_isready -U user -d restaurant-api' ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,7 +26,7 @@
     command: >
       --requirepass Secret123
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "Secret", "ping"]
+      test: ["CMD", "redis-cli", "-a", "Secret123", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5

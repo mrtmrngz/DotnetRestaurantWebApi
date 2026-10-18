@@ -117,17 +117,59 @@ git clone https://github.com/mrtmrngz/DotnetRestaurantWebApi.git
 cd DotnetRestaurantWebApi
 ```
 
-### 2) Altyapıyı başlatın
+### 2) `.env` dosyasını oluşturun
+
+`compose.api.yaml`, API konteynerinin ayarlarını `docker compose` değişkenleri olarak proje kökündeki `.env` dosyasından okur (dosya `.gitignore` içinde olduğu için repoda bulunmaz). Örnek içerik (parola/anahtar değerleri yer tutucudur):
+
+```env
+# PostgreSQL (compose.yaml'daki servis ile aynı olmalı)
+POSTGRES_USER=user
+POSTGRES_PASSWORD=<postgres-parolasi>
+
+# Redis (compose.yaml'daki servis ile aynı olmalı)
+REDIS_PASSWORD=<redis-parolasi>
+
+# MinIO (S3 uyumlu depolama)
+MINIO_ROOT_USER=<minio-kullanici>
+MINIO_ROOT_PASSWORD=<minio-parolasi>
+
+# JWT imza anahtarı (en az 32 karakter)
+JWT_SECRET_KEY=<en-az-32-karakterli-anahtar>
+
+# Mail (SMTP)
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_EMAIL=<gonderen-eposta>
+MAIL_PASSWORD=<smtp-uygulama-sifresi>
+```
+
+`POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `JWT_SECRET_KEY`, `MAIL_EMAIL` ve `MAIL_PASSWORD` zorunludur; eksik olmaları durumunda `docker compose` hata verir. `POSTGRES_USER` varsayılanı `user`, `MAIL_HOST` varsayılanı `smtp.gmail.com`, `MAIL_PORT` varsayılanı `587`'dir. Veritabanı, Redis ve MinIO değerleri `compose.yaml`'daki servis tanımlarıyla aynı olmalıdır.
+
+### 3) Servisleri başlatın
+
+```bash
+docker compose -f compose.yaml -f compose.api.yaml --profile dev --profile app-dev up -d --build
+```
+
+Bu komut PostgreSQL (`5432`), parola korumalı Redis (`6379`), RedisInsight (`5540`), Seq (`5341`), MinIO (`9000`, konsol `9001`) servislerini ve `images-bucket` bucket'ını oluşturan tek seferlik `createbuckets` job'ını başlatır; ardından `api-dev` konteynerini (`5269` → konteyner içinde `8080`) ayağa kaldırır.
+
+Sıcak yeniden yükleme (hot reload) ile çalıştırmak için:
+
+```bash
+docker compose -f compose.yaml -f compose.api.yaml --profile dev --profile app-dev up --build --watch
+```
+
+Durdurmak için `docker compose -f compose.yaml -f compose.api.yaml --profile dev --profile app-dev down` kullanılır; `-v` verilmedikçe PostgreSQL, Redis, MinIO ve Seq volume verileri korunur.
+
+### 4) Docker olmadan çalıştırma
+
+API'yi yerelde (`dotnet run`) çalıştırmak isterseniz önce yalnızca altyapıyı başlatın:
 
 ```bash
 docker compose --profile dev up -d
 ```
 
-Bu komut PostgreSQL (`5432`), parola korumalı Redis (`6379`), Seq (`5341`), MinIO (`9000`, konsol `9001`) servislerini ve `images-bucket` bucket'ını oluşturan tek seferlik `createbuckets` job'ını ayağa kaldırır.
-
-### 3) Ayarları user secrets ile verin
-
-`appsettings.Development.json` ve `.env` `.gitignore` içinde olduğu için repoda bulunmaz. Değerleri `dotnet user-secrets` ile tanımlayın (`RestaurantApi.WebApi.csproj` içinde `UserSecretsId` tanımlı; `Development` ortamında otomatik okunur). Parola/anahtar içeren değerler yer tutucudur:
+Ardından ayarları `dotnet user-secrets` ile tanımlayın. `appsettings.Development.json` da `.gitignore` içinde olduğu için repoda bulunmaz; `RestaurantApi.WebApi.csproj` içindeki `UserSecretsId` sayesinde bu değerler `Development` ortamında otomatik okunur. Parola/anahtar içeren değerler yer tutucudur:
 
 ```bash
 cd src/RestaurantApi.WebApi
@@ -156,13 +198,13 @@ dotnet user-secrets set "MailSettings:Password" "<smtp-uygulama-sifresi>"
 
 Veritabanı, Redis ve MinIO değerleri (kullanıcı adı, parola, veritabanı ve bucket adı) `compose.yaml`'daki servis tanımlarıyla aynı olmalıdır; parolaları depoya yazmayın.
 
-### 4) Uygulamayı çalıştırın
+Ardından uygulamayı çalıştırın:
 
 ```bash
 dotnet run --project src/RestaurantApi.WebApi
 ```
 
-Uygulama açılışında `SeedDataAsync()` çalışır: `Database.MigrateAsync()` ile migration'lar uygulanır, izinler ve roller seed edilir. Migration'ı elle uygulamak isterseniz:
+Uygulama hangi biçimde başlatılırsa başlatılsın açılışta `SeedDataAsync()` çalışır: `Database.MigrateAsync()` ile migration'lar uygulanır, izinler ve roller seed edilir. Migration'ı elle uygulamak isterseniz:
 
 ```bash
 dotnet ef database update --project src/RestaurantApi.Persistence --startup-project src/RestaurantApi.WebApi
@@ -178,7 +220,7 @@ dotnet ef database update --project src/RestaurantApi.Persistence --startup-proj
 | Seq | `http://localhost:5341` |
 | MinIO konsolu | `http://localhost:9001` |
 
-`compose.yaml` yalnızca altyapı servislerini içerir; API imajı için repoda `src/RestaurantApi.WebApi/Dockerfile` bulunur (`8080` ve `8081` portlarını açar):
+`compose.yaml` altyapı servislerini, `compose.api.yaml` ise API konteynerini (`api-dev`) tanımlar. İmajı elle derlemek isterseniz çok aşamalı Dockerfile `src/RestaurantApi.WebApi/Dockerfile` içindedir (`development`, `build`, `publish`, `final` aşamaları; `8080` portunu açar):
 
 ```bash
 docker build -f src/RestaurantApi.WebApi/Dockerfile -t restaurant-api .

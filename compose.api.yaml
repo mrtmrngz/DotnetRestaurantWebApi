@@ -1,0 +1,87 @@
+# =============================================================================
+# RestaurantApi - API servisleri (compose.yaml'daki altyapıyla birlikte kullanılır)
+#
+# compose.yaml servis adları: postgres, cache (Redis), minio, createbuckets, seq
+#
+# Kullanım (komutlar proje kök dizininden çalıştırılır):
+#
+#   Prod benzeri : docker compose -f compose.yaml -f compose.api.yaml --profile dev --profile app up -d --build
+#   Hot reload   : docker compose -f compose.yaml -f compose.api.yaml --profile dev --profile app-dev up --build --watch
+#   Dev durdur   : docker compose -f compose.yaml -f compose.api.yaml --profile dev --profile app-dev down
+#   Prod durdur  : docker compose -f compose.yaml -f compose.api.yaml --profile dev --profile app down
+#
+#   Sadece API durdurmak (altyapı çalışmaya devam eder):
+#   Dev API      : docker compose -f compose.yaml -f compose.api.yaml stop api-dev
+#   Prod API     : docker compose -f compose.yaml -f compose.api.yaml stop api
+#
+# Not: Hot reload komutunda -d kullanılmaz. down komutunda -v kullanılmadığı
+# sürece PostgreSQL, Redis, MinIO ve Seq volume verileri korunur.
+#
+# Ayarlar .env dosyasından gelir (.env.example'ı kopyala). Konteynerde user secrets
+# otomatik okunmaz; ASP.NET Core ayarları ortam değişkenlerinden alır
+# ("__" iç içe anahtar demektir).
+# =============================================================================
+
+x-api-environment: &api-environment
+  ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=restaurant-api;Username=${POSTGRES_USER:-user};Password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD gerekli}"
+  ConnectionStrings__Redis: "cache:6379,password=${REDIS_PASSWORD:?REDIS_PASSWORD gerekli}"
+
+  AWS__ServiceUrl: "http://minio:9000"
+  AWS__AccessKey: "${MINIO_ROOT_USER:?MINIO_ROOT_USER gerekli}"
+  AWS__SecretKey: "${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD gerekli}"
+  AWS__Region: "eu-west-1"
+  AWS__Bucket: "images-bucket"
+  AWS__PublicBaseUrl: "http://localhost:9000"
+
+  JwtSettings__SecretKey: "${JWT_SECRET_KEY:?JWT_SECRET_KEY gerekli}"
+  JwtSettings__Issuer: "restaurant-api"
+  JwtSettings__Audience: "restaurant-api-client"
+  JwtSettings__AccessTokenExpirationMinutes: "15"
+  JwtSettings__RefreshTokenExpirationDays: "7"
+
+  MailSettings__Host: "${MAIL_HOST:-smtp.gmail.com}"
+  MailSettings__Port: "${MAIL_PORT:-587}"
+  MailSettings__Email: "${MAIL_EMAIL:?MAIL_EMAIL gerekli}"
+  MailSettings__Password: "${MAIL_PASSWORD:?MAIL_PASSWORD gerekli}"
+  
+
+x-api-depends-on: &api-depends-on
+  postgres:
+    condition: service_healthy
+  cache:
+    condition: service_healthy
+  minio:
+    condition: service_healthy
+  createbuckets:
+    condition: service_completed_successfully
+    
+services:
+  api-dev:
+    profiles:
+      - app-dev
+    build:
+      context: .
+      dockerfile: src/RestaurantApi.WebApi/Dockerfile
+      target: development
+    ports:
+      - "5269:8080"
+    environment:
+      <<: *api-environment
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: "8080"
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    depends_on: *api-depends-on
+    restart: on-failure
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /src/src
+          ignore:
+            - "**/bin/"
+            - "**/obj/"
+            - "**/*.csproj"
+        - action: rebuild
+          path: ./src
+          include:
+            - "**/*.csproj"
