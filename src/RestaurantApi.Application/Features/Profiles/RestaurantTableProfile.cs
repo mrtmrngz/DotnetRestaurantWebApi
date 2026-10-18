@@ -1,4 +1,5 @@
 using AutoMapper;
+using RestaurantApi.Application.Features.RestaurantTable.Queries.GetAvailableTablesQuery;
 using RestaurantApi.Application.Features.RestaurantTable.Queries.GetRestaurantTableDetailQuery;
 using RestaurantApi.Application.Features.RestaurantTable.Queries.GetRestaurantTableListQuery;
 
@@ -17,5 +18,8 @@ public class RestaurantTableProfile: Profile
         CreateMap<Domain.Entities.RestaurantTable, GetRestaurantTableDetailQueryResult>()
             .ForMember(dest => dest.GuestCount, opt =>
                 opt.MapFrom(src => src.Capacity));
+
+        // Available Restaurant Table Profile
+        CreateMap<Domain.Entities.RestaurantTable, GetAvailableTablesQueryResult>();
     }
 }

@@ -39,4 +39,16 @@ public class ReservationRepository: IReservationRepository
 
         return maxGuestCount ?? 0;
     }
+
+    // Bitiş zamanı geçmiş rezervasyonlar meşgul sayılmaz (masa güncelleme/silme kontrolüyle aynı kural).
+
+    public async Task<List<Guid>> GetBusyTableIdsAsync(DateTime now, CancellationToken ctx)
+    {
+        return await _context.Reservations
+            .Where(r => (r.Status == ReservationStatus.Pending || r.Status == ReservationStatus.Confirmed) &&
+                        r.EndTime >= now)
+            .Select(r => r.RestaurantTableId)
+            .Distinct()
+            .ToListAsync(ctx);
+    }
 }

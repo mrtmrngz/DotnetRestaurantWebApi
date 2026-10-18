@@ -112,6 +112,27 @@ public class RestaurantTableRulesTests
 
     #endregion
 
+    #region ShouldTableNotHaveActiveReservationForDeletion Tests
+
+    [Fact]
+    public void ShouldTableNotHaveActiveReservationForDeletion_WhenTableHasActiveReservation_ShouldThrowConflictException()
+    {
+        Action act = () => _sut.ShouldTableNotHaveActiveReservationForDeletion(true, Guid.NewGuid());
+
+        act.Should().Throw<ConflictException>()
+            .WithMessage("Aktif rezervasyonu bulunan masa silinemez.");
+    }
+
+    [Fact]
+    public void ShouldTableNotHaveActiveReservationForDeletion_WhenTableHasNoActiveReservation_ShouldNotThrowAnything()
+    {
+        Action act = () => _sut.ShouldTableNotHaveActiveReservationForDeletion(false, Guid.NewGuid());
+
+        act.Should().NotThrow("Masanın aktif rezervasyonu bulunmadığı için silme işlemine devam edilebilir.");
+    }
+
+    #endregion
+
     #region ShouldTableBeValidForDeletion Tests
 
     [Fact]

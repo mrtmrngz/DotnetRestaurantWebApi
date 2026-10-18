@@ -77,6 +77,7 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
 | Method | Route | Açıklama | Gereken izin | Başarı kodu |
 | --- | --- | --- | --- | --- |
 | GET | `api/tables` | Masa listesi; `is-active`, `min-guest`, `max-guest`, `number` filtreleri | `table:view` | 200 |
+| GET | `api/tables/available` | Müsait masalar; `guest-count`, `start-time`, `end-time` zorunludur (aktif rezervasyonu olmayan, kapasitesi yeterli ve aktif masalar) | `table:view` | 200 |
 | GET | `api/tables/{tableId}` | Masa detayı | `table:view` | 200 |
 | POST | `api/tables` | Masa oluşturma | `table:create` | 201 |
 | PATCH | `api/tables/{tableId}` | Masa güncelleme (numara, kapasite, aktiflik) | `table:update` | 200 |
