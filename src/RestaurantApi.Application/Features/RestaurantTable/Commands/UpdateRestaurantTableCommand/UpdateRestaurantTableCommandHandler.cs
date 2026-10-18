@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using RestaurantApi.Application.Common;
 using RestaurantApi.Application.Common.Abstractions;
@@ -6,6 +7,7 @@ using RestaurantApi.Application.Common.Abstractions.Repositories;
 using RestaurantApi.Application.Common.Enums;
 using RestaurantApi.Application.Features.Rules.RestaurantTableRules;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
+using RestaurantApi.Domain.Entities;
 
 namespace RestaurantApi.Application.Features.RestaurantTable.Commands.UpdateRestaurantTableCommand;
 
@@ -51,8 +53,10 @@ public class UpdateRestaurantTableCommandHandler: IRequestHandler<UpdateRestaura
 
             var now = DateTime.UtcNow;
 
-            var hasActiveReservation =
-                await _reservationRepository.HasActiveReservationAsync(request.TableId, now, cancellationToken);
+            var hasActiveReservation = await _reservationRepository.GetAllAsQueryable()
+                .AnyAsync(r => r.RestaurantTableId == request.TableId &&
+                               (r.Status == ReservationStatus.Pending || r.Status == ReservationStatus.Confirmed) &&
+                               r.EndTime >= now, cancellationToken);
 
             var maxActiveGuestCount = hasActiveReservation
                 ? await _reservationRepository.GetMaxActiveGuestCountAsync(request.TableId, now, cancellationToken)

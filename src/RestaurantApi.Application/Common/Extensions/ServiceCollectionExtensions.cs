@@ -11,6 +11,7 @@ using RestaurantApi.Application.Features.Rules.ProductMediaRules;
 using RestaurantApi.Application.Features.Rules.ProductRules;
 using RestaurantApi.Application.Features.Rules.ProfileRules;
 using RestaurantApi.Application.Features.Rules.RefreshTokenRules;
+using RestaurantApi.Application.Features.Rules.ReservationRules;
 using RestaurantApi.Application.Features.Rules.RestaurantTableRules;
 using RestaurantApi.Application.Features.Rules.UserRules;
 
@@ -42,6 +43,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ProductMediaRules>();
         services.AddScoped<DiscountRules>();
         services.AddScoped<RestaurantTableRules>();
+        services.AddScoped<ReservationRules>();
+
+        // Saat bağımlı iş kuralları (rezervasyon zaman kuralları) test edilebilir olsun diye
+        // DateTime.UtcNow yerine TimeProvider üzerinden çalışır.
+        services.AddSingleton(TimeProvider.System);
         
         // Automapper
         services.AddAutoMapper(cfg => cfg.AddMaps(typeof(ApplicationAssemblyMarker).Assembly));

@@ -238,6 +238,7 @@ Ayrıntılı parametreler, örnek istek/yanıtlar ve yetki bilgisi için Swagger
 - `api/products` — public ve admin ürün listeleme, detay, oluşturma, güncelleme, silme
 - `api/discounts` — indirim listeleme (status filtresi), detay, oluşturma, güncelleme
 - `api/tables` — masa listeleme (`is-active`, `min-guest`, `max-guest`, `number`), detay, oluşturma, güncelleme, silme ve müsait masa sorgusu (`GET api/tables/available`)
+- `api/reservations` — giriş yapan kullanıcı için rezervasyon oluşturma (`POST api/reservations/add/current-user`, `reservation:create`)
 - `api/diagnostics/cache` — cache hit/miss sayaçları
 
 Tüm uçların method, route, izin ve başarı kodu bilgisiyle tablo halindeki listesi: [docs/API.md](docs/API.md).

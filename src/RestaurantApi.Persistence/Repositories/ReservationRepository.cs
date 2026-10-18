@@ -19,14 +19,10 @@ public class ReservationRepository: IReservationRepository
         return _context.Reservations.AsQueryable();
     }
 
-    // Bitiş zamanı geçmiş rezervasyonlar (kapatılmayı unutulmuş / teknik hata) aktif sayılmaz.
-
-    public Task<bool> HasActiveReservationAsync(Guid restaurantTableId, DateTime now, CancellationToken ctx)
+    public void CreateReservation(Reservation reservation, CancellationToken ctx)
     {
-        return _context.Reservations
-            .AnyAsync(r => r.RestaurantTableId == restaurantTableId &&
-                           (r.Status == ReservationStatus.Pending || r.Status == ReservationStatus.Confirmed) &&
-                           r.EndTime >= now, ctx);
+        ctx.ThrowIfCancellationRequested();
+        _context.Reservations.Add(reservation);
     }
 
     public async Task<int> GetMaxActiveGuestCountAsync(Guid restaurantTableId, DateTime now, CancellationToken ctx)

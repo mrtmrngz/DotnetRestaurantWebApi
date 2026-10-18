@@ -63,4 +63,10 @@ public static class Permissions
         [Description("Masa silme yetkisi verir.")]
         public const string Delete = "table:delete";
     }
+
+    public static class ReservationPermissions
+    {
+        [Description("Rezervasyon oluşturma yetkisi verir.")]
+        public const string Create = "reservation:create";
+    }
 }

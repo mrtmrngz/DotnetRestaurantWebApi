@@ -82,6 +82,13 @@ public class TestDatabaseFixture : IAsyncLifetime
                     if (storageDescriptor != null) services.Remove(storageDescriptor);
                     services.AddScoped<IFileStorage, FakeFileStorage>();
 
+                    // Test saati: rezervasyon zaman kuralları deterministik test edilebilsin diye dondurulabilir.
+                    // Dondurulmadığı sürece gerçek zamanı döner, diğer testleri etkilemez.
+                    // Birden fazla TimeProvider kaydı (framework + uygulama) olduğu için kaydı silmek yerine
+                    // en son kaydediyoruz; tek çözümlemede son kayıt kazanır.
+                    services.AddSingleton<TestTimeProvider>();
+                    services.AddSingleton<TimeProvider>(sp => sp.GetRequiredService<TestTimeProvider>());
+
                     services.AddHttpContextAccessor();
                 });
             });
