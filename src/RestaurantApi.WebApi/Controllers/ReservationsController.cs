@@ -126,4 +126,40 @@ public class ReservationsController : ControllerBase
 
         return Ok(response);
     }
+    
+    /// <summary>
+    /// Panelde yetki sahibi kullanıcılar zamanı geçmemiş, herhangi rezervasyonunu iptal eder.
+    /// </summary>
+    /// <response code="200">Rezervasyon başarıyla iptal edildi.</response>
+    /// <response code="400">Rezervasyon ID bilgisi gönderilmediğinde veya geçersiz GUID formatında olduğunda</response>
+    /// <response code="401">Yetkisiz erişim (JWT Token eksik veya geçersiz).</response>
+    /// <response code="403">Kullanıcının bu işlem için yetkisi olmadığında. (reservation:cancel)</response>
+    /// <response code="404">Rezervasyon bulunamadı.</response>
+    /// <response code="409">Rezervasyon zaten iptal edilmiş durumda.</response>
+    /// <response code="422">Rezervasyon end time işlem yapılan zamandan daha büyük ise.</response>
+    [HttpPatch("panel/canceled/{reservationId:guid}")]
+    #region Swagger Docs
+    [ProducesResponseType(typeof(ValidationException), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(NotFoundException), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    [ProducesResponseType(typeof(ConflictException), 409)]
+    [SwaggerResponseExample(StatusCodes.Status409Conflict, typeof(ConflictErrorExample))]
+    [ProducesResponseType(typeof(ErrorResponse), 422)]
+    [SwaggerResponseExample(StatusCodes.Status422UnprocessableEntity, typeof(UnproccesableEntityErrorExample))]
+    [ProducesResponseType(typeof(BaseResponse), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ReservationCanceledResponseExample))]
+    #endregion
+    [Authorize(Policy = Permissions.ReservationPermissions.Cancel)]
+    public async Task<IActionResult> PanelCancelReservation([FromRoute] Guid reservationId)
+    {
+        CancelReservationCommand command = new CancelReservationCommand(ReservationId: reservationId,
+            UserId: null, RequestType: CancelReservationTypes.Admin);
+
+        var response = await _mediator.Send(command);
+
+        return Ok(response);
+    }
 }
