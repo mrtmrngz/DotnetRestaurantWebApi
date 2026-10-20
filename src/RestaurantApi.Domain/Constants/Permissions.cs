@@ -70,7 +70,11 @@ public static class Permissions
         public const string Create = "reservation:create";
         [Description("Panel Rezervasyon oluşturma yetkisi verir.")]
         public const string PanelCreate = "reservation:create:panel";
-        [Description("Panel rezervasyon iptail etme yetkisi verir.")]
+        [Description("Panel rezervasyon iptal etme yetkisi verir.")]
         public const string Cancel = "reservation:cancel";
+        [Description("Rezervasyon durumu güncelleme yetkisi verir.")]
+        public const string StatusUpdate = "reservation:status-update";
+        [Description("Panelde yetki sahibi kullanıcılara, tüm rezervasyonları listeleme yetkisi verir.")]
+        public const string PanelListing = "reservation:listing";
     }
 }

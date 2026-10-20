@@ -26,4 +26,17 @@ public class ReservationStatus
     public const string Confirmed = "Confirmed";
     public const string Completed = "Completed";
     public const string Canceled = "Canceled";
+    
+    private static readonly HashSet<string> ValidStatuses =
+    [
+        Pending,
+        Confirmed,
+        Completed,
+        Canceled
+    ];
+
+    public static bool IsValid(string? status)
+    {
+        return status is not null && ValidStatuses.Contains(status);
+    }
 }

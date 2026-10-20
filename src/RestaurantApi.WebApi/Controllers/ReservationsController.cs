@@ -7,6 +7,7 @@ using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Reservation.Commands.CancelReservationCommand;
 using RestaurantApi.Application.Features.Reservation.Commands.CreateCurrentUserReservationCommand;
 using RestaurantApi.Application.Features.Reservation.Commands.CreatePanelReservationCommand;
+using RestaurantApi.Application.Features.Reservation.Commands.ReservationStatusUpdateCommand;
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
@@ -160,6 +161,41 @@ public class ReservationsController : ControllerBase
 
         var response = await _mediator.Send(command);
 
+        return Ok(response);
+    }
+    
+    /// <summary>Yetki sahibi kullanıcılar, zamanı geçmemiş herhangi bir rezervasyonun durumunu günceller.</summary>
+    /// <remarks>
+    /// Status için geçerli değerler: Pending, Confirmed, Completed, Canceled.
+    /// </remarks>
+    /// <response code="200">Rezervasyon durum güncelleme başarılı.</response>
+    /// <response code="400">Validasyon (status) hataları meydana geldi.</response>
+    /// <response code="401">Kullanıcı giriş yapmamış.</response>
+    /// <response code="403">Kullanıcı giriş yapmış fakat bu işlem için yetkili değil.</response>
+    /// <response code="404">Rezervasyon bulunamadı.</response>
+    /// <response code="422">Rezervasyonun bitiş zamanı geçmiş.</response>
+    [HttpPatch("status-update/{reservationId:guid}")]
+    #region Swagger Docs
+    [SwaggerRequestExample(typeof(ReservationStatusUpdateCommand),
+        typeof(ReservationStatusUpdateRequestExample))]
+    [ProducesResponseType(typeof(ValidationException), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(NotFoundException), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    [ProducesResponseType(typeof(ErrorResponse), 422)]
+    [SwaggerResponseExample(StatusCodes.Status422UnprocessableEntity, typeof(UnproccesableEntityErrorExample))]
+    [ProducesResponseType(typeof(BaseResponse), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(BaseResponse))]
+    #endregion
+    [Authorize(Policy = Permissions.ReservationPermissions.StatusUpdate)]
+    public async Task<IActionResult> ReservationStatusUpdate([FromBody] ReservationStatusUpdateCommand command, Guid reservationId)
+    {
+        command = command with { ReservationId = reservationId };
+
+        BaseResponse response = await _mediator.Send(command);
+        
         return Ok(response);
     }
 }
