@@ -59,37 +59,44 @@
       - logging
       - dev
   minio:
-    image: minio/minio:latest
+    image: cgr.dev/chainguard/minio:latest
     container_name: minio-s3
     ports:
-      - "9000:9000" 
-      - "9001:9001" 
+      - "9000:9000"
+      - "9001:9001"
     environment:
-      MINIO_ROOT_USER: test
-      MINIO_ROOT_PASSWORD: testpassword
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?required}
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
     profiles:
       - localstack
       - dev
-    healthcheck:
-      test: [ "CMD", "mc", "ready", "local" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
   createbuckets:
-    image: minio/mc:latest
+    image: cgr.dev/chainguard/minio-client:latest-dev
     depends_on:
       minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      /usr/bin/mc alias set myminio http://minio:9000 test testpassword;
-      /usr/bin/mc mb myminio/images-bucket;
-      /usr/bin/mc anonymous set download myminio/images-bucket;
-      exit 0;
-      "
+        condition: service_started
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?required}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+
+        until mc alias set myminio http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" &&
+              mc ready myminio; do
+          echo "MinIO henuz hazir degil, tekrar deneniyor..."
+          sleep 2
+        done
+
+        mc mb --ignore-existing myminio/images-bucket
+        mc anonymous set download myminio/images-bucket
+
+        echo "MinIO bucket basariyla hazirlandi."
     profiles:
       - localstack
       - dev

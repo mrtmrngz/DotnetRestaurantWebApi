@@ -51,7 +51,7 @@ x-api-depends-on: &api-depends-on
   cache:
     condition: service_healthy
   minio:
-    condition: service_healthy
+    condition: service_started
   createbuckets:
     condition: service_completed_successfully
     
