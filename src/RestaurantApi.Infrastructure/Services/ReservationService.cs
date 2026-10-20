@@ -5,6 +5,7 @@ using RestaurantApi.Application.Common.Abstractions.Services;
 using RestaurantApi.Application.Features.Rules.ReservationRules;
 using RestaurantApi.Application.Features.Rules.RestaurantTableRules;
 using RestaurantApi.Domain.Entities;
+using RestaurantApi.Domain.Identity;
 
 namespace RestaurantApi.Infrastructure.Services;
 

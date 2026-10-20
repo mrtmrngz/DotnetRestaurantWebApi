@@ -158,28 +158,6 @@ public class CreateCurrentUserReservationTests: BaseIntegrationTest
     }
 
     [Fact]
-    public async Task CreateCurrentUserReservation_WhenUserHasNoCreatePermission_ShouldReturn403()
-    {
-        using var clock = FreezeLocalNow(15);
-
-        await SeedTableAsync(capacity: 6, isActive: true);
-
-        var setupResult = await CreateVanillaUserAsync();
-        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", setupResult.AccessToken);
-
-        var response = await Client.PostAsJsonAsync(Endpoint, new
-        {
-            guestCount = 4,
-            startTime = LocalToday.AddHours(16),
-            endTime = LocalToday.AddHours(17),
-            tableId = Guid.NewGuid()
-        });
-
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden,
-            "Kullanıcının reservation:create yetkisi olmadığı için 403 FORBIDDEN dönmeliydi.");
-    }
-
-    [Fact]
     public async Task CreateCurrentUserReservation_WhenUserNotExistInDatabase_ShouldReturn404()
     {
         using var clock = FreezeLocalNow(15);

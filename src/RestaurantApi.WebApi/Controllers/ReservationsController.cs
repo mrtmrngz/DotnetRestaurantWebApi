@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Reservation.Commands.CreateCurrentUserReservationCommand;
+using RestaurantApi.Application.Features.Reservation.Commands.CreatePanelReservationCommand;
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
@@ -53,6 +54,31 @@ public class ReservationsController : ControllerBase
 
         BaseResponse response = await _mediator.Send(commandToSend);
 
+        return StatusCode(StatusCodes.Status201Created, response);
+    }
+
+    [HttpPost("add/panel")]
+    #region Swagger Docs
+    [SwaggerRequestExample(typeof(CreatePanelReservationCommand),
+        typeof(CreatePanelReservationRequestExample))]
+    [ProducesResponseType(typeof(ValidationException), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(NotFoundException), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    [ProducesResponseType(typeof(ConflictException), 409)]
+    [SwaggerResponseExample(StatusCodes.Status409Conflict, typeof(ConflictErrorExample))]
+    [ProducesResponseType(typeof(ErrorResponse), 422)]
+    [SwaggerResponseExample(StatusCodes.Status422UnprocessableEntity, typeof(UnproccesableEntityErrorExample))]
+    [ProducesResponseType(typeof(BaseResponse), 201)]
+    [SwaggerResponseExample(StatusCodes.Status201Created, typeof(ContentCreatedExample))]
+    #endregion
+    [Authorize(Policy = Permissions.ReservationPermissions.PanelCreate)]
+    public async Task<IActionResult> CreatePanelReservation([FromBody] CreatePanelReservationCommand command)
+    {
+        var response = await _mediator.Send(command);
+        
         return StatusCode(StatusCodes.Status201Created, response);
     }
 }

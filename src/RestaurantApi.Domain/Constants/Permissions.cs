@@ -68,5 +68,7 @@ public static class Permissions
     {
         [Description("Rezervasyon oluşturma yetkisi verir.")]
         public const string Create = "reservation:create";
+        [Description("Rezervasyon oluşturma yetkisi verir.")]
+        public const string PanelCreate = "reservation:create:panel";
     }
 }
