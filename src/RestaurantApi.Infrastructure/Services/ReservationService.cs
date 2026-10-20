@@ -62,4 +62,24 @@ public class ReservationService: IReservationService
         _logger.LogInformation("Masa rezervasyona uygun. TableId:{TableId}, TableNumber:{TableNumber}",
             table.Id, table.Number);
     }
+
+    public async Task<Reservation> FindAndValidateCurrentUserReservation(Guid reservationId, Guid userId, CancellationToken ctx)
+    {
+        Reservation? reservation = await _reservationRepository.GetAllAsQueryable()
+            .FirstOrDefaultAsync(x => x.Id == reservationId && x.UserId == userId, ctx);
+        
+        _reservationRules.ShouldReservationExist(reservation, reservationId);
+
+        return reservation!;
+    }
+
+    public async Task<Reservation> FindAndValidatePanelReservation(Guid reservationId, CancellationToken ctx)
+    {
+        Reservation? reservation = await _reservationRepository.GetAllAsQueryable()
+            .FirstOrDefaultAsync(x => x.Id == reservationId, ctx);
+        
+        _reservationRules.ShouldReservationExist(reservation, reservationId);
+
+        return reservation!;
+    }
 }

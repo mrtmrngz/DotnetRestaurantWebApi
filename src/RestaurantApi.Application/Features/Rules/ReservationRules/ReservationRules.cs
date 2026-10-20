@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging;
+using RestaurantApi.Application.Common.Enums;
 using RestaurantApi.Application.Common.Exceptions;
+using RestaurantApi.Domain.Entities;
 
 namespace RestaurantApi.Application.Features.Rules.ReservationRules;
 
@@ -52,5 +54,53 @@ public class ReservationRules
             "Seçilen masa istenen zaman aralığında dolu. TableId:{TableId}, StartTime:{StartTime}, EndTime:{EndTime}",
             tableId, startTime, endTime);
         throw new ConflictException("Seçilen masa, istenen zaman aralığında dolu.");
+    }
+
+    public void ShouldUserIdExistOnCurrentUserReservationCancel(Guid? userId, Guid reservationId)
+    {
+        if (userId != null)
+            return;
+
+        _logger.LogWarning(
+            "Bu işlemi gerçekleştirmek için kullanıcı id gereklidir. UserId:{usId} ReservationId:{resId}", userId,
+            reservationId);
+
+        throw new BadRequestException("Bu işlemi şuanda gerçekleştiremiyoruz.");
+    }
+
+    public void ShouldReservationExist(Domain.Entities.Reservation? reservation, Guid reservationId)
+    {
+        if (reservation is not null)
+            return;
+
+        _logger.LogWarning("İlgili rezervasyon sistemde bulunamadı. ReservationId: {resId}", reservationId);
+        throw new NotFoundException("Rezervasyon bulunamadı.");
+    }
+
+    public void ShouldReservationNotCanceledOrCompleted(string status, Guid reservationId, CancelReservationTypes types)
+    {
+        if(types == CancelReservationTypes.Admin)
+            return;
+        
+        if (string.Equals(status, nameof(ReservationStatus.Canceled), StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning("Rezervasyon zaten iptal edilmiş. ReservationId:{resId}", reservationId);
+            throw new ConflictException("Rezervasyon zaten iptal edilmiş.");
+        }
+        
+        if (string.Equals(status, nameof(ReservationStatus.Completed), StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning("Rezervasyon tamamlanmış durumda. ReservationId:{resId}", reservationId);
+            throw new UnprocessableEntityError("Rezervasyon tamamlandığı için iptal edilemez.");
+        }
+    }
+
+    public void ShouldReservationEndTimeNotPassing(DateTime endTime, DateTimeOffset nowUtc, Guid reservationId)
+    {
+        if (endTime <= nowUtc)
+        {
+            _logger.LogInformation("Rezervasyon bitiş zamanı zaten geçmiş. ReservationId:{resId}", reservationId);
+            throw new UnprocessableEntityError("Rezervasyon bitiş tarihi zaten geçmiş.");
+        }
     }
 }

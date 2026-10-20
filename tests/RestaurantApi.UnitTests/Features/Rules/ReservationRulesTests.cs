@@ -1,8 +1,10 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using RestaurantApi.Application.Common.Enums;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Rules.ReservationRules;
+using RestaurantApi.Domain.Entities;
 
 namespace RestaurantApi.UnitTests.Features.Rules;
 
@@ -35,7 +37,8 @@ public class ReservationRulesTests
     }
 
     [Fact]
-    public void ShouldTableBeActiveForReservation_WhenTableIsPassiveAndRequestIsFromCurrentUser_ShouldThrowNotFoundException()
+    public void
+        ShouldTableBeActiveForReservation_WhenTableIsPassiveAndRequestIsFromCurrentUser_ShouldThrowNotFoundException()
     {
         Action act = () => _sut.ShouldTableBeActiveForReservation(false, Guid.NewGuid(), isPanelRequest: false);
 
@@ -94,6 +97,114 @@ public class ReservationRulesTests
 
         act.Should().Throw<ConflictException>()
             .WithMessage("Seçilen masa, istenen zaman aralığında dolu.");
+    }
+
+    #endregion
+
+    #region ShouldUserIdExistOnCurrentUserReservationCancel Tests
+
+    [Fact]
+    public async Task ShouldUserIdExistOnCurrentUserReservationCancel_WhenUserIdNull_ShouldThrowBadRequestException()
+    {
+        Action act = () => _sut.ShouldUserIdExistOnCurrentUserReservationCancel(null, Guid.NewGuid());
+
+        act.Should().Throw<BadRequestException>().WithMessage("Bu işlemi şuanda gerçekleştiremiyoruz.");
+    }
+
+    [Fact]
+    public async Task
+        ShouldUserIdExistOnCurrentUserReservationCancel_WhenUserIdNotNull_ShouldNotThrowBadRequestException()
+    {
+        Action act = () => _sut.ShouldUserIdExistOnCurrentUserReservationCancel(Guid.NewGuid(), Guid.NewGuid());
+
+        act.Should().NotThrow("User id olduğu için bir hata fırlatmaması gerekirdi.");
+    }
+
+    #endregion
+
+    #region ShouldReservationExist Tests
+
+    [Fact]
+    public async Task ShouldReservationExist_WhenReservationNotExist_ShouldThrowNotFoundException()
+    {
+        Action act = () => _sut.ShouldReservationExist(null, Guid.NewGuid());
+
+        act.Should().Throw<NotFoundException>().WithMessage("Rezervasyon bulunamadı.");
+    }
+
+    [Fact]
+    public async Task ShouldReservationExist_WhenReservationExist_ShouldNotThrowNotFoundException()
+    {
+        Action act = () => _sut.ShouldReservationExist(new Domain.Entities.Reservation { }, Guid.NewGuid());
+
+        act.Should().NotThrow("Rezervasyon bulunduğu için herahngi bir hata fırlatmaması gerekirdi.");
+    }
+
+    #endregion
+
+    #region ShouldReservationNotCanceledOrCompleted Tests
+
+    [Fact]
+    public async Task
+        ShouldReservationNotCanceledOrCompleted_WhenReservationStatusCanceled_ShouldThrowConflictException()
+    {
+        Action act = () => _sut.ShouldReservationNotCanceledOrCompleted(ReservationStatus.Canceled, Guid.NewGuid(),
+            CancelReservationTypes.CurrentUser);
+
+        act.Should().Throw<ConflictException>().WithMessage("Rezervasyon zaten iptal edilmiş.");
+    }
+
+    [Fact]
+    public async Task
+        ShouldReservationNotCanceledOrCompleted_WhenReservationStatusCompleted_ShouldThrowUnprocessableException()
+    {
+        Action act = () => _sut.ShouldReservationNotCanceledOrCompleted(ReservationStatus.Completed, Guid.NewGuid(),
+            CancelReservationTypes.CurrentUser);
+
+        act.Should().Throw<UnprocessableEntityError>().WithMessage("Rezervasyon tamamlandığı için iptal edilemez.");
+    }
+
+    [Fact]
+    public async Task
+        ShouldReservationNotCanceledOrCompleted_WhenReservationStatusCompletedButRequestFromAdmin_ShouldNotThrowAnything()
+    {
+        Action act = () => _sut.ShouldReservationNotCanceledOrCompleted(ReservationStatus.Canceled, Guid.NewGuid(),
+            CancelReservationTypes.Admin);
+
+        act.Should().NotThrow("Rezervasyon iptal edilmiş fakat istek admin tarafından yapıldığı için herhangi bir hata fırlatmamalıydı.");
+    }
+
+    [Fact]
+    public async Task
+        ShouldReservationNotCanceledOrCompleted_WhenReservationStatusNotCompletedOrCanceled_ShouldNotThrowAnything()
+    {
+        Action act = () =>
+            _sut.ShouldReservationNotCanceledOrCompleted(ReservationStatus.Pending, Guid.NewGuid(), CancelReservationTypes.CurrentUser);
+
+        act.Should().NotThrow("Rezervasyon iptail edilmemiş veya tamamamlanmamış olmadığı için hata fırlatmamalıydı.");
+    }
+
+    #endregion
+    
+    #region ShouldReservationEndTimeNotPassing Tests
+
+    [Fact]
+    public async Task
+        ShouldReservationEndTimeNotPassing_WhenEndTimeHigherThanNow_ShouldThrowUnprocessableException()
+    {
+        Action act = () => _sut.ShouldReservationEndTimeNotPassing(DateTime.UtcNow.AddDays(-2), DateTime.UtcNow, Guid.NewGuid());
+
+        act.Should().Throw<UnprocessableEntityError>().WithMessage("Rezervasyon bitiş tarihi zaten geçmiş.");
+    }
+    
+    [Fact]
+    public async Task
+        ShouldReservationEndTimeNotPassing_WhenEndTimeLowerThanNow_ShouldNotThrowAnything()
+    {
+        Action act = () =>
+            _sut.ShouldReservationEndTimeNotPassing(DateTime.UtcNow.AddDays(1), DateTime.UtcNow, Guid.NewGuid());
+
+        act.Should().NotThrow("Rezervasyonun bitmesine daha zaman olduğu için hata göndermemeliydi.");
     }
 
     #endregion

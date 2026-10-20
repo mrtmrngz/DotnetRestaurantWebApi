@@ -10,4 +10,6 @@ public interface IReservationService
     // masanın aktif/pasif durumu istemciye sızdırılmaz.
     Task ShouldTableBeReservableAsync(Guid tableId, int guestCount, DateTime startTimeUtc, DateTime endTimeUtc,
         DateTime nowUtc, bool isPanelRequest, CancellationToken ctx);
+    Task<Domain.Entities.Reservation> FindAndValidateCurrentUserReservation(Guid reservationId, Guid userId, CancellationToken ctx);
+    Task<Domain.Entities.Reservation> FindAndValidatePanelReservation(Guid reservationId, CancellationToken ctx);
 }

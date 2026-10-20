@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json.Serialization;
 using Hangfire;
 using Microsoft.AspNetCore.Mvc;
@@ -65,6 +66,10 @@ builder.Services.AddSwaggerGen(c =>
     c.OperationFilter<SwaggerIgnoreBindNeverFilter>();
     c.ExampleFilters();
     
+    var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFilename);
+    c.IncludeXmlComments(xmlPath);
+    
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -84,6 +89,8 @@ builder.Services.AddSwaggerGen(c =>
         
         return requirement;
     });
+    
+    
 });
 
 var app = builder.Build();
