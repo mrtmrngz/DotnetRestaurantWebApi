@@ -36,10 +36,8 @@ public class ReservationsController : ControllerBase
     /// <response code="200">Rezervasyonlar başarılı bir şekilde döner.</response>
     /// <response code="400">
     /// Aşağıdaki durumlarda geçersiz istek (Bad Request) döner:
-    /// - Validasyon hataları olduğunda:
-    ///     - Durum 1: Eğer request type (static) Panel ise fakat query içerisinde user id (static) var ise.
-    ///     - Durum 2: Eğer request type (static) CurrentUser ise fakat query içerisinde user id (static) yok ise.
-    /// - Durum 2 gerçekleşir ve validasyonda yakalanmazsa.
+    /// - Eğer request type (static) CurrentUser ise fakat query içerisinde user id (static) yok ise.
+    /// - Validasyon sırasında hata yakalanamayıp, handler içerisinde yakalndığında.
     /// </response>
     /// <response code="401">Yetkisiz erişim (JWT Token eksik veya geçersiz).</response>
     [HttpGet("public")]
@@ -56,6 +54,30 @@ public class ReservationsController : ControllerBase
         var currentUserId = _currentUserService.GetRequiredUserId();
 
         ReservationListQuery query = new ReservationListQuery(UserId: currentUserId, RequestType: ReservationListRequestEnums.CurrentUser);
+
+        var response = await _mediator.Send(query);
+
+        return Ok(response);
+    }
+    
+    /// <summary>Panel'deki yetkililer tüm rezervasyonları görebilir.</summary>
+    /// <response code="200">Rezervasyonlar başarılı bir şekilde döner.</response>
+    /// <response code="400">Request Type (static) Admin ise fakat query içerisinde (static) user id bulunuyorsa.</response>
+    /// <response code="401">Yetkisiz erişim (JWT Token eksik veya geçersiz).</response>
+    /// <response code="403">Kullanıcının bu işlem için gerekli izinleri karşılamıyor.</response>
+    [HttpGet("panel")]
+    #region Swagger Docs
+    [ProducesResponseType(typeof(ValidationException), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<IReadOnlyList<ReservationListQueryResult>>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(GetPanelUserReservationListResponseExample))]
+    #endregion
+    [Authorize(Policy = Permissions.ReservationPermissions.PanelListing)]
+    public async Task<IActionResult> GetPanelReservationList()
+    {
+        ReservationListQuery query = new ReservationListQuery(UserId: null, RequestType: ReservationListRequestEnums.PanelUser);
 
         var response = await _mediator.Send(query);
 

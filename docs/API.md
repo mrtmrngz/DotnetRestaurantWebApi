@@ -87,10 +87,12 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
 
 | Method | Route | Açıklama | Gereken izin | Başarı kodu |
 | --- | --- | --- | --- | --- |
-| POST | `api/reservations/add/current-user` | Giriş yapan kullanıcı için rezervasyon oluşturma (masa, misafir sayısı, başlangıç/bitiş zamanı, opsiyonel not) | `reservation:create` | 201 |
-| POST | `api/reservations/add/panel` | Panel yetkisi olan kullanıcılar için rezervasyon oluşturma yetkisi | `reservation:create:panel` | 201 |
-| POST | `api/reservations/public/canceled/:reservationId` | Kullanıcılar kendi rezervasyonlarını iptal edebilir. | Yok | 200 |
-| POST | `api/reservations/panel/canceled/:reservationId` | Panel yetkisi olan kullanıcılar için rezervasyon iptal yetkisi | `reservation:cancel` | 200 |
+| GET | `api/reservations/public` | Her kullanıcı kendi oluştruğu rezervasyonları görebilir. | Yok | 200 |
+| GET | `api/reservations/panel` | Panel yetkisi olan kullanıcılar, tüm rezervasyonları görebilir. | `reservation:listing` | 200 |
+| POST | `api/reservations/add/panel` | Panel yetkisi olan kullanıcılar için rezervasyon oluşturma yetkisi. | `reservation:create:panel` | 201 |
+| PATCH | `api/reservations/public/canceled/:reservationId` | Kullanıcılar kendi rezervasyonlarını iptal edebilir. | Yok | 200 |
+| PATCH | `api/reservations/panel/canceled/:reservationId` | Panel yetkisi olan kullanıcılar için rezervasyon iptal yetkisi. | `reservation:cancel` | 200 |
+| PATCH | `api/reservations/status-update/:reservationId` | Panel yetkisi olan kullanıcılar için rezervasyon durum güncelleme yetkisi. | `reservation:status-update` | 200 |
 
 - **Zaman kuralları (yerel saat, Avrupa/İstanbul UTC+03:00, 24 saatlik):** `start-time` / `end-time` değerleri **yerel duvar saati** olarak kabul edilir (UTC'ye çevirmenize gerek yok; `Z` eki varsa yok sayılır) ve veritabanında UTC karşılığı saklanır. Restoran 7 gün açıktır ve 10:00 - 24:00 arası hizmet verir. Bir gün için `start-time` **11:00 - 22:30** (açılış + 1 saat … kapanış − 1.30 saat) aralığında, `end-time` ise `start-time`'dan sonra ve en geç **23:30** (kapanış − 30 dk) olmalıdır; süre en fazla **3 saat**, `start-time` ayrıca şuandan en az 1 saat sonrası olmalıdır. İhlallerde 400 döner.
 - **Masa doluluk kuralı:** Masa yalnızca istenen aralıkla **çakışan** aktif (`Pending`/`Confirmed` ve bitişi geçmemiş) rezervasyonu varsa kilitlidir; örn. 12:00-13:00 dolu ise 13:00'te başlayan rezervasyon alınabilir ve farklı günler birbirini etkilemez. Çakışmada 409 döner.

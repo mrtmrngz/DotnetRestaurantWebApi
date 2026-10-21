@@ -29,9 +29,9 @@ public class GetCurrentUserReservationListResponseExample: IExamplesProvider<Gen
             {
                 Id = Guid.NewGuid(),
                 CreatedAt = DateTime.UtcNow.AddDays(-3),
-                Email = "jane@gmail.com",
+                Email = "john@gmail.com",
                 EndTime = DateTime.UtcNow.AddDays(-1),
-                FullName = "Jane Doe",
+                FullName = "John Doe",
                 GuestCount = 2,
                 Note = null,
                 PhoneNumber = "+901234567890",
