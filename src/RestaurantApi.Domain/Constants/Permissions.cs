@@ -77,4 +77,10 @@ public static class Permissions
         [Description("Panelde yetki sahibi kullanıcılara, tüm rezervasyonları listeleme yetkisi verir.")]
         public const string PanelListing = "reservation:listing";
     }
+    
+    public static class CartPermissions
+    {
+        [Description("Sepete ekleme ve sepet oluşturma yetkisi verir.")]
+        public const string AddToCart = "cart:add";
+    }
 }

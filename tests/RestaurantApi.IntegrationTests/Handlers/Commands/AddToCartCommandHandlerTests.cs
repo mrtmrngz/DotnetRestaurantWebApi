@@ -281,6 +281,26 @@ public class AddToCartCommandHandlerTests: BaseIntegrationTest
         await act.Should().ThrowAsync<NotFoundException>()
             .WithMessage("Masa bulunamadı.");
     } 
+    
+    [Fact]
+    public async Task AddToCartCommandHandler_WhenRequestIsPanelCartAndRestaurantTableExistButTableIsDeleted_ShouldThrow404()
+    {
+        var prd = await SeedProductAsync();
+        var table = await SeedTableAsync(r => r.IsActive = false);
+
+        AddToCartCommand command = new AddToCartCommand(ProductId: prd.Id, Quantity: 3) with
+        {
+            RequestType = CartRequestTypes.PanelUser, RestaurantTableId = table.Id
+        };
+
+        await using var scope = Factory.Services.CreateAsyncScope();
+        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+        
+        Func<Task> act = async () => await mediator.Send(command);
+
+        await act.Should().ThrowAsync<NotFoundException>()
+            .WithMessage("Masa bulunamadı.");
+    } 
 
     [Fact]
     public async Task AddToCartCommandHandler_WhenExceedsMaxQuantityCount_ShouldThrowUnprocessableEntityException()
@@ -310,7 +330,7 @@ public class AddToCartCommandHandlerTests: BaseIntegrationTest
     // ERROR TESTS END
     
     // SETUP
-    private async Task<RestaurantTable> SeedTableAsync()
+    private async Task<RestaurantTable> SeedTableAsync(Action<RestaurantTable>? customConfig = null)
     {
         using var scope = Factory.Services.CreateScope();
         var ctx = scope.ServiceProvider.GetRequiredService<ApiContext>();
@@ -322,6 +342,8 @@ public class AddToCartCommandHandlerTests: BaseIntegrationTest
             IsActive = true,
             Number = 2
         };
+        
+        customConfig?.Invoke(rt);
 
         ctx.RestaurantTables.Add(rt);
 

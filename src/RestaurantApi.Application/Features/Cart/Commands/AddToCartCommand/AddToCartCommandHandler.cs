@@ -150,7 +150,7 @@ public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, BaseRes
 
         var existTable = await _restaurantTableRepository.GetAllAsQueryable()
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == command.RestaurantTableId, ctx);
+            .FirstOrDefaultAsync(x => x.Id == command.RestaurantTableId && x.IsActive, ctx);
 
         _restaurantTableRules.ShouldTableExist(existTable, command.RestaurantTableId!.Value);
 
