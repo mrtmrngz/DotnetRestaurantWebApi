@@ -30,7 +30,7 @@ public class ReservationListQueryHandler: IRequestHandler<ReservationListQuery, 
         _logger.LogInformation("Rezarvasyon listeleme işlemi başlıyor... RequestType:{Type}", request.RequestType);
 
         IReadOnlyList<ReservationListQueryResult> 
-            reservations = await FindRawReservations(request.RequestType.ToString(), request.UserId);
+            reservations = await FindRawReservations(request.RequestType.ToString(), request.UserId, cancellationToken);
         
         _logger.LogInformation("Rezervasyonlar başarılı bir şekilde bulundu.");
 
@@ -39,7 +39,7 @@ public class ReservationListQueryHandler: IRequestHandler<ReservationListQuery, 
 
     #region Helper Methods
 
-    private async Task<IReadOnlyList<ReservationListQueryResult>> FindRawReservations(string requestType, Guid? userId)
+    private async Task<IReadOnlyList<ReservationListQueryResult>> FindRawReservations(string requestType, Guid? userId, CancellationToken ctx)
     {
 
         IQueryable<Domain.Entities.Reservation> reservationsQuery = _reservationRepository.GetAllAsQueryable()
@@ -55,7 +55,7 @@ public class ReservationListQueryHandler: IRequestHandler<ReservationListQuery, 
         return await reservationsQuery
             .OrderByDescending(x => x.CreatedAt)
             .ProjectTo<ReservationListQueryResult>(_mapper.ConfigurationProvider)
-            .ToListAsync();
+            .ToListAsync(ctx);
     }
 
     #endregion

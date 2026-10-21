@@ -20,4 +20,6 @@ public static class CacheKeys
     public static string AdminProductDetail(Guid id) => $"admin:products:{id}";
     public static string AdminDiscounts() => "admin:discounts";
     public static string AdminRestaurantTables() => "admin:restaurantTables";
+    public static string UserCart(Guid userId) => $"cart:users:{userId}";
+    public static string PanelCart(Guid tableId) => $"cart:panel:{tableId}";
 }

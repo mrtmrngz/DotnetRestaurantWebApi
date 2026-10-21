@@ -128,4 +128,25 @@ public class ProductRulesTests
     }
 
     #endregion
+
+    #region ShouldProductActive Tests
+
+    [Fact]
+    public async Task ShouldProductActive_WhenProductAlreadyDeleted_ShouldThrowNotFoundException()
+    {
+        Action act = () => _sut.ShouldProductActive(true, Guid.NewGuid());
+
+        act.Should().Throw<NotFoundException>()
+            .WithMessage("Ürün bulunamadı.");
+    }
+
+    [Fact]
+    public async Task ShouldProductActive_WhenProductNotDeleted_ShouldNotThrowAnything()
+    {
+        Action act = () => _sut.ShouldProductActive(false, Guid.NewGuid());
+
+        act.Should().NotThrow();
+    }
+
+    #endregion
 }

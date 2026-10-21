@@ -4,6 +4,7 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using RestaurantApi.Application.Common.Behaviors;
 using RestaurantApi.Application.Features.Rules.AddressRules;
+using RestaurantApi.Application.Features.Rules.CartItemRules;
 using RestaurantApi.Application.Features.Rules.CategoryRules;
 using RestaurantApi.Application.Features.Rules.DiscountRules;
 using RestaurantApi.Application.Features.Rules.MediaRules;
@@ -44,6 +45,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<DiscountRules>();
         services.AddScoped<RestaurantTableRules>();
         services.AddScoped<ReservationRules>();
+        services.AddScoped<CartItemRules>();
 
         // Saat bağımlı iş kuralları (rezervasyon zaman kuralları) test edilebilir olsun diye
         // DateTime.UtcNow yerine TimeProvider üzerinden çalışır.

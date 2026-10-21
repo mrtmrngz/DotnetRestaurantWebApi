@@ -50,9 +50,14 @@ public class ProductRules
             throw new NotFoundException("Ürün bulunamadı.");
         }
 
-        if (product.IsDeleted)
+        ShouldProductActive(product.IsDeleted, prdId);
+    }
+
+    public void ShouldProductActive(bool isDeleted, Guid productId)
+    {
+        if (isDeleted)
         {
-            _logger.LogWarning("Silinmek istenen ürün zaten silinmiş durumda. ProductId:{PrdId}", prdId);
+            _logger.LogWarning("Silinen ürünle herhangi bir işlem yapılamaz. ProductId:{PrdId}", productId);
             throw new NotFoundException("Ürün bulunamadı.");
         }
     }

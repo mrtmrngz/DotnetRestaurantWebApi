@@ -3,6 +3,7 @@ namespace RestaurantApi.Application.Common.Enums;
 public enum Codes
 {
     FETH_DATA_SUCCESS,
+    ADD_TO_CART_SUCCESS,
     CONTENT_CREATED_SUCCESS,
     CONTENT_UPDATED_SUCCESS,
     CONTENT_DELETED_SUCCESS,

@@ -98,6 +98,12 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
 - **Masa doluluk kuralı:** Masa yalnızca istenen aralıkla **çakışan** aktif (`Pending`/`Confirmed` ve bitişi geçmemiş) rezervasyonu varsa kilitlidir; örn. 12:00-13:00 dolu ise 13:00'te başlayan rezervasyon alınabilir ve farklı günler birbirini etkilemez. Çakışmada 409 döner.
 - **Diğer iş kuralı hataları:** kullanıcı yok 404, pasif masa 409, kapasite yetersiz 422.
 
+## Cart — `api/cart`
+
+| Method | Route | Açıklama | Gereken izin | Başarı kodu |
+| --- | --- | --- | --- | --- |
+| POST | `api/cart/users` | Normal kullanıcıların sepet oluşturmasına ve sepete ürün ekler. | Yok | 200 |
+
 ## Diagnostics — `api/diagnostics`
 
 | Method | Route | Açıklama | Gereken izin | Başarı kodu |
