@@ -103,4 +103,13 @@ public class ReservationRules
             throw new UnprocessableEntityError("Rezervasyon bitiş tarihi zaten geçmiş.");
         }
     }
+
+    public void UserIdShouldInListRequest(Guid? userId)
+    {
+        if(userId != null)
+            return;
+        
+        _logger.LogInformation("Rezervasyon listeleme sırasında user id null geliyor.");
+        throw new BadRequestException("Bu işlemi şuanda gerçekleştiremiyoruz.");
+    }
 }

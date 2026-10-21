@@ -8,6 +8,7 @@ using RestaurantApi.Application.Features.Reservation.Commands.CancelReservationC
 using RestaurantApi.Application.Features.Reservation.Commands.CreateCurrentUserReservationCommand;
 using RestaurantApi.Application.Features.Reservation.Commands.CreatePanelReservationCommand;
 using RestaurantApi.Application.Features.Reservation.Commands.ReservationStatusUpdateCommand;
+using RestaurantApi.Application.Features.Reservation.Queries.ReservationListQuery;
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
@@ -29,6 +30,36 @@ public class ReservationsController : ControllerBase
     {
         _mediator = mediator;
         _currentUserService = currentUserService;
+    }
+
+    /// <summary>Kullanıcı kendi rezervasyonlarını görebilir.</summary>
+    /// <response code="200">Rezervasyonlar başarılı bir şekilde döner.</response>
+    /// <response code="400">
+    /// Aşağıdaki durumlarda geçersiz istek (Bad Request) döner:
+    /// - Validasyon hataları olduğunda:
+    ///     - Durum 1: Eğer request type (static) Panel ise fakat query içerisinde user id (static) var ise.
+    ///     - Durum 2: Eğer request type (static) CurrentUser ise fakat query içerisinde user id (static) yok ise.
+    /// - Durum 2 gerçekleşir ve validasyonda yakalanmazsa.
+    /// </response>
+    /// <response code="401">Yetkisiz erişim (JWT Token eksik veya geçersiz).</response>
+    [HttpGet("public")]
+    #region Swagger Docs
+    [ProducesResponseType(typeof(object), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(BadRequestMultipleExamplesProvider))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<IReadOnlyList<ReservationListQueryResult>>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(GetCurrentUserReservationListResponseExample))]
+    #endregion
+    [Authorize]
+    public async Task<IActionResult> GetCurrentUserReservationList()
+    {
+        var currentUserId = _currentUserService.GetRequiredUserId();
+
+        ReservationListQuery query = new ReservationListQuery(UserId: currentUserId, RequestType: ReservationListRequestEnums.CurrentUser);
+
+        var response = await _mediator.Send(query);
+
+        return Ok(response);
     }
 
     [HttpPost("add/current-user")]

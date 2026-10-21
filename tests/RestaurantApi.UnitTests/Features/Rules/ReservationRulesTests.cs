@@ -208,4 +208,27 @@ public class ReservationRulesTests
     }
 
     #endregion
+
+    #region UserIdShouldInListRequest Tests
+
+    [Fact]
+    public async Task
+        UserIdShouldInListRequest_WhenUserIdIsNull_ThrowBadRequestException()
+    {
+        Action act = () => _sut.UserIdShouldInListRequest(null);
+
+        act.Should().Throw<BadRequestException>().WithMessage("Bu işlemi şuanda gerçekleştiremiyoruz.");
+    }
+    
+    [Fact]
+    public async Task
+        UserIdShouldInListRequest_WhenUserIdIsNotNull_ShouldNotThrowAnything()
+    {
+        Action act = () =>
+            _sut.UserIdShouldInListRequest(Guid.NewGuid());
+
+        act.Should().NotThrow("Kullanıcı id null olmadığı için herhangi bir hata fırlatılmamlıydı.");
+    }
+
+    #endregion
 }
