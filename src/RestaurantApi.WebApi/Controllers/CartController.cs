@@ -151,4 +151,45 @@ public class CartController : ControllerBase
 
         return Ok(response);
     }
+    
+    /// <summary>Paneldeki yetki sahibi kullanıcılar sepetteki ürün mikatatını güncellebilir.</summary>
+    /// <response code="200">Sepetteki ürün miktarı güncellenir.</response>
+    /// <response code="400">
+    /// Şu durumda gerçekleşir:
+    /// - Validasyon hataları meydana geldiyse.
+    /// - Eğer geçersiz istek tipi geldiyse.
+    /// </response>
+    /// <response code="401">Yetkisiz erişim (JWT Token eksik veya geçersiz).</response>
+    /// <response code="403">Kullanıcının bu işlem için gerekli izni yok.</response>
+    /// <response code="404">
+    /// Şu durumda gerçekleşir:
+    /// - Masa bulunamadığında.
+    /// - Sepet bulunamadığında.
+    /// - Sepetteki ürün bulunamadığında. 
+    /// </response>
+    [HttpPatch("tables/{tableId:guid}/items/{itemId:guid}/quantity")]
+    #region Swagger Docs
+    [SwaggerRequestExample(typeof(SetCartItemQuantityCommand), typeof(SetCartItemQuantityRequestExample))]
+    [ProducesResponseType(typeof(BaseResponse), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentUpdatedResponseExample))]
+    [ProducesResponseType(typeof(object), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(BadRequestMultipleExamplesProvider))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(ErrorResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    #endregion
+    [Authorize(Policy = Permissions.CartPermissions.UpdateCart)]
+    public async Task<IActionResult> SetCartItemQuantityForPanel([FromBody] SetCartItemQuantityCommand command,
+        [FromRoute] Guid tableId, Guid itemId)
+    {
+        var newCommand = command with
+        {
+            ItemId = itemId, UserId = null, RequestType = CartRequestTypes.PanelUser, RestaurantTableId = tableId
+        };
+
+        var response = await _mediator.Send(newCommand);
+
+        return Ok(response);
+    }
 }

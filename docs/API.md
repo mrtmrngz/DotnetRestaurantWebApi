@@ -104,6 +104,8 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
 | --- | --- | --- | --- | --- |
 | POST | `api/cart/users` | Normal kullanıcıların sepet oluşturmasına ve sepete ürün ekler. | Yok | 200 |
 | POST | `api/cart/tables/:tableId` | Panel yetkisi olan kullanıcılar, masalar için sepete ürün ekler. | cart:add | 200 |
+| PATCH | `api/cart/users/items/:itemId/quantity` | Kullanıcılar sepetteki ürün miktarını günceller. | Yok | 200 |
+| PATCH | `api/cart/tables/:tableId/items/:itemId/quantity` | Panel yetkisi olan kullanıcılar, masala sepetindeki ürünlerin miktarını gönceller. | cart:update | 200 |
 
 ## Diagnostics — `api/diagnostics`
 
