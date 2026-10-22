@@ -40,4 +40,26 @@ public class CartItemRulesTests
     }
 
     #endregion
+    
+    
+    #region ShouldCartItemUpdated Tests
+
+    [Fact]
+    public void ShouldCartItemUpdated_WhenRowsNotAffected_ShouldThrowNotFoundException()
+    {
+        Action act = () => _sut.ShouldCartItemUpdated(0);
+
+        act.Should().Throw<NotFoundException>("Sepette ilgili ürün olmadığı için bu hata mesajı dönmesi gerekirdi.")
+            .WithMessage("Sepetteki ürün bulunamadı.");
+    }
+    
+    [Fact]
+    public void ShouldCartItemUpdated_WhenRowsAffected_ShouldNotThrow()
+    {
+        Action act = () => _sut.ShouldCartItemUpdated(1);
+
+        act.Should().NotThrow();
+    }
+
+    #endregion
 }

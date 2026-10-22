@@ -99,6 +99,7 @@ public static class ServiceRegistration
         services.AddScoped<ISlugService, SlugService>();
         services.AddScoped<IReservationService, ReservationService>();
         services.AddScoped<ICartItemService, CartItemService>();
+        services.AddScoped<ICartService, CartService>();
 
         // Discount scheduling (zamanlanmış işler)
         services.AddScoped<IDiscountScheduler, DiscountScheduler>();

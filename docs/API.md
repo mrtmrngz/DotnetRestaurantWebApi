@@ -103,6 +103,7 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
 | Method | Route | Açıklama | Gereken izin | Başarı kodu |
 | --- | --- | --- | --- | --- |
 | POST | `api/cart/users` | Normal kullanıcıların sepet oluşturmasına ve sepete ürün ekler. | Yok | 200 |
+| POST | `api/cart/tables/:tableId` | Panel yetkisi olan kullanıcılar, masalar için sepete ürün ekler. | cart:add | 200 |
 
 ## Diagnostics — `api/diagnostics`
 

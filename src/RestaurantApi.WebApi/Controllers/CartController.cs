@@ -5,9 +5,13 @@ using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Enums;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Cart.Commands.AddToCartCommand;
+using RestaurantApi.Application.Features.Cart.Commands.SetCartItemQuantityCommand;
+using RestaurantApi.Application.Models.Responses.ErrorResponses;
+using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
 using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
 using RestaurantApi.WebApi.Swagger.Examples.RequestExamples.CartExample;
+using RestaurantApi.WebApi.Swagger.Examples.SuccessExamples;
 using Swashbuckle.AspNetCore.Filters;
 
 namespace RestaurantApi.WebApi.Controllers;
@@ -104,6 +108,47 @@ public class CartController : ControllerBase
 
         var response = await _mediator.Send(newCommand);
         
+        return Ok(response);
+    }
+
+    /// <summary>Kullanıcı sepetteki ürün mikatatını güncellebilir.</summary>
+    /// <response code="200">Sepetteki ürün miktarı güncellenir.</response>
+    /// <response code="400">
+    /// Şu durumda gerçekleşir:
+    /// - Validasyon hataları meydana geldiyse.
+    /// - Eğer geçersiz istek tipi geldiyse.
+    /// </response>
+    /// <response code="401">Yetkisiz erişim (JWT Token eksik veya geçersiz).</response>
+    /// <response code="404">
+    /// Şu durumda gerçekleşir:
+    /// - Kullanıcı bulunamadığında.
+    /// - Sepet bulunamadığında.
+    /// - Sepetteki ürün bulunamadığında. 
+    /// </response>
+    [HttpPatch("users/items/{itemId:guid}/quantity")]
+    #region Swagger Docs
+    [SwaggerRequestExample(typeof(SetCartItemQuantityCommand), typeof(SetCartItemQuantityRequestExample))]
+    [ProducesResponseType(typeof(BaseResponse), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentUpdatedResponseExample))]
+    [ProducesResponseType(typeof(object), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(BadRequestMultipleExamplesProvider))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(typeof(ErrorResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    #endregion
+    [Authorize]
+    public async Task<IActionResult> SetCartItemQuantityForUsers([FromBody] SetCartItemQuantityCommand command,
+        [FromRoute] Guid itemId)
+    {
+        var userId = _currentUserService.GetRequiredUserId();
+
+        var newCommand = command with
+        {
+            ItemId = itemId, UserId = userId, RequestType = CartRequestTypes.CurrentUser, RestaurantTableId = null
+        };
+
+        var response = await _mediator.Send(newCommand);
+
         return Ok(response);
     }
 }

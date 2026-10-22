@@ -32,13 +32,14 @@ public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, BaseRes
     private readonly RestaurantTableRules _restaurantTableRules;
     private readonly ICartItemService _cartItemService;
     private readonly CartItemRules _cartItemRules;
+    private readonly ICartService _cartService;
 
     public AddToCartCommandHandler(ILogger<AddToCartCommandHandler> logger, ICacheService cacheService,
         IUnitOfWork unitOfWork, IProductRepository productRepository, ProductRules productRules,
         IUserRepository userRepository, UserRules userRules, ICartRepository cartRepository,
         ICartItemRepository cartItemRepository,
         IRestaurantTableRepository restaurantTableRepository, RestaurantTableRules restaurantTableRules,
-        ICartItemService cartItemService, CartItemRules cartItemRules)
+        ICartItemService cartItemService, CartItemRules cartItemRules, ICartService cartService)
     {
         _logger = logger;
         _cacheService = cacheService;
@@ -53,6 +54,7 @@ public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, BaseRes
         _restaurantTableRules = restaurantTableRules;
         _cartItemService = cartItemService;
         _cartItemRules = cartItemRules;
+        _cartService = cartService;
     }
 
     public async Task<BaseResponse> Handle(AddToCartCommand request, CancellationToken cancellationToken)
@@ -66,7 +68,7 @@ public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, BaseRes
         
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        await InvalidateCartCache(request);
+        await _cartService.InvalidateCartCache(request.RequestType, request.UserId, request.RestaurantTableId);
         
         _logger.LogInformation("Sepete oluşturma/ekleme işlemleri tamamlandı.");
 
@@ -203,32 +205,6 @@ public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, BaseRes
         }
 
         _cartItemService.IncreaseCartItemAsync(existCartItem, quantity, ctx);
-    }
-    
-    private async Task InvalidateCartCache(
-        AddToCartCommand command)
-    {
-        string cacheKey = command.RequestType switch
-        {
-            CartRequestTypes.CurrentUser =>
-                CacheKeys.UserCart(command.UserId!.Value),
-
-            CartRequestTypes.PanelUser =>
-                CacheKeys.PanelCart(command.RestaurantTableId!.Value),
-
-            _ => throw new BadRequestException(
-                "Geçersiz işlem tipi.")
-        };
-
-        _logger.LogInformation(
-            "Sepet cache temizliği yapılıyor. CacheKey:{CacheKey}",
-            cacheKey);
-
-        await _cacheService.RemoveAsync(cacheKey);
-
-        _logger.LogInformation(
-            "Sepet cache temizliği tamamlandı. CacheKey:{CacheKey}",
-            cacheKey);
     }
 
     #endregion
