@@ -24,7 +24,7 @@ public class CartItemRules
             "Bir üründen sepete en fazla 100 adet eklenebilir. Daha fazlası için restoran ile iletişime geçiniz.");
     }
 
-    public void ShouldCartItemUpdated(int affectedRows)
+    public void ShouldCartItemAffected(int affectedRows)
     {
         if(affectedRows > 0)
             return;
