@@ -5,6 +5,7 @@ using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Enums;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Cart.Commands.AddToCartCommand;
+using RestaurantApi.Application.Features.Cart.Commands.RemoveCartCommand;
 using RestaurantApi.Application.Features.Cart.Commands.RemoveCartItemCommand;
 using RestaurantApi.Application.Features.Cart.Commands.SetCartItemQuantityCommand;
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
@@ -208,8 +209,8 @@ public class CartController : ControllerBase
     #region Swagger Docs
     [ProducesResponseType(typeof(BaseResponse), 200)]
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentDeletedSuccessResponseExample))]
-    [ProducesResponseType(typeof(BadRequestException), 400)]
-    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(BadRequestException))]
+    [ProducesResponseType(typeof(object), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(BadRequestMultipleExamplesProvider))]
     [ProducesResponseType(401)]
     [ProducesResponseType(typeof(ErrorResponse), 404)]
     [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
@@ -261,6 +262,41 @@ public class CartController : ControllerBase
             RequestType = CartRequestTypes.PanelUser,
             RestaurantTableId = tableId,
             ItemId = itemId
+        };
+
+        var response = await _mediator.Send(command);
+
+        return Ok(response);
+    }
+    
+    /// <summary>Kullanıcı sepetini temizleyebilir.</summary>
+    /// <response code="200">Sepet temizlenir.</response>
+    /// <response code="400">Eğer geçersiz istek tipi geldiyse(Static olarak karar verilir).</response>
+    /// <response code="401">Yetkisiz erişim (JWT Token eksik veya geçersiz).</response>
+    /// <response code="404">
+    /// Şu durumda gerçekleşir:
+    /// - Kullanıcı bulunamadığında.
+    /// - Sepet bulunamadığında.
+    /// </response>
+    [HttpDelete("users")]
+    #region Swagger Docs
+    [ProducesResponseType(typeof(BaseResponse), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentDeletedSuccessResponseExample))]
+    [ProducesResponseType(typeof(object), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(BadRequestMultipleExamplesProvider))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(typeof(ErrorResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    #endregion
+    [Authorize]
+    public async Task<IActionResult> RemoveCartForUsers()
+    {
+        var userId = _currentUserService.GetRequiredUserId();
+
+        RemoveCartCommand command = new RemoveCartCommand() with
+        {
+            RequestType = CartRequestTypes.CurrentUser,
+            UserId = userId
         };
 
         var response = await _mediator.Send(command);
