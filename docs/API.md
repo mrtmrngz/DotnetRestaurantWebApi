@@ -107,6 +107,7 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
 | PATCH | `api/cart/users/items/:itemId/quantity` | Kullanıcılar sepetteki ürün miktarını günceller. | Yok | 200 |
 | PATCH | `api/cart/tables/:tableId/items/:itemId/quantity` | Panel yetkisi olan kullanıcılar, masala sepetindeki ürünlerin miktarını gönceller. | cart:update | 200 |
 | DELETE | `api/cart/users` | Kullanıcılar kendi sepetini temizler. | Yok | 200 |
+| DELETE | `api/cart/tables/:tableId` | Panel yetkisine sahip kullanıcılar maların sepetini temizleyebilir. | cart:delete | 200 |
 | DELETE | `api/cart/users/items/:itemId` | Kullanıcılar sepetteki ürünü silebilir. | Yok | 200 |
 | DELETE | `api/cart/tables/:tableId/items/:itemId` | Panel yetkisi olan kullanıcılar, masa sepetindeki ürünü silebilir. | cart:items:delete | 200 |
 

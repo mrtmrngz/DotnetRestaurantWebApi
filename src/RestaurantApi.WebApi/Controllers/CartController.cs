@@ -303,4 +303,39 @@ public class CartController : ControllerBase
 
         return Ok(response);
     }
+    
+    /// <summary>Panel yetkisine sahip kullanıcılar masaların sepetini temizleyebilir.</summary>
+    /// <response code="200">Masa sepeti temizlenir.</response>
+    /// <response code="400">Eğer geçersiz istek tipi geldiyse(Static olarak karar verilir).</response>
+    /// <response code="401">Yetkisiz erişim (JWT Token eksik veya geçersiz).</response>
+    /// <response code="403">Kullanıcı bu işlem için yetkili değil.</response>
+    /// <response code="404">
+    /// Şu durumda gerçekleşir:
+    /// - Masa bulunamadığında.
+    /// - Sepet bulunamadığında.
+    /// </response>
+    [HttpDelete("tables/{tableId:guid}")]
+    #region Swagger Docs
+    [ProducesResponseType(typeof(BaseResponse), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentDeletedSuccessResponseExample))]
+    [ProducesResponseType(typeof(object), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(BadRequestMultipleExamplesProvider))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(ErrorResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    #endregion
+    [Authorize(Policy = Permissions.CartPermissions.DeleteCart)]
+    public async Task<IActionResult> RemoveCartForPanel([FromRoute] Guid tableId)
+    {
+        RemoveCartCommand command = new RemoveCartCommand() with
+        {
+            RequestType = CartRequestTypes.PanelUser,
+            RestaurantTableId = tableId
+        };
+
+        var response = await _mediator.Send(command);
+
+        return Ok(response);
+    }
 }
