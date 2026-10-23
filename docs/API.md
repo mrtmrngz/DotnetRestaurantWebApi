@@ -102,6 +102,8 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
 
 | Method | Route | Açıklama | Gereken izin | Başarı kodu |
 | --- | --- | --- | --- | --- |
+| GET | `api/cart/users` | Normal kullanıcıların sepetteki ürünlerini listeler. | Yok | 200 |
+| GET | `api/cart/tables/:tableId` | Paneldeki yetki sahibi kullanıcılar, masa sepetindeki ürünleri listeler. | cart:read | 200 |
 | POST | `api/cart/users` | Normal kullanıcıların sepet oluşturmasına ve sepete ürün ekler. | Yok | 200 |
 | POST | `api/cart/tables/:tableId` | Panel yetkisi olan kullanıcılar, masalar için sepete ürün ekler. | cart:add | 200 |
 | PATCH | `api/cart/users/items/:itemId/quantity` | Kullanıcılar sepetteki ürün miktarını günceller. | Yok | 200 |

@@ -80,12 +80,15 @@ public static class Permissions
     
     public static class CartPermissions
     {
+        [Description("Sepetteki ürünleri listeleme yetkisi verir.")]
+        public const string ReadCart = "cart:read";
         [Description("Sepete ekleme ve sepet oluşturma yetkisi verir.")]
         public const string AddToCart = "cart:add";
         [Description("Sepetteki ürünlerin miktarını güncelleme verir.")]
         public const string UpdateCart = "cart:update";
-        [Description("Sepeti silme yetkisi verir.")]
+        [Description("Sepetteki ürünü silme yetkisi verir.")]
         public const string DeleteCartItems = "cart:items:delete";
+        [Description("Sepeti silme yetkisi verir.")]
         public const string DeleteCart = "cart:delete";
     }
 }

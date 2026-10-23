@@ -51,16 +51,16 @@ public class SetCartItemQuantityCommandHandler : IRequestHandler<SetCartItemQuan
         
         _cartItemRules.ShouldCartItemAffected(affectedRows);
         
-        _logger.LogInformation("Sepetteki ürün silindi.");
+        _logger.LogInformation("Sepetteki ürün miktarı güncellendi.");
 
         await _cartService.InvalidateCartCache(request.RequestType, request.UserId, request.RestaurantTableId);
 
-        _logger.LogInformation("Sepet ürün silme işlemleri tamamlandı.");
+        _logger.LogInformation("Sepet ürün miktarı güncelleme işlemleri tamamlandı.");
 
         return new BaseResponse
         {
             Code = Codes.CONTENT_UPDATED_SUCCESS,
-            Message = "Sepetteki ürün başarılı bir şekilde silindi."
+            Message = "Sepetteki ürün miktarı bir şekilde güncellendi."
         };
     }
 }

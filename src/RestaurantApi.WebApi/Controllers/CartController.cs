@@ -61,6 +61,38 @@ public class CartController : ControllerBase
 
         return Ok(response);
     }
+    
+    /// <summary>Paneldeki yetki sahibi kullanıcılar masa, sepetindeki ürünleri listeler.</summary>
+    /// <response code="200">Kullanıcının sepetindeki ürünler döner.</response>
+    /// <response code="400">Validasyon hataları meydana gelir (Statik olarak).</response>
+    /// <response code="401">Yetkisiz erişim (JWT Token eksik veya geçersiz).</response>
+    /// <response code="403">Kullanıcının bu işlem için gerekli izni yok.</response>
+    /// <response code="404">Masa bulunamaz ise.</response>
+    [HttpGet("tables/{tableId:guid}")]
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<IReadOnlyList<GetCartQueryResult>>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(GetCartItemQueryResponseExample))]
+    [ProducesResponseType(typeof(ValidationErrorResponse), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
+    [ProducesResponseType(typeof(ErrorResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [Authorize(Policy = Permissions.CartPermissions.ReadCart)]
+    public async Task<IActionResult> GetTableCartItems([FromRoute] Guid tableId)
+    {
+        var userId = _currentUserService.GetRequiredUserId();
+
+        GetCartItemQuery query = new GetCartItemQuery()
+        {
+            RequestType = CartRequestTypes.PanelUser,
+            UserId = null,
+            RestaurantTableId = tableId
+        };
+
+        var response = await _mediator.Send(query);
+
+        return Ok(response);
+    }
 
     /// <summary>Kullanıcıların restoran dışına sipariş verebilir.</summary>
     /// <response code="200">Herşey yolunda ise.</response>
