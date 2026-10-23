@@ -8,6 +8,7 @@ using RestaurantApi.Application.Features.Cart.Commands.AddToCartCommand;
 using RestaurantApi.Application.Features.Cart.Commands.RemoveCartCommand;
 using RestaurantApi.Application.Features.Cart.Commands.RemoveCartItemCommand;
 using RestaurantApi.Application.Features.Cart.Commands.SetCartItemQuantityCommand;
+using RestaurantApi.Application.Features.Cart.Queries.GetCartItemQuery;
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
@@ -29,6 +30,40 @@ public class CartController : ControllerBase
     {
         _currentUserService = currentUserService;
         _mediator = mediator;
+    }
+
+    /// <summary>Kullanıcı sepetindeki ürünleri listeler.</summary>
+    /// <response code="200">Kullanıcının sepetindeki ürünler döner.</response>
+    /// <response code="400">Validasyon hataları meydana gelir (Statik olarak).</response>
+    /// <response code="401">Yetkisiz erişim (JWT Token eksik veya geçersiz).</response>
+    /// <response code="404">
+    /// Aşağıdaki durumlarda bu hata kodu döner:
+    /// - Kullanıcı bulunamaz ise.
+    /// - Sepet bulunamaz ise.
+    /// </response>
+    [HttpGet("users")]
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<IReadOnlyList<GetCartQueryResult>>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(GetCartItemQueryResponseExample))]
+    [ProducesResponseType(typeof(ValidationErrorResponse), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
+    [ProducesResponseType(typeof(ErrorResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    [ProducesResponseType(401)]
+    [Authorize]
+    public async Task<IActionResult> GetUserCartItems()
+    {
+        var userId = _currentUserService.GetRequiredUserId();
+
+        GetCartItemQuery query = new GetCartItemQuery()
+        {
+            RequestType = CartRequestTypes.CurrentUser,
+            UserId = userId,
+            RestaurantTableId = null
+        };
+
+        var response = await _mediator.Send(query);
+
+        return Ok(response);
     }
 
     /// <summary>Kullanıcıların restoran dışına sipariş verebilir.</summary>
@@ -68,10 +103,10 @@ public class CartController : ControllerBase
         };
 
         var response = await _mediator.Send(newCommand);
-        
+
         return Ok(response);
     }
-    
+
     /// <summary>Restoran yetkilileri, restoran masaları için sepete ekleme işlemi yapabilir.</summary>
     /// <response code="200">Herşey yolunda ise.</response>
     /// <response code="400">
@@ -101,7 +136,8 @@ public class CartController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status422UnprocessableEntity, typeof(UnproccesableEntityErrorExample))]
     #endregion
     [Authorize(Policy = Permissions.CartPermissions.AddToCart)]
-    public async Task<IActionResult> AddToCartForRestaurantTables([FromBody] AddToCartCommand command, [FromRoute] Guid tableId)
+    public async Task<IActionResult> AddToCartForRestaurantTables([FromBody] AddToCartCommand command,
+        [FromRoute] Guid tableId)
     {
         var newCommand = command with
         {
@@ -109,7 +145,7 @@ public class CartController : ControllerBase
         };
 
         var response = await _mediator.Send(newCommand);
-        
+
         return Ok(response);
     }
 
@@ -153,7 +189,7 @@ public class CartController : ControllerBase
 
         return Ok(response);
     }
-    
+
     /// <summary>Paneldeki yetki sahibi kullanıcılar sepetteki ürün mikatatını güncellebilir.</summary>
     /// <response code="200">Sepetteki ürün miktarı güncellenir.</response>
     /// <response code="400">
@@ -194,7 +230,7 @@ public class CartController : ControllerBase
 
         return Ok(response);
     }
-    
+
     /// <summary>Kullanıcı sepetteki ürünü silebilir.</summary>
     /// <response code="200">Sepetteki ürün silinir.</response>
     /// <response code="400">Eğer geçersiz istek tipi geldiyse(Static olarak karar verilir).</response>
@@ -231,7 +267,7 @@ public class CartController : ControllerBase
 
         return Ok(response);
     }
-    
+
     /// <summary>Paneldeki yetki sahibi kullanıcılar masa sepetindeki ürünleri silebilir.</summary>
     /// <response code="200">Ürün sepetten silinir.</response>
     /// <response code="400">Eğer geçersiz istek tipi geldiyse (Static olarak kontrol edilir).</response>
@@ -268,7 +304,7 @@ public class CartController : ControllerBase
 
         return Ok(response);
     }
-    
+
     /// <summary>Kullanıcı sepetini temizleyebilir.</summary>
     /// <response code="200">Sepet temizlenir.</response>
     /// <response code="400">Eğer geçersiz istek tipi geldiyse(Static olarak karar verilir).</response>
@@ -303,7 +339,7 @@ public class CartController : ControllerBase
 
         return Ok(response);
     }
-    
+
     /// <summary>Panel yetkisine sahip kullanıcılar masaların sepetini temizleyebilir.</summary>
     /// <response code="200">Masa sepeti temizlenir.</response>
     /// <response code="400">Eğer geçersiz istek tipi geldiyse(Static olarak karar verilir).</response>
