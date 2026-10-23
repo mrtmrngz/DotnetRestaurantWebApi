@@ -1,5 +1,6 @@
 using AutoMapper;
 using RestaurantApi.Application.Features.Cart.Queries.GetCartItemQuery;
+using RestaurantApi.Application.Features.Cart.Queries.GetCartTotalQuery;
 using RestaurantApi.Domain.Entities;
 
 namespace RestaurantApi.Application.Features.Profiles;
@@ -8,6 +9,7 @@ public class CartMappingProfile : Profile
 {
     public CartMappingProfile()
     {
+        // Get Cart Items
         CreateMap<CartItem, GetCartQueryResult>()
             .ForCtorParam(
                 nameof(GetCartQueryResult.Title),
@@ -47,5 +49,26 @@ public class CartMappingProfile : Profile
                             .FirstOrDefault() ?? 0m) / 100m))
                 )
             );
+        
+        // Get Cart Total
+        CreateMap<CartTotalProjection, GetCartTotalQueryResult>()
+            .ForCtorParam(nameof(GetCartTotalQueryResult.Subtotal),
+                opt => opt.MapFrom(src => src.SubTotal))
+            .ForCtorParam(nameof(GetCartTotalQueryResult.AfterDiscountTotal),
+                opt => opt.MapFrom(src => src.AfterDiscountTotal))
+            .ForCtorParam(nameof(GetCartTotalQueryResult.SavingTotal),
+                opt => opt.MapFrom(src =>
+                    src.SubTotal - src.AfterDiscountTotal))
+            .ForCtorParam(nameof(GetCartTotalQueryResult.ShippingCost),
+                opt => opt.MapFrom(src =>
+                    src.AfterDiscountTotal == 0m || src.AfterDiscountTotal >= 500m
+                        ? 0m
+                        : 120m))
+            .ForCtorParam(nameof(GetCartTotalQueryResult.Total),
+                opt => opt.MapFrom(src =>
+                    src.AfterDiscountTotal +
+                    (src.AfterDiscountTotal == 0m || src.AfterDiscountTotal >= 500m
+                        ? 0m
+                        : 120m)));
     }
 }

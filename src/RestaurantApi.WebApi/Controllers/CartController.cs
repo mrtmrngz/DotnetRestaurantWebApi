@@ -9,6 +9,7 @@ using RestaurantApi.Application.Features.Cart.Commands.RemoveCartCommand;
 using RestaurantApi.Application.Features.Cart.Commands.RemoveCartItemCommand;
 using RestaurantApi.Application.Features.Cart.Commands.SetCartItemQuantityCommand;
 using RestaurantApi.Application.Features.Cart.Queries.GetCartItemQuery;
+using RestaurantApi.Application.Features.Cart.Queries.GetCartTotalQuery;
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
@@ -62,6 +63,7 @@ public class CartController : ControllerBase
         return Ok(response);
     }
     
+    
     /// <summary>Paneldeki yetki sahibi kullanıcılar masa, sepetindeki ürünleri listeler.</summary>
     /// <response code="200">Kullanıcının sepetindeki ürünler döner.</response>
     /// <response code="400">Validasyon hataları meydana gelir (Statik olarak).</response>
@@ -87,6 +89,36 @@ public class CartController : ControllerBase
             RequestType = CartRequestTypes.PanelUser,
             UserId = null,
             RestaurantTableId = tableId
+        };
+
+        var response = await _mediator.Send(query);
+
+        return Ok(response);
+    }
+    
+    /// <summary>Kullanıcı toplam sepet tutarını hesaplar.</summary>
+    /// <response code="200">Kullanıcının sepet tutarı hesaplanır.</response>
+    /// <response code="400">Validasyon hataları meydana gelir (Statik olarak).</response>
+    /// <response code="401">Yetkisiz erişim (JWT Token eksik veya geçersiz).</response>
+    /// <response code="404">Kullanıcı bulunamaz ise.</response>
+    [HttpGet("users/total")]
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<GetCartTotalQueryResult>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(GetCartTotalResponseExample))]
+    [ProducesResponseType(typeof(ValidationErrorResponse), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
+    [ProducesResponseType(typeof(ErrorResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    [ProducesResponseType(401)]
+    [Authorize]
+    public async Task<IActionResult> GetUserCartTotal()
+    {
+        var userId = _currentUserService.GetRequiredUserId();
+
+        GetCartTotalQuery query = new GetCartTotalQuery
+        {
+            RequestType = CartRequestTypes.CurrentUser,
+            UserId = userId,
+            RestaurantTableId = null
         };
 
         var response = await _mediator.Send(query);
