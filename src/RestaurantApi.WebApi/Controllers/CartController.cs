@@ -82,8 +82,6 @@ public class CartController : ControllerBase
     [Authorize(Policy = Permissions.CartPermissions.ReadCart)]
     public async Task<IActionResult> GetTableCartItems([FromRoute] Guid tableId)
     {
-        var userId = _currentUserService.GetRequiredUserId();
-
         GetCartItemQuery query = new GetCartItemQuery()
         {
             RequestType = CartRequestTypes.PanelUser,
@@ -119,6 +117,36 @@ public class CartController : ControllerBase
             RequestType = CartRequestTypes.CurrentUser,
             UserId = userId,
             RestaurantTableId = null
+        };
+
+        var response = await _mediator.Send(query);
+
+        return Ok(response);
+    }
+    
+    /// <summary>Panel izni olan kullancıılar, masaların toplam sepet tutarını hesaplar.</summary>
+    /// <response code="200">Panel izni olan kullancıılar, masaların toplam sepet tutarını hesaplar.</response>
+    /// <response code="400">Validasyon hataları meydana gelir (Statik olarak).</response>
+    /// <response code="401">Yetkisiz erişim (JWT Token eksik veya geçersiz).</response>
+    /// <response code="403">Kullanıcının bu rota için gerekli izni yok.</response>
+    /// <response code="404">Masa bulunamaz ise.</response>
+    [HttpGet("tables/{tableId:guid}/total")]
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<GetCartTotalQueryResult>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(GetCartTotalResponseExample))]
+    [ProducesResponseType(typeof(ValidationErrorResponse), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
+    [ProducesResponseType(typeof(ErrorResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [Authorize(Policy = Permissions.CartPermissions.ReadCart)]
+    public async Task<IActionResult> GetTableCartTotal([FromRoute] Guid tableId)
+    {
+        GetCartTotalQuery query = new GetCartTotalQuery
+        {
+            RequestType = CartRequestTypes.PanelUser,
+            UserId = null,
+            RestaurantTableId = tableId
         };
 
         var response = await _mediator.Send(query);
