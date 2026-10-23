@@ -40,16 +40,19 @@ public class GetCartItemQueryHandler : IRequestHandler<GetCartItemQuery,
         
         var cacheKey = GetCacheKey(request.RequestType, request.UserId, request.RestaurantTableId);
 
-        IReadOnlyList<GetCartQueryResult> items = await _cacheService.GetOrInternalSetAsync(cacheKey, async () =>
+        IReadOnlyList<GetCartQueryResult> items = await _cacheService.GetOrInternalSetAsync<IReadOnlyList<GetCartQueryResult>>(cacheKey, async () =>
         {
-            Guid cartId = await _cartService.FindCartByRequest(request.RequestType, request.UserId,
+            Domain.Entities.Cart? cart = await _cartService.FindCartWithoutValidate(request.RequestType, request.UserId,
                 request.RestaurantTableId, cancellationToken);
 
+            if (cart == null)
+                return Array.Empty<GetCartQueryResult>();
+
             return await _cartItemRepository.GetAllAsQueryable()
-                .AsNoTracking()
-                .Where(x => x.CartId == cartId)
-                .ProjectTo<GetCartQueryResult>(_mapper.ConfigurationProvider)
-                .ToListAsync(cancellationToken);
+                    .AsNoTracking()
+                    .Where(x => x.CartId == cart.Id)
+                    .ProjectTo<GetCartQueryResult>(_mapper.ConfigurationProvider)
+                    .ToListAsync(cancellationToken);
         }, TimeSpan.FromHours(1));
         
         _logger.LogInformation("Sepetteki ürünler bulundu. Count:{Count}", items.Count);

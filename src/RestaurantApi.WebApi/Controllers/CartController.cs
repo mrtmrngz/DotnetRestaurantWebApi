@@ -36,11 +36,7 @@ public class CartController : ControllerBase
     /// <response code="200">Kullanıcının sepetindeki ürünler döner.</response>
     /// <response code="400">Validasyon hataları meydana gelir (Statik olarak).</response>
     /// <response code="401">Yetkisiz erişim (JWT Token eksik veya geçersiz).</response>
-    /// <response code="404">
-    /// Aşağıdaki durumlarda bu hata kodu döner:
-    /// - Kullanıcı bulunamaz ise.
-    /// - Sepet bulunamaz ise.
-    /// </response>
+    /// <response code="404">Kullanıcı bulunamaz ise.</response>
     [HttpGet("users")]
     [ProducesResponseType(typeof(GeneralSuccessResponseWithData<IReadOnlyList<GetCartQueryResult>>), 200)]
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(GetCartItemQueryResponseExample))]

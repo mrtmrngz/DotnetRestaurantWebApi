@@ -9,6 +9,7 @@ using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Rules.CartRules;
 using RestaurantApi.Application.Features.Rules.RestaurantTableRules;
 using RestaurantApi.Application.Features.Rules.UserRules;
+using RestaurantApi.Domain.Entities;
 
 namespace RestaurantApi.Infrastructure.Services;
 
@@ -101,10 +102,11 @@ public class CartService : ICartService
         }
     }
 
-    public async Task<Guid> FindCartByRequest(CartRequestTypes type, Guid? userId, Guid? tableId, CancellationToken ctx)
+    public async Task<Cart?> FindCartWithoutValidate(CartRequestTypes type, Guid? userId, Guid? tableId,
+        CancellationToken ctx)
     {
         _logger.LogInformation("Sepet aranıyor...");
-        var cart = await (type switch
+        return await (type switch
         {
             CartRequestTypes.CurrentUser =>
                 _cartRepository.GetAllAsQueryable()
@@ -118,9 +120,14 @@ public class CartService : ICartService
 
             _ => throw new BadRequestException("Geçersiz işlem tipi.")
         });
+    }
 
-        _cartRules.ShouldCartExist(cart);
+    public async Task<Guid> FindCartByRequest(CartRequestTypes type, Guid? userId, Guid? tableId, CancellationToken ctx)
+    {
+        var cart = await FindCartWithoutValidate(type, userId, tableId, ctx);
         
+        _cartRules.ShouldCartExist(cart);
+
         _logger.LogInformation("Sepet bulundu. CartId:{CI}", cart!.Id);
 
         return cart!.Id;

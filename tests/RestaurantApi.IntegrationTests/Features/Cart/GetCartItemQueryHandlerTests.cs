@@ -1,4 +1,3 @@
-
 using FluentAssertions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -6,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using RestaurantApi.Application.Common;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Enums;
-using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Cart.Queries.GetCartItemQuery;
 using RestaurantApi.Domain.Entities;
 using RestaurantApi.IntegrationTests.Setup;
@@ -283,28 +281,70 @@ public class GetCartItemQueryHandlerTests : BaseIntegrationTest
 
     #endregion
 
-    #region Error Tests
+    #region Missing Cart Tests
 
     [Fact]
-    public async Task GetCartItems_WhenCartDoesNotExist_ShouldThrowNotFoundException()
+    public async Task GetCartItems_WhenUserCartDoesNotExist_ShouldReturnEmptyList()
+    {
+        // Arrange
+        var user = await CreateVanillaUserAsync();
+        // Kullanıcı mevcut, fakat sepet kaydı hiç oluşturulmadı.
+
+        await using var scope = Factory.Services.CreateAsyncScope();
+        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+        var query = CreateCurrentUserQuery(user.User.Id);
+
+        // Act
+        var response = await mediator.Send(query);
+
+        // Assert
+        response.Code.Should().Be(Codes.FETH_DATA_SUCCESS);
+        response.Data.Should().NotBeNull();
+        response.Data.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetCartItems_WhenTableCartDoesNotExist_ShouldReturnEmptyList()
+    {
+        // Arrange
+        var table = await SeedTableAsync();
+        // Masa mevcut, fakat sepet kaydı hiç oluşturulmadı.
+
+        await using var scope = Factory.Services.CreateAsyncScope();
+        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+        var query = CreatePanelQuery(table.Id);
+
+        // Act
+        var response = await mediator.Send(query);
+
+        // Assert
+        response.Code.Should().Be(Codes.FETH_DATA_SUCCESS);
+        response.Data.Should().NotBeNull();
+        response.Data.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetCartItems_WhenCartDoesNotExist_ShouldCacheEmptyList()
     {
         // Arrange
         var user = await CreateVanillaUserAsync();
 
-        // Kullanıcı var fakat sepet oluşturulmadı.
-
         await using var scope = Factory.Services.CreateAsyncScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-
+        var cacheService = scope.ServiceProvider.GetRequiredService<ICacheService>();
+        var cacheKey = CacheKeys.UserCart(user.User.Id);
         var query = CreateCurrentUserQuery(user.User.Id);
 
         // Act
-        Func<Task> act = () => mediator.Send(query);
+        var response = await mediator.Send(query);
+        var cachedItems =
+            await cacheService.GetAsync<List<GetCartQueryResult>>(cacheKey);
 
         // Assert
-        await act.Should()
-            .ThrowAsync<NotFoundException>()
-            .WithMessage("Sepet bulunamadı.");
+        response.Code.Should().Be(Codes.FETH_DATA_SUCCESS);
+        response.Data.Should().BeEmpty();
+        cachedItems.Should().NotBeNull();
+        cachedItems.Should().BeEmpty();
     }
 
     #endregion

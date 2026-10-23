@@ -57,19 +57,6 @@ public class GetUserCartItemsTests: BaseIntegrationTest
             "Kullanıcı giriş yapmadığı için 401 hata kodu dönmeliydi.");
     }
     
-    [Fact]
-    public async Task GetUserCartItems_WhenCartNotFound_ShouldReturn404()
-    {
-        var userSetup = await CreateVanillaUserAsync();
-
-        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userSetup.AccessToken);
-
-        var response = await Client.GetAsync(Route);
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound,
-            "Kullanıcının sepeti olmadığı için 404 hata kodu dönmeliydi.");
-    }
-    
     // ERROR TESTS END
     
     // SETUP
