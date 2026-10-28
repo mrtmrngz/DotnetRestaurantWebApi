@@ -26,9 +26,24 @@ public class OrderConfiguration: IEntityTypeConfiguration<Order>
             .HasColumnType("decimal(18,2)")
             .IsRequired();
 
-        builder.Property(o => o.AddressSnapshot)
+        builder.Property(o => o.IdempotencyKey)
             .IsRequired()
+            .HasMaxLength(150);
+
+        builder.HasIndex(o => new { o.UserId, o.IdempotencyKey }).IsUnique().HasFilter("\"UserId\" IS NOT NULL");
+        builder.HasIndex(o => new { o.RestaurantTableId, o.IdempotencyKey }).IsUnique().HasFilter("\"RestaurantTableId\" IS NOT NULL");
+
+        builder.Property(o => o.CheckoutSessionId)
+            .HasMaxLength(255);
+
+        builder.Property(o => o.CheckoutSessionUrl)
             .HasColumnType("text");
+
+        builder.Property(o => o.CheckoutSessionExpiresAt)
+            .HasColumnType("timestamp with time zone");
+
+        builder.HasIndex(o => o.CheckoutSessionId)
+            .IsUnique();
 
         // enums
         builder.Property(o => o.OrderStatus)

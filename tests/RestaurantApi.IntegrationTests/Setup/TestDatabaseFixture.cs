@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Respawn;
 using RestaurantApi.Application.Common.Abstractions;
+using RestaurantApi.Application.Common.Abstractions.Services;
 using RestaurantApi.Application.Mail;
 using RestaurantApi.Persistence.Extension;
 using StackExchange.Redis;
@@ -51,6 +52,9 @@ public class TestDatabaseFixture : IAsyncLifetime
     
         Environment.SetEnvironmentVariable("AWS__ServiceUrl", "http://localhost:9000");
 
+        Environment.SetEnvironmentVariable("Stripe__SecretKey", "sk_test_fake_key");
+        Environment.SetEnvironmentVariable("Stripe__WebhookSecret", "whsec_test_fake");
+
         Factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
@@ -63,7 +67,12 @@ public class TestDatabaseFixture : IAsyncLifetime
                         {"JwtSettings:SecretKey", "test-ortami-icin-en-az-32-karakterli-gizli-key-123!"},
                         {"JwtSettings:Issuer", "restaurant-api"},
                         {"JwtSettings:Audience", "restaurant-api-client"},
-                        {"JwtSettings:AccessTokenExpirationMinutes", "60"}
+                        {"JwtSettings:AccessTokenExpirationMinutes", "60"},
+                        {"Stripe:SecretKey", "sk_test_fake_key"},
+                        {"Stripe:WebhookSecret", "whsec_test_fake"},
+                        {"Stripe:SuccessUrl", "https://example.com/payment/success"},
+                        {"Stripe:CancelUrl", "https://example.com/payment/cancel"},
+                        {"Stripe:Currency", "try"}
                     };
 
                     config.AddInMemoryCollection(testJwtSettings!);
@@ -81,6 +90,11 @@ public class TestDatabaseFixture : IAsyncLifetime
                     var storageDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IFileStorage));
                     if (storageDescriptor != null) services.Remove(storageDescriptor);
                     services.AddScoped<IFileStorage, FakeFileStorage>();
+
+                    // dış ödeme servisi (Stripe) testlerde sahtelenir
+                    var paymentDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IPaymentService));
+                    if (paymentDescriptor != null) services.Remove(paymentDescriptor);
+                    services.AddScoped<IPaymentService, FakePaymentService>();
 
                     // Test saati: rezervasyon zaman kuralları deterministik test edilebilsin diye dondurulabilir.
                     // Dondurulmadığı sürece gerçek zamanı döner, diğer testleri etkilemez.

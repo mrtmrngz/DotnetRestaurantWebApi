@@ -20,5 +20,17 @@ public class OrderItemConfiguration: IEntityTypeConfiguration<OrderItem>
             .WithMany()
             .HasForeignKey(oi => oi.ProductId)
             .OnDelete(DeleteBehavior.Restrict);
+        
+        builder.Property(oi => oi.ProductSnapshot)
+            .IsRequired()
+            .HasColumnType("jsonb");
+
+        builder.Property(oi => oi.UnitPrice)
+            .HasColumnType("numeric(18,2)")
+            .IsRequired();
+
+        builder.Property(oi => oi.TotalPrice)
+            .HasColumnType("numeric(18,2)")
+            .IsRequired();
     }
 }

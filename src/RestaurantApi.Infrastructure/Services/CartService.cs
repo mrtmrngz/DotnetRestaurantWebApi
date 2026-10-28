@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using RestaurantApi.Application.Common;
@@ -71,31 +72,27 @@ public class CartService : ICartService
         {
             case CartRequestTypes.CurrentUser:
                 _logger.LogInformation("Kullanıcı aranıyor.UserId:{UI}", userId);
-                if (!userId.HasValue)
-                {
-                    _logger.LogWarning("Kullanıcı id request içersinde değil.");
-                    throw new BadRequestException("Bu işlemi şuanda gerçekleştiremiyoruz.");
-                }
-
-                bool userExist = await _userRepository.AnyUserExistAsync(userId.Value, ctx);
-
-                await _userRules.ShouldUserExistBool404(userExist);
-                _logger.LogInformation("Kullanıcı bulundu. UserId:{UI}", userId);
+                await ValidateUser(userId, ctx);
                 break;
             case CartRequestTypes.PanelUser:
-                _logger.LogInformation("Masa aranıyor. TableId{TI}", tableId);
-                if (!tableId.HasValue)
-                {
-                    _logger.LogWarning("Masa id request içerisinde değil.");
-                    throw new BadRequestException("Bu işlemi şuanda gerçekleştiremiyoruz.");
-                }
+                await ValidateTable(tableId, ctx);
+                break;
+            default:
+                throw new BadRequestException("Geçersiz sepet istek tipi.");
+        }
+    }
 
-                var restaurantTable = await _restaurantTableRepository.GetAllAsQueryable()
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.Id == tableId.Value && x.IsActive, ctx);
-
-                _restaurantTableRules.ShouldTableExist(restaurantTable, tableId.Value);
-                _logger.LogInformation("Masa bulundu. TableId{TI}", tableId);
+    public async Task ValidateTargetEntityForCheckoutAsync(CheckoutRequestTypes type, Guid? userId, Guid? tableId,
+        CancellationToken ctx)
+    {
+        switch (type)
+        {
+            case CheckoutRequestTypes.CurrentUser:
+                _logger.LogInformation("Kullanıcı aranıyor.UserId:{UI}", userId);
+                await ValidateUser(userId, ctx);
+                break;
+            case CheckoutRequestTypes.PanelUser:
+                await ValidateTable(tableId, ctx);
                 break;
             default:
                 throw new BadRequestException("Geçersiz sepet istek tipi.");
@@ -106,18 +103,11 @@ public class CartService : ICartService
         CancellationToken ctx)
     {
         _logger.LogInformation("Sepet aranıyor...");
-        return await (type switch
+        return (type switch
         {
-            CartRequestTypes.CurrentUser =>
-                _cartRepository.GetAllAsQueryable()
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.UserId == userId, ctx),
+            CartRequestTypes.CurrentUser => await FindUserCart(userId!.Value, ctx),
 
-            CartRequestTypes.PanelUser =>
-                _cartRepository.GetAllAsQueryable()
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.RestaurantTableId == tableId, ctx),
-
+            CartRequestTypes.PanelUser => await FindTableCart(tableId!.Value, ctx),
             _ => throw new BadRequestException("Geçersiz işlem tipi.")
         });
     }
@@ -125,11 +115,89 @@ public class CartService : ICartService
     public async Task<Guid> FindCartByRequest(CartRequestTypes type, Guid? userId, Guid? tableId, CancellationToken ctx)
     {
         var cart = await FindCartWithoutValidate(type, userId, tableId, ctx);
-        
+
         _cartRules.ShouldCartExist(cart);
 
         _logger.LogInformation("Sepet bulundu. CartId:{CI}", cart!.Id);
 
         return cart!.Id;
+    }
+
+    public async Task<Cart?> FindCartWithoutValidateForCheckout(CheckoutRequestTypes type, Guid? userId,
+        Guid? tableId, CancellationToken ctx)
+    {
+        _logger.LogInformation("Sipariş oluşturma için sepet aranıyor...");
+
+        return type switch
+        {
+            CheckoutRequestTypes.CurrentUser =>
+                await FindCartForCheckout(x => x.UserId == userId!.Value, ctx),
+
+            CheckoutRequestTypes.PanelUser =>
+                await FindCartForCheckout(x => x.RestaurantTableId == tableId!.Value, ctx),
+
+            _ => throw new BadRequestException("Geçersiz işlem tipi.")
+        };
+    }
+
+    // Sipariş oluşturulurken sepet kalemleri, ürün ve ürün indirimleri birlikte yüklenmelidir
+    // (sipariş fiyatlandırması indirimli birim fiyat üzerinden yapılır).
+    private async Task<Cart?> FindCartForCheckout(Expression<Func<Cart, bool>> predicate, CancellationToken ctx)
+    {
+        // Product'ta global query filter olduğu için silinmiş ürünler (ve bağlı oldukları cart item'lar) filtrelenir;
+        // sipariş akışı silinmiş ürünü tespit edip iş kuralı hatası verebilsin diye filtre burada devre dışı bırakılır.
+        return await _cartRepository.GetAllAsQueryable()
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Include(x => x.CartItems)
+            .ThenInclude(ci => ci.Product)
+            .ThenInclude(p => p.Discounts)
+            .FirstOrDefaultAsync(predicate, ctx);
+    }
+
+    private async Task ValidateUser(Guid? userId, CancellationToken ctx)
+    {
+        _logger.LogInformation("Kullanıcı aranıyor.UserId:{UI}", userId);
+        if (!userId.HasValue)
+        {
+            _logger.LogWarning("Kullanıcı id request içersinde değil.");
+            throw new BadRequestException("Bu işlemi şuanda gerçekleştiremiyoruz.");
+        }
+
+        bool userExist = await _userRepository.AnyUserExistAsync(userId.Value, ctx);
+
+        await _userRules.ShouldUserExistBool404(userExist);
+        _logger.LogInformation("Kullanıcı bulundu. UserId:{UI}", userId);
+    }
+
+    private async Task ValidateTable(Guid? tableId, CancellationToken ctx)
+    {
+        _logger.LogInformation("Masa aranıyor. TableId{TI}", tableId);
+        if (!tableId.HasValue)
+        {
+            _logger.LogWarning("Masa id request içerisinde değil.");
+            throw new BadRequestException("Bu işlemi şuanda gerçekleştiremiyoruz.");
+        }
+
+        var restaurantTable = await _restaurantTableRepository.GetAllAsQueryable()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == tableId.Value && x.IsActive, ctx);
+
+        _restaurantTableRules.ShouldTableExist(restaurantTable, tableId.Value);
+        _logger.LogInformation("Masa bulundu. TableId{TI}", tableId);
+    }
+
+    private async Task<Cart?> FindUserCart(Guid userId, CancellationToken ctx)
+    {
+        return await _cartRepository.GetAllAsQueryable()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.UserId == userId, ctx);
+    }
+    
+    private async Task<Cart?> FindTableCart(Guid tableId, CancellationToken ctx)
+    {
+        return await _cartRepository.GetAllAsQueryable()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.RestaurantTableId == tableId, ctx);
     }
 }

@@ -25,6 +25,17 @@ public class AddressRules
 
         return Task.CompletedTask;
     }
+    
+    public void ShouldAddressExist(Domain.Entities.Address? address, Guid userId)
+    {
+        if (address is null)
+        {
+            _logger.LogWarning(
+                "Kullanıcının adresi veritabanında bulunamadı. UserId: {UserId}",
+                userId);
+            throw new NotFoundException("Adres bulunamadı.");
+        }
+    }
 
     public Task ShouldAddressExistInCache(GetUserAddressQueryResult? address, Guid userId, Guid addressId)
     {

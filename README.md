@@ -141,6 +141,12 @@ MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
 MAIL_EMAIL=<gonderen-eposta>
 MAIL_PASSWORD=<smtp-uygulama-sifresi>
+
+Stripe__SecretKey=<your-stripe-secret-key> 
+Stripe__WebhookSecret=<your-stripe-webhook-secret> 
+Stripe__SuccessUrl=<your-stripe-success-routing-url>
+Stripe__CancelUrl=<your-stripe-cancel-routing-url>
+Stripe__Currency=try
 ```
 
 `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `JWT_SECRET_KEY`, `MAIL_EMAIL` ve `MAIL_PASSWORD` zorunludur; eksik olmaları durumunda `docker compose` hata verir. `POSTGRES_USER` varsayılanı `user`, `MAIL_HOST` varsayılanı `smtp.gmail.com`, `MAIL_PORT` varsayılanı `587`'dir. Veritabanı, Redis ve MinIO değerleri `compose.yaml`'daki servis tanımlarıyla aynı olmalıdır.
@@ -194,6 +200,12 @@ dotnet user-secrets set "MailSettings:Host" "smtp.example.com"
 dotnet user-secrets set "MailSettings:Port" "587"
 dotnet user-secrets set "MailSettings:Email" "no-reply@example.com"
 dotnet user-secrets set "MailSettings:Password" "<smtp-uygulama-sifresi>"
+
+dotnet user-secrets set "Stripe:SecretKey" "<stripe-secret-key>"
+dotnet user-secrets set "Stripe:WebhookSecret" "<stripe-webhook-secret>"
+dotnet user-secrets set "Stripe:SuccessUrl" "<ui-success-route>"
+dotnet user-secrets set "Stripe:CancelUrl" "<ui-cancel-route>"
+dotnet user-secrets set "Stripe:Currency" "try"
 ```
 
 Veritabanı, Redis ve MinIO değerleri (kullanıcı adı, parola, veritabanı ve bucket adı) `compose.yaml`'daki servis tanımlarıyla aynı olmalıdır; parolaları depoya yazmayın.
@@ -240,6 +252,7 @@ Ayrıntılı parametreler, örnek istek/yanıtlar ve yetki bilgisi için Swagger
 - `api/tables` — masa listeleme (`is-active`, `min-guest`, `max-guest`, `number`), detay, oluşturma, güncelleme, silme ve müsait masa sorgusu (`GET api/tables/available`)
 - `api/reservations` — giriş yapan kullanıcı için rezervasyon oluşturma (`POST api/reservations/add/current-user`, `reservation:create`)
 - `api/cart` — Kullanıcı ve paneldeki yetkili kullanıcılar için sepet işlemleri.
+- `api/checkout` — oturumdaki kullanıcının sepetini siparişe dönüştürüp Stripe ödeme oturumu açar (`POST api/checkout/users`, `X-Idempotency-Key` header'ı zorunlu)
 - `api/diagnostics/cache` — cache hit/miss sayaçları
 
 Tüm uçların method, route, izin ve başarı kodu bilgisiyle tablo halindeki listesi: [docs/API.md](docs/API.md).
@@ -253,7 +266,7 @@ dotnet test RestaurantApi.sln                      # tüm testler
 ```
 
 - **Unit testler:** xUnit, FluentAssertions ve NSubstitute; validator'lar ve `Rules` sınıfları veritabanı olmadan doğrulanır.
-- **Integration testler:** Testcontainers ile PostgreSQL 16 ve Redis container'ları başlatılır. Respawn her testten sonra veritabanını temizler; Redis cache'i her testten sonra flush ile temizlenir. Admin ve normal kullanıcı token'ları üretilerek uçlar gerçek HTTP istekleriyle test edilir. Mail ve dosya depolama servisleri fake implementasyonlarla değiştirilir.
+- **Integration testler:** Testcontainers ile PostgreSQL 16 ve Redis container'ları başlatılır. Respawn her testten sonra veritabanını temizler; Redis cache'i her testten sonra flush ile temizlenir. Admin ve normal kullanıcı token'ları üretilerek uçlar gerçek HTTP istekleriyle test edilir. Mail, dosya depolama ve ödeme (Stripe) servisleri fake implementasyonlarla değiştirilir; dış servise çıkılmaz.
 - **CI:** `.github/workflows/ci.yml` — `main` dalına push ve pull request'te checkout, .NET 10.0.x kurulumu, NuGet cache, `dotnet restore`, Release build ve `dotnet test` adımları çalışır.
 
 ## Proje yapısı
@@ -281,9 +294,9 @@ Bu projenin büyük bölümü Cline + DeepSeek ajanıyla geliştirilmektedir. Mi
 
 Planlanan işler (kodda henüz uç noktası yok):
 
-- **Rezervasyon uçları:** rezervasyon oluşturma, listeleme ve durum güncelleme. Domain modeli ve masa güncelleme/silme kuralları hazır durumda.
-- **Sepet ve sipariş uçları:** `Cart`, `CartItem`, `Order` ve `OrderItem` modelleri veritabanında tanımlı.
-- **Ödeme entegrasyonu.**
+- **Panel (masa) checkout ucu:** `CheckoutRequestTypes.PanelUser` akışı ve `CreateOnlineCheckoutCommand` doğrulamaları hazır; `POST api/checkout/tables/{tableId}` ucu henüz eklenmedi.
+- **Ödeme sonrası durum güncellemesi:** Stripe webhook ucu ile `Order.MarkPaid()` / `MarkExpired()` akışı (`Stripe:WebhookSecret` tanımı hazır, handler yok); siparişler şu an `PaymentStatus.Pending` kalır.
+- **Checkout'ta adres seçimi:** current user akışı varsayılan adresi kullanır; çoklu adres seçimi yok.
 - **CORS politikası.**
 - **Rate limiting.**
 - **Güvenlik sertleştirmesi:** `api/diagnostics/cache` ucu ve Hangfire dashboard için yetkilendirme (CORS ve rate limiting ile birlikte).
@@ -292,6 +305,10 @@ Planlanan işler (kodda henüz uç noktası yok):
 
 - Masa numarası benzersizliği veritabanı kısıtı yerine uygulama seviyesinde (Rules) kontrol edilir; tek restoran ve az sayıda yönetici senaryosu için bilinçli bir tercihtir.
 - İndirimler için silme ucu yok; indirim `PATCH api/discounts/{discountId}` ile pasife alınabilir.
+- Checkout akışında Stripe ödeme oturumu açıldıktan sonra sipariş veritabanına yazılır; yazma başarısız olursa Stripe tarafında oturum açık kalabilir (mükerrer istekler idempotency key ile engellenir, oturum 1 saat sonra kendiliğinden kapanır).
+- Ödeme sonucu (başarılı/başarısız) henüz siparişe yansıtılmaz: webhook ucu olmadığı için siparişler `PaymentStatus.Pending` durumunda kalır.
+- Boş sepette `POST api/checkout/users` 422 döner; `Order.CreateFromCart` içindeki "Sepet boş." koruması yedek katman olarak korunur.
+- Sepet ürünlerinin temizliği ödeme oturumu açıldıktan sonra yapılır; ödeme tamamlanmadan sepet sıfırlanmış olur (yeniden sipariş için ürünler tekrar eklenmelidir).
 
 ## İletişim
 

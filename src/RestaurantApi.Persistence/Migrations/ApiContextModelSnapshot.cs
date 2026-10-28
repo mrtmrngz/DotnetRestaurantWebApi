@@ -356,8 +356,22 @@ namespace RestaurantApi.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("AddressSnapshot")
-                        .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<DateTime?>("CheckoutSessionExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CheckoutSessionId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("CheckoutSessionUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<DateTime>("OrderDate")
                         .HasColumnType("timestamp with time zone");
@@ -389,7 +403,16 @@ namespace RestaurantApi.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RestaurantTableId");
+                    b.HasIndex("CheckoutSessionId")
+                        .IsUnique();
+
+                    b.HasIndex("RestaurantTableId", "IdempotencyKey")
+                        .IsUnique()
+                        .HasFilter("\"RestaurantTableId\" IS NOT NULL");
+
+                    b.HasIndex("UserId", "IdempotencyKey")
+                        .IsUnique()
+                        .HasFilter("\"UserId\" IS NOT NULL");
 
                     b.HasIndex("UserId", "OrderDate");
 
@@ -408,23 +431,23 @@ namespace RestaurantApi.Persistence.Migrations
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("ProductImageUrl")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("ProductName")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<string>("ProductSnapshot")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
                     b.Property<decimal>("TotalPrice")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<decimal>("UnitPrice")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric(18,2)");
 
                     b.HasKey("Id");
 

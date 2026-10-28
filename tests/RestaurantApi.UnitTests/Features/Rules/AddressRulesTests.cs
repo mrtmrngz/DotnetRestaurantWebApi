@@ -104,4 +104,33 @@ public class AddressRulesTests
     }
 
     #endregion
+
+    #region ShouldAddressExist (Current User / Checkout) TESTS
+
+    [Fact]
+    public void ShouldAddressExist_WhenCurrentUserHasNoAddress_ShouldThrowNotFoundException()
+    {
+        Domain.Entities.Address? add = null;
+
+        Action act = () => _sut.ShouldAddressExist(add, Guid.NewGuid());
+
+        act.Should().Throw<NotFoundException>("Kullanıcının adresi bulunamadığı için bu hata fırlatılması gerekirdi")
+            .WithMessage("Adres bulunamadı.");
+    }
+
+    [Fact]
+    public void ShouldAddressExist_WhenCurrentUserHasAddress_ShouldNotThrowAnything()
+    {
+        Domain.Entities.Address add = new Domain.Entities.Address
+        {
+            Id = Guid.NewGuid(),
+            UserId = Guid.NewGuid()
+        };
+
+        Action act = () => _sut.ShouldAddressExist(add, add.UserId);
+
+        act.Should().NotThrow("Kullanıcının adresi bulunduğu için hata fırlatılmamalıydı");
+    }
+
+    #endregion
 }

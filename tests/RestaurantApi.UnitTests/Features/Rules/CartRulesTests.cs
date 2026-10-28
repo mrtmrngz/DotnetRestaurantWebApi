@@ -36,4 +36,25 @@ public class CartRulesTests
     }
 
     #endregion
+
+    #region ShouldCartHaveItems Tests
+
+    [Fact]
+    public void ShouldCartHaveItems_WhenCartIsEmpty_ShouldThrowUnprocessableEntityError()
+    {
+        Action act = () => _sut.ShouldCartHaveItems(false);
+
+        act.Should().Throw<UnprocessableEntityError>("Boş sepetle sipariş oluşturulamayacağı için bu hata fırlatılması gerekirdi")
+            .WithMessage("Sepetinizde sipariş oluşturulacak ürün bulunmuyor.");
+    }
+
+    [Fact]
+    public void ShouldCartHaveItems_WhenCartHasItems_ShouldNotThrow()
+    {
+        Action act = () => _sut.ShouldCartHaveItems(true);
+
+        act.Should().NotThrow("Sepette ürün bulunduğu için bu hata fırlatmaması gerekirdi");
+    }
+
+    #endregion
 }

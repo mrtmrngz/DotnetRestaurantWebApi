@@ -12,106 +12,196 @@ public class CacheService : ICacheService
     private readonly RedisLockService _lockService;
     private readonly ILogger<CacheService> _logger;
 
-    public CacheService(IConnectionMultiplexer redis, RedisLockService lockService, ILogger<CacheService> logger)
+    public CacheService(
+        IConnectionMultiplexer redis,
+        RedisLockService lockService,
+        ILogger<CacheService> logger)
     {
         _redis = redis;
         _lockService = lockService;
         _logger = logger;
     }
 
-    public async Task<T> GetOrInternalSetAsync<T>(string key, Func<Task<T>> task, TimeSpan? expiration = null)
+    public async Task<T> GetOrInternalSetAsync<T>(
+        string key,
+        Func<Task<T>> task,
+        TimeSpan? expiration = null)
     {
-        var db = _redis.GetDatabase();
-        
-        _logger.LogInformation("🔍 CACHE CHECK: {Key}", key);
+        IDatabase db;
 
-        var cachedData = await db.StringGetAsync(key);
-
-        if (cachedData.HasValue)
+        try
         {
-            CacheMetrics.Hit();
-            _logger.LogInformation("⚡ CACHE HIT: {Key}", key);
-            var json = CompressionHelper.Decompress(cachedData!);
-            return JsonSerializer.Deserialize<T>(json)!;
+            db = _redis.GetDatabase();
+
+            var (found, value) = await TryReadCacheAsync<T>(db, key);
+            if (found)
+                return value!;
+
+
+            CacheMetrics.Miss();
+
+            _logger.LogInformation("CACHE MISS: {Key}", key);
         }
-        
-        CacheMetrics.Miss();
-        _logger.LogWarning("❌ CACHE MISS: {Key}", key);
-
-        var lockAcquired = await _lockService.AcquireLock(key, TimeSpan.FromSeconds(5));
-
-        if (!lockAcquired)
+        catch (RedisException ex)
         {
-            _logger.LogWarning("🔒 LOCK FAILED, retrying: {Key}", key);
-            await Task.Delay(50);
-            return await GetOrInternalSetAsync(key, task, expiration);
+            _logger.LogWarning(
+                ex,
+                "Redis erişilemiyor. Veri kaynağından okunuyor: {Key}",
+                key);
+
+            return await task();
+        }
+
+        string? lockToken = null;
+
+        try
+        {
+            for (var attempt = 0; attempt < 20; attempt++)
+            {
+                lockToken = await _lockService.AcquireLock(
+                    key,
+                    TimeSpan.FromSeconds(30));
+
+                if (lockToken is not null)
+                    break;
+
+                await Task.Delay(100);
+
+                var (waitFound, waitValue) = await TryReadCacheAsync<T>(db, key);
+                if (waitFound)
+                    return waitValue!;
+            }
+        }
+        catch (RedisException ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Redis lock işlemi başarısız. Veri kaynağından okunuyor: {Key}",
+                key);
+
+            return await task();
+        }
+
+        if (lockToken is null)
+        {
+            _logger.LogWarning(
+                "Cache lock alınamadı. Veri kaynağından okunuyor: {Key}",
+                key);
+
+            return await task();
         }
 
         try
         {
+            // Lock alındıktan sonra cache tekrar kontrol edilir.
+            try
+            {
+                var (recheckFound, recheckValue) = await TryReadCacheAsync<T>(db, key);
+                if (recheckFound)
+                    return recheckValue!;
+            }
+            catch (RedisException ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Cache yeniden okunamadı: {Key}",
+                    key);
+            }
+
             var result = await task();
 
-            var json = JsonSerializer.Serialize(result);
-            var compressed = CompressionHelper.Compress(json);
+            try
+            {
+                var json = JsonSerializer.Serialize(result);
+                var compressed = CompressionHelper.Compress(json);
 
-            await db.StringSetAsync(key, compressed, expiration ?? TimeSpan.FromHours(1));
+                await db.StringSetAsync(
+                    key,
+                    compressed,
+                    expiration ?? TimeSpan.FromHours(1));
 
-            _logger.LogInformation("💾 CACHE SET: {Key}", key);
+                _logger.LogInformation("CACHE SET: {Key}", key);
+            }
+            catch (RedisException ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Redis'e yazılamadı. Veri kaynağının sonucu kullanılacak: {Key}",
+                    key);
+            }
 
             return result;
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "🔴 Redis connection failed for key: {Key}", key);
-            return await task();
-        }
         finally
         {
-            await _lockService.ReleaseAsync(key);
-            _logger.LogInformation("🔓 LOCK RELEASED: {Key}", key);
+            try
+            {
+                await _lockService.ReleaseAsync(key, lockToken);
+            }
+            catch (RedisException ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Cache lock serbest bırakılamadı: {Key}",
+                    key);
+            }
         }
     }
 
-    public async Task SetAsync<T>(string key, T data, TimeSpan? expiration = null)
+    public async Task<bool> TrySetAsync<T>(
+        string key,
+        T value,
+        TimeSpan expiration)
     {
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(
+            expiration,
+            TimeSpan.Zero);
 
-        int retryCount = 0;
-        const int maxRetries = 5;
+        var db = _redis.GetDatabase();
 
-        while (retryCount < maxRetries)
+        var json = JsonSerializer.Serialize(value);
+        var compressed = CompressionHelper.Compress(json);
+
+        var created = await db.StringSetAsync(
+            key,
+            compressed,
+            expiration,
+            When.NotExists);
+
+        _logger.LogInformation(
+            "CACHE TRY SET: {Key}, Created: {Created}",
+            key,
+            created);
+
+        return created;
+    }
+
+    public async Task SetAsync<T>(
+        string key,
+        T data,
+        TimeSpan? expiration = null)
+    {
+        try
         {
-            var lockAcquired = await _lockService.AcquireLock(key, TimeSpan.FromSeconds(5));
+            var db = _redis.GetDatabase();
 
-            if (lockAcquired)
-            {
-                try
-                {
-                    var db = _redis.GetDatabase();
-                    var json = JsonSerializer.Serialize(data);
-                    var compressed = CompressionHelper.Compress(json);
+            var json = JsonSerializer.Serialize(data);
+            var compressed = CompressionHelper.Compress(json);
 
-                    await db.StringSetAsync(key, compressed, expiration ?? TimeSpan.FromHours(1));
-                    _logger.LogInformation("💾 CACHE MANUAL SET: {Key}", key);
-                    return;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "🔴 Redis SetAsync failed: {Key}", key);
-                    return;
-                }
-                finally
-                {
-                    await _lockService.ReleaseAsync(key);
-                    _logger.LogInformation("🔓 LOCK RELEASED: {Key}", key);
-                }
-            }
+            await db.StringSetAsync(
+                key,
+                compressed,
+                expiration ?? TimeSpan.FromHours(1));
 
-            retryCount++;
-            _logger.LogWarning("🔒 LOCK FAILED, retry {Count}/{Max}: {Key}", retryCount, maxRetries, key);
-            await Task.Delay(100);
+            _logger.LogInformation("CACHE SET: {Key}", key);
         }
-
-        _logger.LogError("🚫 Could not acquire lock for SetAsync after {Max} retries: {Key}", maxRetries, key);
+        catch (RedisException ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Redis cache yazma işlemi başarısız: {Key}",
+                key);
+        }
     }
 
     public async Task<T?> GetAsync<T>(string key)
@@ -120,31 +210,69 @@ public class CacheService : ICacheService
         {
             var db = _redis.GetDatabase();
 
-            var cachedValue = await db.StringGetAsync(key);
+            var (found, value) = await TryReadCacheAsync<T>(db, key);
+            if (found)
+                return value;
 
-            if (cachedValue.HasValue)
-            {
-                CacheMetrics.Hit();
-                _logger.LogInformation("⚡ CACHE HIT: {Key}", key);
-                var decompressed = CompressionHelper.Decompress(cachedValue!);
-                return JsonSerializer.Deserialize<T>(decompressed)!;
-            }
-            
             CacheMetrics.Miss();
-            _logger.LogWarning("❌ CACHE MISS: {Key}", key);
+
+            _logger.LogInformation("CACHE MISS: {Key}", key);
+
             return default;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "🔴 Redis GetAsync failed for key: {Key}", key);
+            _logger.LogError(
+                ex,
+                "Cache okuma işlemi başarısız: {Key}",
+                key);
+
             return default;
         }
     }
 
     public async Task RemoveAsync(string key)
     {
-        var db = _redis.GetDatabase();
-        await db.KeyDeleteAsync(key);
-        _logger.LogInformation("🗑 CACHE REMOVED: {Key}", key);
+        try
+        {
+            var db = _redis.GetDatabase();
+
+            await db.KeyDeleteAsync(key);
+
+            _logger.LogInformation("CACHE REMOVED: {Key}", key);
+        }
+        catch (RedisException ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Cache silme işlemi başarısız: {Key}",
+                key);
+        }
+    }
+
+    private async Task<(bool Found, T? Value)> TryReadCacheAsync<T>(IDatabase db, string key)
+    {
+        var cached = await db.StringGetAsync(key);
+
+        if (!cached.HasValue)
+            return (false, default);
+
+        try
+        {
+            var json = CompressionHelper.Decompress(cached!);
+            var value = JsonSerializer.Deserialize<T>(json);
+
+            CacheMetrics.Hit();
+            _logger.LogDebug("CACHE HIT: {Key}", key);
+
+            return (true, value);
+        }
+        catch (Exception ex) when (ex is JsonException or InvalidDataException)
+        {
+            _logger.LogError(ex, "Corrupt cache entry, evicting: {Key}", key);
+            await db.KeyDeleteAsync(key);
+
+            return (false, default);
+        }
     }
 }

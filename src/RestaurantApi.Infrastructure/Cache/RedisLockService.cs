@@ -11,15 +11,28 @@ public class RedisLockService
         _redis = redis;
     }
 
-    public async Task<bool> AcquireLock(string key, TimeSpan expiry)
+    public async Task<string?> AcquireLock(string key, TimeSpan expiry)
     {
         var db = _redis.GetDatabase();
-        return await db.StringSetAsync($"lock:{key}", "1", expiry, When.NotExists);
+
+        var token = Guid.NewGuid().ToString("N");
+
+        var acquired = await db.StringSetAsync(
+            $"lock:{key}",
+            token,
+            expiry,
+            When.NotExists
+        );
+
+        return acquired ? token : null;
     }
 
-    public async Task ReleaseAsync(string key)
+    public async Task<bool> ReleaseAsync(string key, string token)
     {
         var db = _redis.GetDatabase();
-        await db.KeyDeleteAsync($"lock:{key}");
+
+        return await db.LockReleaseAsync(
+            $"lock:{key}",
+            token);
     }
 }

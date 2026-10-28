@@ -44,6 +44,12 @@ x-api-environment: &api-environment
   MailSettings__Email: "${MAIL_EMAIL:?MAIL_EMAIL gerekli}"
   MailSettings__Password: "${MAIL_PASSWORD:?MAIL_PASSWORD gerekli}"
   
+  Stripe__SecretKey: "${Stripe__SecretKey:? Stripe__SecretKey gerekli}"
+  Stripe__WebhookSecret: "${Stripe__WebhookSecret:? Stripe__WebhookSecret gerekli}"
+  Stripe__SuccessUrl: "${Stripe__SuccessUrl:? Stripe__SuccessUrl gerekli}"
+  Stripe__CancelUrl: "${Stripe__CancelUrl:? Stripe__CancelUrl gerekli}"
+  Stripe__Currency: "${Stripe__Currency:? Stripe__Currency gerekli}"
+  
 
 x-api-depends-on: &api-depends-on
   postgres:

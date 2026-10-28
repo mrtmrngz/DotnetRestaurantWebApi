@@ -75,6 +75,9 @@ public static class ServiceRegistration
         
         // mail service secrets
         services.Configure<MailSettings>(configuration.GetSection("MailSettings"));
+
+        // stripe secrets (user-secrets: Stripe:SecretKey / Stripe:WebhookSecret)
+        services.Configure<StripeSettings>(configuration.GetSection("Stripe"));
         
         // mail service
         services.AddScoped<IMailService, SmtpMailService>();
@@ -95,6 +98,7 @@ public static class ServiceRegistration
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAuthTokenService, AuthTokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<IAddressService, AddressService>();
         services.AddScoped<ISlugService, SlugService>();
         services.AddScoped<IReservationService, ReservationService>();

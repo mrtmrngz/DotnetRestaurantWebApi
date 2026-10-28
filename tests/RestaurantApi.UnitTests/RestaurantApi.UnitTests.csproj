@@ -25,4 +25,8 @@
       <ProjectReference Include="..\..\src\RestaurantApi.Infrastructure\RestaurantApi.Infrastructure.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Features\Checkout\" />
+    </ItemGroup>
+
 </Project>

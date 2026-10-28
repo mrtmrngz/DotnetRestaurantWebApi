@@ -70,4 +70,9 @@ public class AddressRepository: IAddressRepository
                 .ExecuteUpdateAsync(s => s.SetProperty(add => add.IsDefault, true), ctx);
         }
     }
+
+    public IQueryable<Address> GetAllAsQueryable()
+    {
+        return _context.Addresses.AsQueryable();
+    }
 }

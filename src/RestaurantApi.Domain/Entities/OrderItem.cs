@@ -7,7 +7,7 @@ public class OrderItem
     public int Quantity { get; set; }
     public decimal TotalPrice { get; set; }
     public string ProductName { get; set; } = null!;
-    public string ProductImageUrl { get; set; } = null!;
+    public string ProductSnapshot { get; set; } = null!;
 
     public Guid OrderId { get; set; }
     public Order Order { get; set; } = null!;

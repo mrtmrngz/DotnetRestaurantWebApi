@@ -20,4 +20,14 @@ public class CartRules
         _logger.LogInformation("Sepet bulunamadı.");
         throw new NotFoundException("Sepet bulunamadı.");
     }
+
+    // Boş sepetle sipariş oluşturulamaz; domain koruması yerine iş kuralı hatası (422) döner.
+    public void ShouldCartHaveItems(bool hasItems)
+    {
+        if (hasItems)
+            return;
+
+        _logger.LogWarning("Boş sepet için sipariş oluşturulamaz.");
+        throw new UnprocessableEntityError("Sepetinizde sipariş oluşturulacak ürün bulunmuyor.");
+    }
 }

@@ -114,6 +114,18 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
 | DELETE | `api/cart/users/items/:itemId` | Kullanıcılar sepetteki ürünü silebilir. | Yok | 200 |
 | DELETE | `api/cart/tables/:tableId/items/:itemId` | Panel yetkisi olan kullanıcılar, masa sepetindeki ürünü silebilir. | cart:items:delete | 200 |
 
+## Checkout — `api/checkout`
+
+| Method | Route | Açıklama | Gereken izin | Başarı kodu |
+| --- | --- | --- | --- | --- |
+| POST | `api/checkout/users` | Oturumdaki kullanıcının sepetini siparişe dönüştürür ve Stripe ödeme oturumu açar; `X-Idempotency-Key` header'ı **zorunludur** | Yok (yalnız login) | 200 |
+
+- **Akış:** idempotency kontrolü → kullanıcı/sepet doğrulaması → sepet kalemlerinin **indirimli birim fiyatla** siparişe aktarılması → Stripe Checkout oturumu → `sessionId` + `sessionUrl` siparişe kaydı → sepet kalemlerinin temizlenmesi (sepet kaydı korunur, cache geçersiz kılınır).
+- **Tutarlar:** Veritabanında TRY tutulur, Stripe'a **kuruş** (en küçük birim) gönderilir; kargo varsa ayrı **"Kargo"** kalemi eklenir, böylece tahsil edilen tutar sipariş toplamına eşit olur.
+- **Ödeme oturumu:** 1 saat geçerlidir; `X-Idempotency-Key` Stripe'a da iletilir (mükerrer oturum açılmaz).
+- **Stripe metadata:** `order_id`, `checkout_request_type`, `user_id`, `restaurant_table_id`.
+- **Hatalar:** 400 (eksik/geçersiz `X-Idempotency-Key` veya geçersiz işlem tipi), 401, 404 (kullanıcı / sepet / varsayılan adres bulunamadı), 409 (aynı idempotency key ile ödeme başlatılmış veya sepette satışta olmayan ürün), 422 (sepet boş veya Stripe oturumu oluşturulamadı).
+
 ## Diagnostics — `api/diagnostics`
 
 | Method | Route | Açıklama | Gereken izin | Başarı kodu |
