@@ -252,7 +252,7 @@ Ayrıntılı parametreler, örnek istek/yanıtlar ve yetki bilgisi için Swagger
 - `api/tables` — masa listeleme (`is-active`, `min-guest`, `max-guest`, `number`), detay, oluşturma, güncelleme, silme ve müsait masa sorgusu (`GET api/tables/available`)
 - `api/reservations` — giriş yapan kullanıcı için rezervasyon oluşturma (`POST api/reservations/add/current-user`, `reservation:create`)
 - `api/cart` — Kullanıcı ve paneldeki yetkili kullanıcılar için sepet işlemleri.
-- `api/checkout` — oturumdaki kullanıcının (`POST api/checkout/users`) veya panelden bir masanın (`POST api/checkout/tables/{tableId}/online`, `checkout:create`) sepetini siparişe dönüştürüp Stripe ödeme oturumu açar; `X-Idempotency-Key` header'ı zorunlu
+- `api/checkout` — oturumdaki kullanıcının (`POST api/checkout/users`) veya panelden bir masanın (`POST api/checkout/tables/{tableId}/online`) sepetini Stripe ödeme oturumuna, ya da masanın sepetini nakit ödemeli siparişe (`POST api/checkout/tables/{tableId}/cash`, `checkout:create`) dönüştürür; `X-Idempotency-Key` header'ı zorunlu
 - `api/diagnostics/cache` — cache hit/miss sayaçları
 
 Tüm uçların method, route, izin ve başarı kodu bilgisiyle tablo halindeki listesi: [docs/API.md](docs/API.md).
@@ -305,7 +305,7 @@ Planlanan işler (kodda henüz uç noktası yok):
 - Masa numarası benzersizliği veritabanı kısıtı yerine uygulama seviyesinde (Rules) kontrol edilir; tek restoran ve az sayıda yönetici senaryosu için bilinçli bir tercihtir.
 - İndirimler için silme ucu yok; indirim `PATCH api/discounts/{discountId}` ile pasife alınabilir.
 - Checkout akışında Stripe ödeme oturumu açıldıktan sonra sipariş veritabanına yazılır; yazma başarısız olursa Stripe tarafında oturum açık kalabilir (mükerrer istekler idempotency key ile engellenir, oturum 1 saat sonra kendiliğinden kapanır).
-- Ödeme sonucu (başarılı/başarısız) henüz siparişe yansıtılmaz: webhook ucu olmadığı için siparişler `PaymentStatus.Pending` durumunda kalır.
+- Ödeme sonucu (başarılı/başarısız) Stripe akışında henüz siparişe yansıtılmaz: webhook ucu olmadığı için Stripe ile başlatılan siparişler `PaymentStatus.Pending` durumunda kalır; nakit ödemeli masa siparişleri ise `OrderStatus.Confirmed` + `PaymentStatus.Paid` olarak açılır.
 - Boş sepette `POST api/checkout/users` 422 döner; `Order.CreateFromCart` içindeki "Sepet boş." koruması yedek katman olarak korunur.
 - Sepet ürünlerinin temizliği ödeme oturumu açıldıktan sonra yapılır; ödeme tamamlanmadan sepet sıfırlanmış olur (yeniden sipariş için ürünler tekrar eklenmelidir).
 

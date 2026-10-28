@@ -120,9 +120,11 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
 | --- | --- | --- | --- | --- |
 | POST | `api/checkout/users` | Oturumdaki kullanıcının sepetini siparişe dönüştürür ve Stripe ödeme oturumu açar; `X-Idempotency-Key` header'ı **zorunludur** | Yok (yalnız login) | 200 |
 | POST | `api/checkout/tables/{tableId}/online` | Panel yetkisi olan kullanıcılar için **masanın** sepetini siparişe dönüştürür ve Stripe ödeme oturumu açar; `X-Idempotency-Key` header'ı **zorunludur** | `checkout:create` | 200 |
+| POST | `api/checkout/tables/{tableId}/cash` | Panel yetkisi olan kullanıcılar için **masanın** sepetini nakit ödemeli siparişe dönüştürür (ödeme oturumu açılmaz, sipariş `Confirmed`); `X-Idempotency-Key` header'ı **zorunludur** | `checkout:create` | 200 |
 
 - **Akış:** idempotency kontrolü → kullanıcı/sepet doğrulaması → sepet kalemlerinin **indirimli birim fiyatla** siparişe aktarılması → Stripe Checkout oturumu → `sessionId` + `sessionUrl` siparişe kaydı → sepet kalemlerinin temizlenmesi (sepet kaydı korunur, cache geçersiz kılınır).
 - **Panel (masa) akışı:** `api/checkout/tables/{tableId}/online` siparişi **masaya** bağlar (`UserId` boş), kargo alınmaz ve adres snapshot'ı tutulmaz; masa ya da masa sepeti yoksa 404, pasif masa da "bulunamadı" olarak döner. `checkout:create` izni gerekir.
+- **Nakit ödeme (masa):** `api/checkout/tables/{tableId}/cash` aynı kontrolleri yapar ama Stripe oturumu açmaz; sipariş **`OrderStatus.Confirmed`** ve **`PaymentStatus.Paid`** olarak oluşur (ödeme masada nakit alınır) ve sepet boşaltılır. Cevap `BaseResponse` + `CHECKOUT_SUCCESS` kodudur. Mükerrer idempotency key 409, boş sepet 422, satışta olmayan ürün 409 döner.
 - **Tutarlar:** Veritabanında TRY tutulur, Stripe'a **kuruş** (en küçük birim) gönderilir; kargo varsa ayrı **"Kargo"** kalemi eklenir, böylece tahsil edilen tutar sipariş toplamına eşit olur.
 - **Ödeme oturumu:** 1 saat geçerlidir; `X-Idempotency-Key` Stripe'a da iletilir (mükerrer oturum açılmaz).
 - **Stripe metadata:** `order_id`, `checkout_request_type`, `user_id`, `restaurant_table_id`.
