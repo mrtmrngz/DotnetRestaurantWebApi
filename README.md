@@ -252,7 +252,7 @@ Ayrıntılı parametreler, örnek istek/yanıtlar ve yetki bilgisi için Swagger
 - `api/tables` — masa listeleme (`is-active`, `min-guest`, `max-guest`, `number`), detay, oluşturma, güncelleme, silme ve müsait masa sorgusu (`GET api/tables/available`)
 - `api/reservations` — giriş yapan kullanıcı için rezervasyon oluşturma (`POST api/reservations/add/current-user`, `reservation:create`)
 - `api/cart` — Kullanıcı ve paneldeki yetkili kullanıcılar için sepet işlemleri.
-- `api/checkout` — oturumdaki kullanıcının sepetini siparişe dönüştürüp Stripe ödeme oturumu açar (`POST api/checkout/users`, `X-Idempotency-Key` header'ı zorunlu)
+- `api/checkout` — oturumdaki kullanıcının (`POST api/checkout/users`) veya panelden bir masanın (`POST api/checkout/tables/{tableId}/online`, `checkout:create`) sepetini siparişe dönüştürüp Stripe ödeme oturumu açar; `X-Idempotency-Key` header'ı zorunlu
 - `api/diagnostics/cache` — cache hit/miss sayaçları
 
 Tüm uçların method, route, izin ve başarı kodu bilgisiyle tablo halindeki listesi: [docs/API.md](docs/API.md).
@@ -294,7 +294,6 @@ Bu projenin büyük bölümü Cline + DeepSeek ajanıyla geliştirilmektedir. Mi
 
 Planlanan işler (kodda henüz uç noktası yok):
 
-- **Panel (masa) checkout ucu:** `CheckoutRequestTypes.PanelUser` akışı ve `CreateOnlineCheckoutCommand` doğrulamaları hazır; `POST api/checkout/tables/{tableId}` ucu henüz eklenmedi.
 - **Ödeme sonrası durum güncellemesi:** Stripe webhook ucu ile `Order.MarkPaid()` / `MarkExpired()` akışı (`Stripe:WebhookSecret` tanımı hazır, handler yok); siparişler şu an `PaymentStatus.Pending` kalır.
 - **Checkout'ta adres seçimi:** current user akışı varsayılan adresi kullanır; çoklu adres seçimi yok.
 - **CORS politikası.**

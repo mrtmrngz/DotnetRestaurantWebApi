@@ -91,4 +91,10 @@ public static class Permissions
         [Description("Sepeti silme yetkisi verir.")]
         public const string DeleteCart = "cart:delete";
     }
+    
+    public static class CheckoutPermissions
+    {
+        [Description("Sipariş (ödeme) oluşturma yetkisi verir.")]
+        public const string CreateCheckout = "checkout:create";
+    }
 }
