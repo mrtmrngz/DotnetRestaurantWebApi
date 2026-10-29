@@ -10,4 +10,8 @@ public interface IPaymentService
     // Tutarlar sağlayıcının beklediği en küçük birime (kuruş) çevrilir, IdempotencyKey sağlayıcıya iletilir.
     Task<PaymentSessionResult> CreateCheckoutSessionAsync(Order order, CheckoutRequestTypes requestType,
         CancellationToken ctx);
+
+    // Sağlayıcıdan gelen webhook isteğinin imzasını doğrular ve olayı uygulama modeline çevirir.
+    // İmza doğrulanamazsa BadRequestException fırlatılır (istek ödeme sağlayıcısından gelmemiştir).
+    StripeWebhookEvent ParseWebhookEvent(string payload, string signature);
 }

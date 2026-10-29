@@ -130,6 +130,22 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
 - **Stripe metadata:** `order_id`, `checkout_request_type`, `user_id`, `restaurant_table_id`.
 - **Hatalar:** 400 (eksik/geçersiz `X-Idempotency-Key` veya geçersiz işlem tipi), 401, 404 (kullanıcı / sepet / varsayılan adres bulunamadı), 409 (aynı idempotency key ile ödeme başlatılmış veya sepette satışta olmayan ürün), 422 (sepet boş veya Stripe oturumu oluşturulamadı).
 
+## Webhooks — `api/webhooks`
+
+| Method | Route | Açıklama | Gereken izin | Başarı kodu |
+| --- | --- | --- | --- | --- |
+| POST | `api/webhooks/checkout` | Stripe checkout ödeme olaylarını işler; `Stripe-Signature` header'ı **zorunludur** | Yok (anonim) | 200 |
+
+- **Güvenlik:** Uç anonimdir ve yalnızca Stripe'ın çağırması içindir; istek gövdesi **ham (raw)** hâliyle okunur ve `Stripe-Signature` başlığı `Stripe:WebhookSecret` ile **HMAC-SHA256** üzerinden doğrulanır (zaman toleransı Stripe varsayılanı: 300 saniye, böylece eski imzaların tekrar oynatılması engellenir). İmza doğrulanamazsa **400** döner.
+- **İşlenen olaylar ve durum eşlemesi:** `checkout.session.completed` (yalnızca oturumun `payment_status` değeri ödemenin alındığını gösteriyorsa) ve `checkout.session.async_payment_succeeded` → sipariş **`PaymentStatus.Paid`**; `checkout.session.async_payment_failed` ve `checkout.session.expired` → sipariş **`PaymentStatus.Failed`** + **`OrderStatus.Canceled`**.
+- **Sipariş eşlemesi:** Oturum açılırken metadata'ya yazılan `order_id` ile, bulunamazsa siparişte kayıtlı `CheckoutSessionId` ile eşlenir; olayın oturumu siparişte kayıtlı oturumla eşleşmiyorsa işlem yapılmaz. Güncelleme tek SQL ifadesiyle ve yalnızca ödeme sonucu bekleyen (`Pending`) siparişlerde uygulanır, mükerrer olaylar **idempotent**tir.
+- **Yanıt kodları:** 200 (işlendi / yoksayıldı / daha önce işlenmiş), 400 (imza ya da gövde geçersiz), 404 (olayın siparişi bulunamadı; Stripe olayı tekrar gönderir), 409 (olayın oturumu siparişte kayıtlı oturumla eşleşmiyor).
+- **İşlenmeyen olaylar** (ör. `payment_intent.*`) yoksayılır ve `STRIPE_WEBHOOK_IGNORED` koduyla **200** döner; Stripe'ın gereksiz tekrar denemesi engellenir.
+- **Yerel geliştirme (HTTPS zorunluluğu):** Stripe webhook'u yalnızca **HTTPS** adreslere gönderir; `Development` profilinde API düz HTTP çalıştığı için yerelde ngrok gibi bir HTTPS tüneli gerekir. Endpoint URL: `https://<ngrok-adresi>/api/webhooks/checkout`, imza sırrı: panelin verdiği `whsec_...` → `Stripe:WebhookSecret`. Kurulum adımları: [README — Stripe webhook'unu yerelde test etme](../README.md#stripe-webhookunu-yerelde-test-etme-https-zorunluluğu)
+
+> Ayrıntılı ve "neden böyle yazıldı?" odaklı anlatım: [odeme-akisi/](odeme-akisi/README.md)
+> Webhook kodunun **satır satır** açıklaması: [stripe-webhook/](stripe-webhook/README.md)
+
 ## Diagnostics — `api/diagnostics`
 
 | Method | Route | Açıklama | Gereken izin | Başarı kodu |

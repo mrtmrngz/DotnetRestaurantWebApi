@@ -22,7 +22,7 @@ Restoranın menüsünü (kategoriler, ürünler, ürün görselleri, indirimler)
 - **İzin tabanlı yetkilendirme:** `Permissions` sabitlerinden üretilen authorization policy'leri; kullanıcının rolüne ait izin listesi Redis'te cache'lenir.
 - **Redis cache:** liste uçları cache-aside deseniyle okunur. Cache miss olduğunda dağıtık kilit alınır, kilit alınamazsa kısa bir bekleme sonrası tekrar denenir; böylece eşzamanlı isteklerde veritabanına tek sorgu gider (cache stampede koruması). Değerler gzip ile sıkıştırılarak saklanır, mutasyonlarda ilgili cache anahtarları temizlenir.
 - **Medya ve arka plan işler:** S3 uyumlu depoya görsel yükleme, güncelleme sonrası eski dosyaların event handler ile silinmesi, indirimlerin başlangıç/bitiş anlarında çalışan Hangfire job'ları ve arka planda gönderilen HTML mailler.
-- **Test ve CI:** 570+ test (unit + integration); GitHub Actions üzerinde restore → build (Release) → test.
+- **Test ve CI:** 1.180+ test (unit + integration); GitHub Actions üzerinde restore → build (Release) → test.
 
 ## Mimari
 
@@ -238,6 +238,42 @@ dotnet ef database update --project src/RestaurantApi.Persistence --startup-proj
 docker build -f src/RestaurantApi.WebApi/Dockerfile -t restaurant-api .
 ```
 
+### Stripe webhook'unu yerelde test etme (HTTPS zorunluluğu)
+
+Stripe webhook gönderirken **HTTPS** bekler. `Development` profilinde API düz HTTP (`http://localhost:5269`) çalıştığı için yerelde webhook alabilmek adına uç noktayı HTTPS üzerinden dışarı açmak gerekir; bunun için **ngrok** yeterlidir.
+
+```bash
+# 1) API'yi çalıştırın (http://localhost:5269), ardından tüneli açın:
+ngrok http 5269
+# Çıktıdaki https://<id>.ngrok-free.app adresini kullanın
+```
+
+2. Stripe paneli → **Developers → Webhooks → Add endpoint** → Endpoint URL:
+
+```text
+https://<id>.ngrok-free.app/api/webhooks/checkout
+```
+
+3. Aynı ekranda üretilen **Signing secret** (`whsec_...`) değerini tanımlayın:
+
+```bash
+dotnet user-secrets set "Stripe:WebhookSecret" "<whsec_...>"
+```
+
+4. Test olayı gönderin (panelde **Send test event** ya da Stripe CLI):
+
+```bash
+stripe listen --forward-to http://localhost:5269/api/webhooks/checkout
+stripe trigger checkout.session.completed
+```
+
+Notlar:
+
+- Uç adresi **`api/` ön ekini içermelidir** (`api/webhooks/checkout`); eksik yazılırsa istek hiçbir controller'a ulaşmaz ve Stripe panelinde **404** olarak görünür.
+- Ücretsiz ngrok adresi her açılışta değişir: paneldeki endpoint URL'ini ve `Stripe:WebhookSecret` değerini güncel tutun (kalıcı çözüm: rezerve/statik domain ya da gerçek sunucu adresi).
+- `stripe listen` ile üretilen `whsec_...` değeri yalnızca o oturum için geçerlidir; canlıda panelin verdiği kalıcı değer kullanılır.
+- İmza doğrulama, olay yönlendirmesi ve hata kodlarının ayrıntısı: [docs/API.md](docs/API.md) ve [docs/stripe-webhook](docs/stripe-webhook/README.md).
+
 ## API uçları
 
 Ayrıntılı parametreler, örnek istek/yanıtlar ve yetki bilgisi için Swagger UI'ı kullanın. Modül özeti:
@@ -253,9 +289,12 @@ Ayrıntılı parametreler, örnek istek/yanıtlar ve yetki bilgisi için Swagger
 - `api/reservations` — giriş yapan kullanıcı için rezervasyon oluşturma (`POST api/reservations/add/current-user`, `reservation:create`)
 - `api/cart` — Kullanıcı ve paneldeki yetkili kullanıcılar için sepet işlemleri.
 - `api/checkout` — oturumdaki kullanıcının (`POST api/checkout/users`) veya panelden bir masanın (`POST api/checkout/tables/{tableId}/online`) sepetini Stripe ödeme oturumuna, ya da masanın sepetini nakit ödemeli siparişe (`POST api/checkout/tables/{tableId}/cash`, `checkout:create`) dönüştürür; `X-Idempotency-Key` header'ı zorunlu
+- `api/webhooks/checkout` — Stripe checkout ödeme olaylarını (`checkout.session.completed`, `async_payment_succeeded`, `async_payment_failed`, `expired`) işler; anonim uçtur, güvenlik `Stripe-Signature` imzasının doğrulanmasıyla sağlanır
 - `api/diagnostics/cache` — cache hit/miss sayaçları
 
 Tüm uçların method, route, izin ve başarı kodu bilgisiyle tablo halindeki listesi: [docs/API.md](docs/API.md).
+Ödeme akışının **neden böyle** yazıldığını anlatan kod rehberi: [docs/odeme-akisi](docs/odeme-akisi/README.md).
+Stripe webhook kodunun **satır satır** açıklaması: [docs/stripe-webhook](docs/stripe-webhook/README.md).
 
 ## Testler ve CI
 
@@ -294,7 +333,6 @@ Bu projenin büyük bölümü Cline + DeepSeek ajanıyla geliştirilmektedir. Mi
 
 Planlanan işler (kodda henüz uç noktası yok):
 
-- **Ödeme sonrası durum güncellemesi:** Stripe webhook ucu ile `Order.MarkPaid()` / `MarkExpired()` akışı (`Stripe:WebhookSecret` tanımı hazır, handler yok); siparişler şu an `PaymentStatus.Pending` kalır.
 - **Checkout'ta adres seçimi:** current user akışı varsayılan adresi kullanır; çoklu adres seçimi yok.
 - **CORS politikası.**
 - **Rate limiting.**
@@ -305,7 +343,8 @@ Planlanan işler (kodda henüz uç noktası yok):
 - Masa numarası benzersizliği veritabanı kısıtı yerine uygulama seviyesinde (Rules) kontrol edilir; tek restoran ve az sayıda yönetici senaryosu için bilinçli bir tercihtir.
 - İndirimler için silme ucu yok; indirim `PATCH api/discounts/{discountId}` ile pasife alınabilir.
 - Checkout akışında Stripe ödeme oturumu açıldıktan sonra sipariş veritabanına yazılır; yazma başarısız olursa Stripe tarafında oturum açık kalabilir (mükerrer istekler idempotency key ile engellenir, oturum 1 saat sonra kendiliğinden kapanır).
-- Ödeme sonucu (başarılı/başarısız) Stripe akışında henüz siparişe yansıtılmaz: webhook ucu olmadığı için Stripe ile başlatılan siparişler `PaymentStatus.Pending` durumunda kalır; nakit ödemeli masa siparişleri ise `OrderStatus.Confirmed` + `PaymentStatus.Paid` olarak açılır.
+- Ödeme sonucu Stripe akışında `api/webhooks/checkout` ucu ile siparişe yansıtılır: `checkout.session.completed` (yalnızca ödeme alınmışsa) ve `async_payment_succeeded` siparişi `Paid`, `async_payment_failed` ve `expired` siparişi `Failed` + `Canceled` yapar. Olay, sipariş bulunamazsa 404 ile reddedilir ve Stripe olayı tekrar gönderir; işlem yalnızca ödeme sonucu bekleyen (`Pending`) siparişlerde uygulanır.
+- Webhook ucu anonimdir; erişim yalnızca `Stripe-Signature` başlığının HMAC-SHA256 ile doğrulanmasıyla kontrol edilir (imza sırrı `Stripe:WebhookSecret`), bu nedenle uç CORS/rate limiting sertleştirmesi ile birlikte ele alınmalıdır.
 - Boş sepette `POST api/checkout/users` 422 döner; `Order.CreateFromCart` içindeki "Sepet boş." koruması yedek katman olarak korunur.
 - Sepet ürünlerinin temizliği ödeme oturumu açıldıktan sonra yapılır; ödeme tamamlanmadan sepet sıfırlanmış olur (yeniden sipariş için ürünler tekrar eklenmelidir).
 

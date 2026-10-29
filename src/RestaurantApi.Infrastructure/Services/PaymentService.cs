@@ -23,6 +23,9 @@ public class PaymentService: IPaymentService
     // Ödeme oturumunun geçerlilik süresi (Stripe en az 30 dakika, en fazla 24 saat kabul eder).
     private static readonly TimeSpan CheckoutSessionLifetime = TimeSpan.FromHours(1);
 
+    // Oturum açılırken sipariş kimliğinin yazıldığı metadata anahtarı.
+    private const string OrderIdMetadataKey = "order_id";
+
     private readonly ILogger<PaymentService> _logger;
     private readonly StripeSettings _stripeSettings;
     private readonly TimeProvider _timeProvider;
@@ -90,7 +93,95 @@ public class PaymentService: IPaymentService
         }
     }
 
+    public StripeWebhookEvent ParseWebhookEvent(string payload, string signature)
+    {
+        if (string.IsNullOrWhiteSpace(payload) || string.IsNullOrWhiteSpace(signature))
+        {
+            _logger.LogWarning(
+                "Stripe webhook isteği eksik geldi: gövde veya Stripe-Signature başlığı boş.");
+
+            throw new BadRequestException("Webhook gövdesi ve imzası zorunludur.");
+        }
+
+        // yapılandırma eksikliği iş kuralı hatası gibi görünmesin: sunucu tarafı hatasıdır (500)
+        if (string.IsNullOrWhiteSpace(_stripeSettings.WebhookSecret))
+        {
+            _logger.LogCritical(
+                "Stripe WebhookSecret yapılandırılmamış. User-secrets içinde 'Stripe:WebhookSecret' tanımlanmalıdır.");
+
+            throw new InvalidOperationException(
+                "Stripe yapılandırması eksik: 'Stripe:WebhookSecret' değeri bulunamadı.");
+        }
+
+        Event stripeEvent;
+
+        try
+        {
+            // İmza HMAC-SHA256 ile doğrulanır; zaman damgası toleransı SDK varsayılanıdır (300 saniye),
+            // böylece eski imzaların tekrar oynatılması (replay) engellenir.
+            // Hesap ile SDK API sürümü farklı olabileceği için sürüm uyuşmazlığı hata sayılmaz.
+            stripeEvent = EventUtility.ConstructEvent(payload, signature, _stripeSettings.WebhookSecret,
+                throwOnApiVersionMismatch: false);
+        }
+        catch (StripeException ex)
+        {
+            // İmza geçersiz, gövde değiştirilmiş ya da zaman damgası tolerans dışı: istek sağlayıcıdan gelmemiştir.
+            _logger.LogWarning(ex,
+                "Stripe webhook imzası doğrulanamadı (istek reddedildi). Code:{Code}", ex.StripeError?.Code);
+
+            throw new BadRequestException("Webhook imzası doğrulanamadı.");
+        }
+
+        StripeWebhookEventTypes eventType = MapEventType(stripeEvent.Type);
+
+        _logger.LogInformation("Stripe webhook olayı doğrulandı. EventId:{EventId}, EventType:{EventType}",
+            stripeEvent.Id, stripeEvent.Type);
+
+        // olay verisi checkout oturumu değilse sipariş bilgisi çıkarılamaz (olay yoksayılır)
+        object? eventObject = stripeEvent.Data?.Object;
+
+        if (eventObject is not Session session)
+        {
+            return new StripeWebhookEvent
+            {
+                EventId = stripeEvent.Id,
+                EventType = eventType
+            };
+        }
+
+        return new StripeWebhookEvent
+        {
+            EventId = stripeEvent.Id,
+            EventType = eventType,
+            CheckoutSessionId = session.Id,
+            OrderId = ResolveMetadataValue(session.Metadata, OrderIdMetadataKey),
+            SessionPaymentStatus = session.PaymentStatus
+        };
+    }
+
     #region Helper Methods
+
+    private static StripeWebhookEventTypes MapEventType(string? stripeEventType)
+    {
+        return stripeEventType switch
+        {
+            EventTypes.CheckoutSessionCompleted => StripeWebhookEventTypes.CheckoutSessionCompleted,
+            EventTypes.CheckoutSessionAsyncPaymentSucceeded => StripeWebhookEventTypes.CheckoutSessionAsyncPaymentSucceeded,
+            EventTypes.CheckoutSessionAsyncPaymentFailed => StripeWebhookEventTypes.CheckoutSessionAsyncPaymentFailed,
+            EventTypes.CheckoutSessionExpired => StripeWebhookEventTypes.CheckoutSessionExpired,
+            _ => StripeWebhookEventTypes.Unknown
+        };
+    }
+
+    private static string? ResolveMetadataValue(Dictionary<string, string>? metadata, string key)
+    {
+        if (metadata is null || !metadata.TryGetValue(key, out string? value))
+        {
+            return null;
+        }
+
+        return string.IsNullOrWhiteSpace(value) ? null : value;
+    }
 
     private SessionCreateOptions BuildSessionOptions(Order order, CheckoutRequestTypes requestType)
     {
