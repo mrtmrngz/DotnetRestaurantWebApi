@@ -9,6 +9,7 @@ using RestaurantApi.Application.Features.Rules.CartRules;
 using RestaurantApi.Application.Features.Rules.CategoryRules;
 using RestaurantApi.Application.Features.Rules.DiscountRules;
 using RestaurantApi.Application.Features.Rules.MediaRules;
+using RestaurantApi.Application.Features.Rules.OrderRules;
 using RestaurantApi.Application.Features.Rules.ProductMediaRules;
 using RestaurantApi.Application.Features.Rules.ProductRules;
 using RestaurantApi.Application.Features.Rules.ProfileRules;
@@ -48,6 +49,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ReservationRules>();
         services.AddScoped<CartItemRules>();
         services.AddScoped<CartRules>();
+        services.AddScoped<OrderRules>();
 
         // Saat bağımlı iş kuralları (rezervasyon zaman kuralları) test edilebilir olsun diye
         // DateTime.UtcNow yerine TimeProvider üzerinden çalışır.

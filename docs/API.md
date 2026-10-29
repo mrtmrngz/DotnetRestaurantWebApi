@@ -130,6 +130,20 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
 - **Stripe metadata:** `order_id`, `checkout_request_type`, `user_id`, `restaurant_table_id`.
 - **Hatalar:** 400 (eksik/geçersiz `X-Idempotency-Key` veya geçersiz işlem tipi), 401, 404 (kullanıcı / sepet / varsayılan adres bulunamadı), 409 (aynı idempotency key ile ödeme başlatılmış veya sepette satışta olmayan ürün), 422 (sepet boş veya Stripe oturumu oluşturulamadı).
 
+## Orders — `api/orders`
+
+| Method | Route | Açıklama | Gereken izin | Başarı kodu |
+| --- | --- | --- | --- | --- |
+| PATCH | `api/orders/users/status/{orderId}` | Kullanıcı siparişinin durumunu günceller | `orders:update` | 200 |
+
+- **Gövde:** `userId` (zorunlu) ve `newStatus` (zorunlu, `OrderStatus` enum'ı). `orderId` **route'tan** alınır ve istek gövdesinden kabul edilmez (`[JsonIgnore]`/`[BindNever]`).
+- **Kapsam:** Yalnızca **kullanıcı** siparişleri güncellenebilir; gövdedeki `userId`, siparişin sahibiyle eşleşmelidir. Masa siparişlerinde `UserId` boş olduğu için bu siparişler uçtan güncellenemez (**403**).
+- **Ön koşullar:** Siparişin ödemesi alınmış olmalıdır (`PaymentStatus.Paid`); ödemesi tamamlanmayan siparişler **422** ile reddedilir. İstenen durum mevcut durumla aynıysa **409** döner.
+- **Güncelleme:** Tek `UPDATE` ifadesiyle (`ExecuteUpdateAsync`) ve `PaymentStatus = Paid` koşuluyla yazılır; bu sırada sipariş değişmişse (ör. ödeme iptal edilmişse) hiçbir satır etkilenmez ve **409** döner.
+- **Başarı cevabı:** `BaseResponse` + `CONTENT_UPDATED_SUCCESS`.
+- **Hatalar:** 400 (doğrulama), 401, 403 (izin yok ya da sipariş başka kullanıcıya ait), 404 (sipariş bulunamadı), 409, 422.
+
+
 ## Webhooks — `api/webhooks`
 
 | Method | Route | Açıklama | Gereken izin | Başarı kodu |

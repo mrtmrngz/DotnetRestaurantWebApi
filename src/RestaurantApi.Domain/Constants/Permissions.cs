@@ -97,4 +97,10 @@ public static class Permissions
         [Description("Sipariş (ödeme) oluşturma yetkisi verir.")]
         public const string CreateCheckout = "checkout:create";
     }
+
+    public static class OrderPermissions
+    {
+        [Description("Kullanıcı siparişlerinin durumunu güncelleme yetkisi verir.")]
+        public const string Update = "orders:update";
+    }
 }

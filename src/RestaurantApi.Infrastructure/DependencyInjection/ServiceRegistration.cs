@@ -104,6 +104,7 @@ public static class ServiceRegistration
         services.AddScoped<IReservationService, ReservationService>();
         services.AddScoped<ICartItemService, CartItemService>();
         services.AddScoped<ICartService, CartService>();
+        services.AddScoped<IOrderService, OrderService>();
 
         // Discount scheduling (zamanlanmış işler)
         services.AddScoped<IDiscountScheduler, DiscountScheduler>();
