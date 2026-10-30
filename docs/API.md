@@ -135,6 +135,7 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
 | Method | Route | Açıklama | Gereken izin | Başarı kodu |
 | --- | --- | --- | --- | --- |
 | PATCH | `api/orders/users/status/{orderId}` | Kullanıcı siparişinin durumunu günceller | `orders:update` | 200 |
+| PATCH | `api/orders/users/cancel/{orderId}` | Oturumdaki kullanıcının **kendi** siparişini iptal eder | `SameUser` | 200 |
 
 - **Gövde:** `userId` (zorunlu) ve `newStatus` (zorunlu, `OrderStatus` enum'ı). `orderId` **route'tan** alınır ve istek gövdesinden kabul edilmez (`[JsonIgnore]`/`[BindNever]`).
 - **Kapsam:** Yalnızca **kullanıcı** siparişleri güncellenebilir; gövdedeki `userId`, siparişin sahibiyle eşleşmelidir. Masa siparişlerinde `UserId` boş olduğu için bu siparişler uçtan güncellenemez (**403**).
@@ -142,6 +143,13 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
 - **Güncelleme:** Tek `UPDATE` ifadesiyle (`ExecuteUpdateAsync`) ve `PaymentStatus = Paid` koşuluyla yazılır; bu sırada sipariş değişmişse (ör. ödeme iptal edilmişse) hiçbir satır etkilenmez ve **409** döner.
 - **Başarı cevabı:** `BaseResponse` + `CONTENT_UPDATED_SUCCESS`.
 - **Hatalar:** 400 (doğrulama), 401, 403 (izin yok ya da sipariş başka kullanıcıya ait), 404 (sipariş bulunamadı), 409, 422.
+- **İptal (kullanıcı akışı):** `PATCH api/orders/users/cancel/{orderId}` yalnızca oturumdaki kullanıcının **kendi** siparişini iptal eder;
+  kullanıcı id'si **token'dan** alınır (istek gövdesi yoktur, `SameUser` policy geçerlidir). Sipariş yoksa **404** döner;
+  sipariş başka bir kullanıcıya aitse bilgi sızdırmamak için yine **404** döner (sebep yalnızca loglara yazılır).
+  Ödemesi tamamlanmayan sipariş **422**, teslim edilmiş sipariş **422**, zaten iptal edilmiş sipariş **409** ile reddedilir.
+  İptal, tek `UPDATE` ile `OrderStatus = Canceled` ve `PaymentStatus = Refunded` yazılarak uygulanır (ödeme durumu statik olarak işaretlenir, Stripe iade entegrasyonu henüz yoktur); hiçbir satır etkilenmezse (eşzamanlı değişiklik) **409** döner.
+  Masa siparişleri kullanıcıya bağlı olmadığı için bu uçtan iptal edilemez.
+- **İptal — yetkilendirme ayrımı:** `SameUser` policy'si yalnızca geçerli bir kullanıcı token'ı arar (token'daki kullanıcı kimliği çözümlenemezse **403** döner; admin rolü her durumda geçer). Sipariş sahipliği ise iş kuralı olarak **404 ile** doğrulanır: başka bir kullanıcıya ait siparişin varlığı istemciye sızdırılmaz, gerçek sebep yalnızca sunucu loglarına yazılır.
 
 
 ## Webhooks — `api/webhooks`
@@ -168,7 +176,7 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
 
 ## Ortak notlar
 
-- **Yetkilendirme:** JWT Bearer token'ı `Authorization: Bearer <token>` başlığıyla gönderilir. İzin tabanlı policy'ler `Permissions` sabitlerinden üretilir; `SameUser` policy'si kullanıcının yalnızca kendi kaynağına erişmesini sağlar.
+- **Yetkilendirme:** JWT Bearer token'ı `Authorization: Bearer <token>` başlığıyla gönderilir. İzin tabanlı policy'ler `Permissions` sabitlerinden üretilir. `SameUser` policy'si, route'ta `id` parametresi varsa token'daki kullanıcı kimliğiyle karşılaştırır; `id` yoksa yalnızca geçerli bir token ister ve admin rolünü her durumda geçirir. Bu yüzden kaynak sahipliği gereken akışlarda sahiplik, ilgili iş kuralıyla ayrıca doğrulanır (ör. sipariş iptalinde 404).
 - **Hata kodları:** Doğrulama hataları 400, iş kuralı hataları 404 (`NotFoundException`), 409 (`ConflictException`) ve 422 (`UnprocessableEntityError`) olarak döner. Eşleme `WebApi/Middlewares/ExceptionMiddleware.cs` içinde yapılır.
 - **Yanıt gövdesi:** Başarılı yanıtlar `BaseResponse` (`Message`, `Code`) veya veri içeren uçlarda `GeneralSuccessResponseWithData<T>` (`Message`, `Code`, `Data`) biçimindedir.
 - **Kimlik doğrulama çerezleri:** Login, refresh ve logout uçları refresh token'ı `HttpOnly` `_session` cookie'sinde taşır; access token yanıt gövdesinde döner.

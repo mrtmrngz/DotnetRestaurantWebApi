@@ -22,7 +22,7 @@ Restoranın menüsünü (kategoriler, ürünler, ürün görselleri, indirimler)
 - **İzin tabanlı yetkilendirme:** `Permissions` sabitlerinden üretilen authorization policy'leri; kullanıcının rolüne ait izin listesi Redis'te cache'lenir.
 - **Redis cache:** liste uçları cache-aside deseniyle okunur. Cache miss olduğunda dağıtık kilit alınır, kilit alınamazsa kısa bir bekleme sonrası tekrar denenir; böylece eşzamanlı isteklerde veritabanına tek sorgu gider (cache stampede koruması). Değerler gzip ile sıkıştırılarak saklanır, mutasyonlarda ilgili cache anahtarları temizlenir.
 - **Medya ve arka plan işler:** S3 uyumlu depoya görsel yükleme, güncelleme sonrası eski dosyaların event handler ile silinmesi, indirimlerin başlangıç/bitiş anlarında çalışan Hangfire job'ları ve arka planda gönderilen HTML mailler.
-- **Test ve CI:** 1.180+ test (unit + integration); GitHub Actions üzerinde restore → build (Release) → test.
+- **Test ve CI:** 1.270+ test (unit + integration); GitHub Actions üzerinde restore → build (Release) → test.
 
 ## Mimari
 
@@ -289,7 +289,7 @@ Ayrıntılı parametreler, örnek istek/yanıtlar ve yetki bilgisi için Swagger
 - `api/reservations` — giriş yapan kullanıcı için rezervasyon oluşturma (`POST api/reservations/add/current-user`, `reservation:create`)
 - `api/cart` — Kullanıcı ve paneldeki yetkili kullanıcılar için sepet işlemleri.
 - `api/checkout` — oturumdaki kullanıcının (`POST api/checkout/users`) veya panelden bir masanın (`POST api/checkout/tables/{tableId}/online`) sepetini Stripe ödeme oturumuna, ya da masanın sepetini nakit ödemeli siparişe (`POST api/checkout/tables/{tableId}/cash`, `checkout:create`) dönüştürür; `X-Idempotency-Key` header'ı zorunlu
-- `api/orders` — kullanıcı siparişinin durumunu güncelleme (`PATCH api/orders/users/status/{orderId}`, `orders:update`)
+- `api/orders` — kullanıcı siparişinin durumunu güncelleme (`PATCH api/orders/users/status/{orderId}`, `orders:update`) ve kullanıcının kendi siparişini iptali (`PATCH api/orders/users/cancel/{orderId}`, `SameUser`)
 - `api/webhooks/checkout` — Stripe checkout ödeme olaylarını (`checkout.session.completed`, `async_payment_succeeded`, `async_payment_failed`, `expired`) işler; anonim uçtur, güvenlik `Stripe-Signature` imzasının doğrulanmasıyla sağlanır
 - `api/diagnostics/cache` — cache hit/miss sayaçları
 
@@ -343,7 +343,7 @@ Planlanan işler (kodda henüz uç noktası yok):
 
 - Masa numarası benzersizliği veritabanı kısıtı yerine uygulama seviyesinde (Rules) kontrol edilir; tek restoran ve az sayıda yönetici senaryosu için bilinçli bir tercihtir.
 - İndirimler için silme ucu yok; indirim `PATCH api/discounts/{discountId}` ile pasife alınabilir.
-- Sipariş durumu güncelleme ucu yalnızca kullanıcı siparişlerini kapsar: masa siparişleri (`UserId` boş) ve ödemesi tamamlanmamış siparişler `PATCH api/orders/users/status/{orderId}` ile güncellenemez; gövdedeki `userId` sipariş sahibiyle eşleşmezse de istek reddedilir.
+- Sipariş durumu güncelleme ucu yalnızca kullanıcı siparişlerini kapsar: masa siparişleri (`UserId` boş) ve ödemesi tamamlanmamış siparişler `PATCH api/orders/users/status/{orderId}` ile güncellenemez; gövdedeki `userId` sipariş sahibiyle eşleşmezse de istek reddedilir. Sipariş iptali (`PATCH api/orders/users/cancel/{orderId}`) yalnızca oturumdaki kullanıcının kendi siparişini kapsar; ödemesi tamamlanmamış, teslim edilmiş ya da zaten iptal edilmiş siparişler iptal edilemez. İptal edilen siparişin ödeme durumu `Refunded` olarak işaretlenir; Stripe üzerinden gerçek iade akışı henüz eklenmemiştir.
 - Checkout akışında Stripe ödeme oturumu açıldıktan sonra sipariş veritabanına yazılır; yazma başarısız olursa Stripe tarafında oturum açık kalabilir (mükerrer istekler idempotency key ile engellenir, oturum 1 saat sonra kendiliğinden kapanır).
 - Ödeme sonucu Stripe akışında `api/webhooks/checkout` ucu ile siparişe yansıtılır: `checkout.session.completed` (yalnızca ödeme alınmışsa) ve `async_payment_succeeded` siparişi `Paid`, `async_payment_failed` ve `expired` siparişi `Failed` + `Canceled` yapar. Olay, sipariş bulunamazsa 404 ile reddedilir ve Stripe olayı tekrar gönderir; işlem yalnızca ödeme sonucu bekleyen (`Pending`) siparişlerde uygulanır.
 - Webhook ucu anonimdir; erişim yalnızca `Stripe-Signature` başlığının HMAC-SHA256 ile doğrulanmasıyla kontrol edilir (imza sırrı `Stripe:WebhookSecret`), bu nedenle uç CORS/rate limiting sertleştirmesi ile birlikte ele alınmalıdır.

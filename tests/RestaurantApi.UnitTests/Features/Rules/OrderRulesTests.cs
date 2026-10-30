@@ -7,8 +7,6 @@ using RestaurantApi.Domain.Enums;
 
 namespace RestaurantApi.UnitTests.Features.Rules;
 
-// Sipariş durum güncelleme akışının iş kuralları: her kural ya sessizce geçer ya da
-// ilgili iş kuralı hatasını (404 / 403 / 409 / 422) doğru mesajla fırlatır.
 public class OrderRulesTests
 {
     private readonly ILogger<OrderRules> _loggerMock = Substitute.For<ILogger<OrderRules>>();
@@ -182,6 +180,85 @@ public class OrderRulesTests
         act.Should()
             .Throw<ConflictException>("hiçbir satır etkilenmediği için bu hata fırlatılması gerekirdi")
             .WithMessage("Sipariş durumu güncellenemedi. Lütfen tekrar deneyiniz.");
+    }
+
+    #endregion
+
+
+    #region ShouldOrderBelongToCurrentUser Tests
+
+    [Fact]
+    public void ShouldOrderBelongToCurrentUser_WhenOrderBelongsToUser_ShouldNotThrow()
+    {
+        var userId = Guid.NewGuid();
+        var order = CreateOrder(userId);
+
+        Action act = () => _sut.ShouldOrderBelongToCurrentUser(order, userId);
+
+        act.Should().NotThrow("Sipariş isteği yapan kullanıcıya ait olduğu için hata fırlatmaması gerekirdi");
+    }
+
+    [Fact]
+    public void ShouldOrderBelongToCurrentUser_WhenOrderBelongsToAnotherUser_ShouldThrowNotFoundException()
+    {
+        // Bilgi sızdırmamak için 403 değil 404 döner; gerçek sebep yalnızca loglara yazılır.
+        var order = CreateOrder(Guid.NewGuid());
+
+        Action act = () => _sut.ShouldOrderBelongToCurrentUser(order, Guid.NewGuid());
+
+        act.Should()
+            .Throw<NotFoundException>(
+                "başka kullanıcıya ait siparişin varlığı 404 ile gizlendiği için bu hata fırlatılması gerekirdi")
+            .WithMessage("Sipariş bulunamadı.");
+    }
+
+    [Fact]
+    public void ShouldOrderBelongToCurrentUser_WhenOrderIsTableOrder_ShouldThrowNotFoundException()
+    {
+        var tableOrder = CreateOrder(userId: null);
+
+        Action act = () => _sut.ShouldOrderBelongToCurrentUser(tableOrder, Guid.NewGuid());
+
+        act.Should()
+            .Throw<NotFoundException>("masa siparişi bir kullanıcıya ait olmadığı için bu hata fırlatılması gerekirdi")
+            .WithMessage("Sipariş bulunamadı.");
+    }
+
+    #endregion
+
+    #region ShouldOrderBeCancelable Tests
+
+    [Theory]
+    [InlineData(OrderStatus.Pending)]
+    [InlineData(OrderStatus.Confirmed)]
+    [InlineData(OrderStatus.Preparing)]
+    [InlineData(OrderStatus.Ready)]
+    [InlineData(OrderStatus.OnTheWay)]
+    public void ShouldOrderBeCancelable_WhenStatusAllowsCancellation_ShouldNotThrow(OrderStatus orderStatus)
+    {
+        Action act = () => _sut.ShouldOrderBeCancelable(orderStatus, Guid.NewGuid());
+
+        act.Should().NotThrow("Sipariş bu durumdayken iptal edilebilir olduğu için hata fırlatmaması gerekirdi");
+    }
+
+    [Fact]
+    public void ShouldOrderBeCancelable_WhenOrderIsAlreadyCanceled_ShouldThrowConflictException()
+    {
+        Action act = () => _sut.ShouldOrderBeCancelable(OrderStatus.Canceled, Guid.NewGuid());
+
+        act.Should().Throw<ConflictException>("Sipariş zaten iptal edildiği için bu hata fırlatılması gerekirdi")
+            .WithMessage("Sipariş zaten iptal edilmiş.");
+    }
+
+    [Fact]
+    public void ShouldOrderBeCancelable_WhenOrderIsDelivered_ShouldThrowUnprocessableEntityError()
+    {
+        Action act = () => _sut.ShouldOrderBeCancelable(OrderStatus.Delivered, Guid.NewGuid());
+
+        act.Should()
+            .Throw<UnprocessableEntityError>(
+                "Teslim edilmiş sipariş iptal edilemeyeceği için bu hata fırlatılması gerekirdi")
+            .WithMessage("Sipariş teslim edildiği için iptal edilemez.");
     }
 
     #endregion

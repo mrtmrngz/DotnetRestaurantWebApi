@@ -75,4 +75,33 @@ public class OrderRules
 
         throw new ConflictException("Sipariş durumu güncellenemedi. Lütfen tekrar deneyiniz.");
     }
+
+    public void ShouldOrderBelongToCurrentUser(Domain.Entities.Order order, Guid userId)
+    {
+        if (order.UserId.HasValue && order.UserId.Value == userId)
+            return;
+
+        _logger.LogWarning(
+            "Sipariş, isteği yapan kullanıcıya ait değil. OrderId:{OrderId}, OrderUserId:{OrderUserId}, CurrentUserId:{CurrentUserId}",
+            order.Id, order.UserId, userId);
+
+        throw new NotFoundException("Sipariş bulunamadı.");
+    }
+
+    // İptal edilemeyecek durumdaki siparişler: iptal edilmişse 409, teslim edilmişse 422.
+    public void ShouldOrderBeCancelable(OrderStatus orderStatus, Guid orderId)
+    {
+        if (orderStatus == OrderStatus.Canceled)
+        {
+            _logger.LogWarning("Sipariş zaten iptal edilmiş. OrderId:{OrderId}", orderId);
+            throw new ConflictException("Sipariş zaten iptal edilmiş.");
+        }
+
+        if (orderStatus == OrderStatus.Delivered)
+        {
+            _logger.LogWarning("Teslim edilmiş sipariş iptal edilemez. OrderId:{OrderId}", orderId);
+            throw new UnprocessableEntityError("Sipariş teslim edildiği için iptal edilemez.");
+        }
+    }
+
 }
