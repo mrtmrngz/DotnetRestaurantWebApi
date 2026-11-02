@@ -136,6 +136,7 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
 | --- | --- | --- | --- | --- |
 | PATCH | `api/orders/users/status/{orderId}` | Kullanıcı siparişinin durumunu günceller | `orders:update` | 200 |
 | PATCH | `api/orders/users/cancel/{orderId}` | Oturumdaki kullanıcının **kendi** siparişini iptal eder | `SameUser` | 200 |
+| GET | `api/orders/users` | Oturumdaki kullanıcının siparişlerini listeler (en yeni sipariş en üstte) | `SameUser` | 200 |
 
 - **Gövde:** `userId` (zorunlu) ve `newStatus` (zorunlu, `OrderStatus` enum'ı). `orderId` **route'tan** alınır ve istek gövdesinden kabul edilmez (`[JsonIgnore]`/`[BindNever]`).
 - **Kapsam:** Yalnızca **kullanıcı** siparişleri güncellenebilir; gövdedeki `userId`, siparişin sahibiyle eşleşmelidir. Masa siparişlerinde `UserId` boş olduğu için bu siparişler uçtan güncellenemez (**403**).
@@ -149,7 +150,9 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
   Ödemesi tamamlanmayan sipariş **422**, teslim edilmiş sipariş **422**, zaten iptal edilmiş sipariş **409** ile reddedilir.
   İptal, tek `UPDATE` ile `OrderStatus = Canceled` ve `PaymentStatus = Refunded` yazılarak uygulanır (ödeme durumu statik olarak işaretlenir, Stripe iade entegrasyonu henüz yoktur); hiçbir satır etkilenmezse (eşzamanlı değişiklik) **409** döner.
   Masa siparişleri kullanıcıya bağlı olmadığı için bu uçtan iptal edilemez.
-- **İptal — yetkilendirme ayrımı:** `SameUser` policy'si yalnızca geçerli bir kullanıcı token'ı arar (token'daki kullanıcı kimliği çözümlenemezse **403** döner; admin rolü her durumda geçer). Sipariş sahipliği ise iş kuralı olarak **404 ile** doğrulanır: başka bir kullanıcıya ait siparişin varlığı istemciye sızdırılmaz, gerçek sebep yalnızca sunucu loglarına yazılır.
+- **Listeleme (kullanıcı akışı):** `GET api/orders/users` kullanıcı id'sini **token'dan** alır (istek parametresi yoktur, `userId` istemciden kabul edilmez). Her satırda `orderId`, `subTotal`, `shippingCost`, `total`, `orderStatus` ve `orderDate` döner. Token geçerli olsa bile kullanıcı kaydı bulunamazsa **404**; siparişi olmayan kullanıcı için **200 + boş liste** döner (liste uçlarında "kayıt yok" bir hata değildir). Masa siparişleri kullanıcıya bağlı olmadığı için bu listede yer almaz.
+  Token yoksa **401**; `SameUser` policy kullanıcıyı tanımlayamazsa (token'da kullanıcı kimliği yoksa) **403** döner.
+- **Yetkilendirme ayrımı (iptal ve listeleme):** `SameUser` policy'si yalnızca geçerli bir kullanıcı token'ı arar (token'daki kullanıcı kimliği çözümlenemezse **403** döner; admin rolü her durumda geçer). Sipariş sahipliği ise iş kuralı olarak **404 ile** doğrulanır: başka bir kullanıcıya ait siparişin varlığı istemciye sızdırılmaz, gerçek sebep yalnızca sunucu loglarına yazılır.
 
 
 ## Webhooks — `api/webhooks`

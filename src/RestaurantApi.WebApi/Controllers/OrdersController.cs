@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Features.Orders.Commands.OrderCancelCommand;
 using RestaurantApi.Application.Features.Orders.Commands.OrderStatusUpdateCommand;
+using RestaurantApi.Application.Features.Orders.Queries.GetUserOrdersQuery;
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
@@ -126,4 +127,43 @@ public class OrdersController : ControllerBase
 
         return Ok(response);
     }
+
+    /// <summary>
+    /// Oturumdaki kullanıcının siparişlerini listeler (en yeni sipariş en üstte).
+    /// </summary>
+    /// <remarks>
+    /// Akış:
+    /// 1. Kullanıcı id'si **token'dan** alınır; uç istek parametresi almaz, `userId` istemciden kabul edilmez.
+    /// 2. Token geçerli olsa bile kullanıcı kaydı bulunamazsa **404** döner.
+    /// 3. Siparişi olmayan kullanıcı için **200 + boş liste** döner; liste uçlarında "kayıt yok" bir hata değildir.
+    /// Her satırda `orderId`, `subTotal`, `shippingCost`, `total`, `orderStatus` ve `orderDate` alanları bulunur.
+    /// Masa siparişleri kullanıcıya bağlı olmadığı için bu listede yer almaz.
+    /// </remarks>
+    /// <response code="200">Kullanıcının siparişleri (boş liste olabilir) döner.</response>
+    /// <response code="401">Yetkisiz erişim (JWT token eksik veya geçersiz).</response>
+    /// <response code="403">Kullanıcı kendi kaynağına erişmediğinde (`SameUser` policy).</response>
+    /// <response code="404">Kullanıcı bulunamadığında.</response>
+    [HttpGet("users")]
+    #region SwaggerDocumentation
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<IReadOnlyList<GetUserOrdersQueryResult>>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(GetUserOrdersResponseExample))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(ErrorResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    #endregion
+    [Authorize(Policy = "SameUser")]
+    public async Task<IActionResult> GetUserOrders()
+    {
+        var query = new GetUserOrdersQuery
+        {
+            UserId = _currentUserService.GetRequiredUserId()
+        };
+
+        GeneralSuccessResponseWithData<IReadOnlyList<GetUserOrdersQueryResult>> response =
+            await _mediator.Send(query);
+
+        return Ok(response);
+    }
+
 }

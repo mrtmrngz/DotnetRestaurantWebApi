@@ -41,8 +41,6 @@ public class DeleteProductCommandHandler: IRequestHandler<DeleteProductCommand, 
 
         _productRules.ShouldBeValidForDelete(product, request.ProductId);
 
-        // soft delete product (ürün fotoğraflarına dokunulmaz)
-
         await _productRepository.GetAllAsQueryable()
             .IgnoreQueryFilters()
             .Where(p => p.Id == request.ProductId)
