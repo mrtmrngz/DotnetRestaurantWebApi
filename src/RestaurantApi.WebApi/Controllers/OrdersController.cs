@@ -6,6 +6,8 @@ using RestaurantApi.Application.Features.Orders.Commands.OrderCancelCommand;
 using RestaurantApi.Application.Features.Orders.Commands.OrderStatusUpdateCommand;
 using RestaurantApi.Application.Features.Orders.Queries.GetAllOrdersQuery;
 using RestaurantApi.Application.Features.Orders.Queries.GetTableOrdersQuery;
+using RestaurantApi.Application.Features.Orders.Queries.GetUserOrderDetailQuery;
+
 using RestaurantApi.Application.Features.Orders.Queries.GetUserOrdersQuery;
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
@@ -168,6 +170,51 @@ public class OrdersController : ControllerBase
         return Ok(response);
     }
 
+    /// <summary>
+    /// Oturumdaki kullanıcının tek bir siparişinin detayını döndürür.
+    /// </summary>
+    /// <remarks>
+    /// Akış:
+    /// 1. `orderId` **route'tan**, kullanıcı id'si **token'dan** alınır; ikisi de istek gövdesinden kabul edilmez.
+    /// 2. Token geçerli olsa bile kullanıcı kaydı bulunamazsa **404** döner.
+    /// 3. Sipariş bulunamazsa **404**; sipariş isteği yapan kullanıcıya ait değilse bilgi sızdırmamak için yine
+    ///    **404** döner (gerçek sebep yalnızca sunucu loglarında görünür).
+    /// 4. Detayda `orderStatus`, `paymentStatus`, `subTotal`, `shippingCost`, `total`, `addressSnapshot` ve sipariş
+    ///    kalemleri (`orderItems`: `productName`, `unitPrice`, `quantity`) döner.
+    /// Kullanıcı siparişlerinde adres zorunlu olduğu için `addressSnapshot` dolu gelir; değer, sipariş anındaki
+    /// adresin JSON anlık görüntüsüdür. Masa siparişleri kullanıcıya bağlı olmadığı için bu uçtan açılamaz.
+    /// </remarks>
+    /// <param name="orderId">Detayı getirilecek siparişin benzersiz id'si.</param>
+    /// <response code="200">Sipariş detayı `FETH_DATA_SUCCESS` kodu ile döner.</response>
+    /// <response code="400">Doğrulama hataları (sipariş ID'si geçersiz/boş ya da kullanıcı ID'si boş olduğunda).</response>
+    /// <response code="401">Yetkisiz erişim (JWT token eksik veya geçersiz).</response>
+    /// <response code="403">Kullanıcı kendi kaynağına erişmediğinde (`SameUser` policy).</response>
+    /// <response code="404">Kullanıcı bulunamadığında ya da sipariş bulunamadığında/başka bir kullanıcıya ait olduğunda.</response>
+    [HttpGet("users/{orderId}")]
+    #region SwaggerDocumentation
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<GetUserOrderDetailQueryResult>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(GetUserOrderDetailResponseExample))]
+    [ProducesResponseType(typeof(ValidationErrorResponse), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(ErrorResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    #endregion
+    [Authorize(Policy = "SameUser")]
+    public async Task<IActionResult> GetUserOrderDetail([FromRoute] Guid orderId)
+    {
+        var query = new GetUserOrderDetailQuery
+        {
+            OrderId = orderId,
+            UserId = _currentUserService.GetRequiredUserId()
+        };
+
+        GeneralSuccessResponseWithData<GetUserOrderDetailQueryResult> response = await _mediator.Send(query);
+
+        return Ok(response);
+    }
+
 
     /// <summary>
     /// Bir masanın siparişlerini listeler (en yeni sipariş en üstte); panel akışıdır.
@@ -245,7 +292,6 @@ public class OrdersController : ControllerBase
         [FromQuery(Name = "order-status")] string? orderStatus,
         [FromQuery(Name = "payment-status")] string? paymentStatus)
     {
-        // Filtreler route query string'inden gelir; hepsi opsiyoneldir (boş bırakılabilir).
         var query = new GetAllOrdersQuery
         {
             Type = type,

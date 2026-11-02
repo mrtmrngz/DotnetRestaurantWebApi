@@ -1,7 +1,9 @@
 using AutoMapper;
 using RestaurantApi.Application.Features.Orders.Queries.GetAllOrdersQuery;
 using RestaurantApi.Application.Features.Orders.Queries.GetTableOrdersQuery;
+using RestaurantApi.Application.Features.Orders.Queries.GetUserOrderDetailQuery;
 using RestaurantApi.Application.Features.Orders.Queries.GetUserOrdersQuery;
+
 
 namespace RestaurantApi.Application.Features.Profiles;
 
@@ -24,5 +26,18 @@ public class OrderProfile: Profile
             .ForMember(dest => dest.TableId, opt => opt.MapFrom(src => src.RestaurantTableId))
             .ForMember(dest => dest.Type, opt => opt.MapFrom(src =>
                 src.UserId.HasValue ? GetAllOrdersQueryResult.OwnerUser : GetAllOrdersQueryResult.OwnerTable));
+
+        // Kullanıcı sipariş detayı: sipariş kalemleri yalnızca istenen alanlarla (ürün adı, birim fiyat, adet) eşlenir;
+        // AddressSnapshot, SubTotal, ShippingCost, Total ve durum alanları isim eşleşmesiyle gelir.
+        CreateMap<Domain.Entities.Order, GetUserOrderDetailQueryResult>()
+            .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.OrderItems, opt => opt.MapFrom(src => src.OrderItems
+                .Select(orderItem => new OrderItemDetail
+                {
+                    ProductName = orderItem.ProductName,
+                    UnitPrice = orderItem.UnitPrice,
+                    Quantity = orderItem.Quantity
+                })));
     }
 }
+
