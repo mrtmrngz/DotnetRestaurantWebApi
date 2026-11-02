@@ -102,5 +102,7 @@ public static class Permissions
     {
         [Description("Kullanıcı siparişlerinin durumunu güncelleme yetkisi verir.")]
         public const string Update = "orders:update";
+        [Description("Yetki sahibi kullanıcılar siparişleri listeleyebilir.")]
+        public const string Read = "orders:read";
     }
 }

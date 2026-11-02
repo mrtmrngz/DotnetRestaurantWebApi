@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Features.Orders.Commands.OrderCancelCommand;
 using RestaurantApi.Application.Features.Orders.Commands.OrderStatusUpdateCommand;
+using RestaurantApi.Application.Features.Orders.Queries.GetTableOrdersQuery;
 using RestaurantApi.Application.Features.Orders.Queries.GetUserOrdersQuery;
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
@@ -161,6 +162,49 @@ public class OrdersController : ControllerBase
         };
 
         GeneralSuccessResponseWithData<IReadOnlyList<GetUserOrdersQueryResult>> response =
+            await _mediator.Send(query);
+
+        return Ok(response);
+    }
+
+
+    /// <summary>
+    /// Bir masanın siparişlerini listeler (en yeni sipariş en üstte); panel akışıdır.
+    /// </summary>
+    /// <remarks>
+    /// Akış:
+    /// 1. `tableId` route'tan alınır; masa kaydı bulunamazsa **404** döner.
+    ///    Aktif/pasif ayrımı yapılmaz: pasif masanın siparişleri de listelenir.
+    /// 2. Siparişi olmayan masa için **200 + boş liste** döner (liste uçlarında "kayıt yok" bir hata değildir).
+    /// Her satırda `orderId`, `subTotal`, `shippingCost`, `total`, `orderStatus` ve `orderDate` alanları bulunur.
+    /// Masa siparişleri kullanıcıya bağlı olmadığı için kullanıcı sipariş listesinde yer almaz; bu uç yalnızca masaya bağlı siparişleri döndürür.
+    /// </remarks>
+    /// <param name="tableId">Siparişleri listelenecek masanın benzersiz id'si.</param>
+    /// <response code="200">Masanın siparişleri (boş liste olabilir) döner.</response>
+    /// <response code="400">Masa ID geçersiz veya boş olduğunda.</response>
+    /// <response code="401">Yetkisiz erişim (JWT token eksik veya geçersiz).</response>
+    /// <response code="403">Kullanıcının `orders:read` izni bulunmadığında.</response>
+    /// <response code="404">Masa bulunamadığında.</response>
+    [HttpGet("tables/{tableId:guid}")]
+    #region SwaggerDocumentation
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<IReadOnlyList<GetTableOrdersQueryResult>>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(GetTableOrdersResponseExample))]
+    [ProducesResponseType(typeof(ValidationErrorResponse), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(ErrorResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    #endregion
+    [Authorize(Policy = Permissions.OrderPermissions.Read)]
+    public async Task<IActionResult> GetTableOrders([FromRoute] Guid tableId)
+    {
+        var query = new GetTableOrdersQuery
+        {
+            TableId = tableId
+        };
+
+        GeneralSuccessResponseWithData<IReadOnlyList<GetTableOrdersQueryResult>> response =
             await _mediator.Send(query);
 
         return Ok(response);

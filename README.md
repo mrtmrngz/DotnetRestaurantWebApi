@@ -22,7 +22,7 @@ Restoranın menüsünü (kategoriler, ürünler, ürün görselleri, indirimler)
 - **İzin tabanlı yetkilendirme:** `Permissions` sabitlerinden üretilen authorization policy'leri; kullanıcının rolüne ait izin listesi Redis'te cache'lenir.
 - **Redis cache:** liste uçları cache-aside deseniyle okunur. Cache miss olduğunda dağıtık kilit alınır, kilit alınamazsa kısa bir bekleme sonrası tekrar denenir; böylece eşzamanlı isteklerde veritabanına tek sorgu gider (cache stampede koruması). Değerler gzip ile sıkıştırılarak saklanır, mutasyonlarda ilgili cache anahtarları temizlenir.
 - **Medya ve arka plan işler:** S3 uyumlu depoya görsel yükleme, güncelleme sonrası eski dosyaların event handler ile silinmesi, indirimlerin başlangıç/bitiş anlarında çalışan Hangfire job'ları ve arka planda gönderilen HTML mailler.
-- **Test ve CI:** 1.280+ test (unit + integration); GitHub Actions üzerinde restore → build (Release) → test.
+- **Test ve CI:** 1.290+ test (unit + integration); GitHub Actions üzerinde restore → build (Release) → test.
 
 ## Mimari
 
@@ -289,7 +289,7 @@ Ayrıntılı parametreler, örnek istek/yanıtlar ve yetki bilgisi için Swagger
 - `api/reservations` — giriş yapan kullanıcı için rezervasyon oluşturma (`POST api/reservations/add/current-user`, `reservation:create`)
 - `api/cart` — Kullanıcı ve paneldeki yetkili kullanıcılar için sepet işlemleri.
 - `api/checkout` — oturumdaki kullanıcının (`POST api/checkout/users`) veya panelden bir masanın (`POST api/checkout/tables/{tableId}/online`) sepetini Stripe ödeme oturumuna, ya da masanın sepetini nakit ödemeli siparişe (`POST api/checkout/tables/{tableId}/cash`, `checkout:create`) dönüştürür; `X-Idempotency-Key` header'ı zorunlu
-- `api/orders` — kullanıcı siparişinin durumunu güncelleme (`PATCH api/orders/users/status/{orderId}`, `orders:update`) ve kullanıcının kendi siparişini iptali (`PATCH api/orders/users/cancel/{orderId}`, `SameUser`), kullanıcının kendi siparişlerini listeleme (`GET api/orders/users`, `SameUser`)
+- `api/orders` — kullanıcı siparişinin durumunu güncelleme (`PATCH api/orders/users/status/{orderId}`, `orders:update`) ve kullanıcının kendi siparişini iptali (`PATCH api/orders/users/cancel/{orderId}`, `SameUser`), kullanıcının kendi siparişlerini listeleme (`GET api/orders/users`, `SameUser`), masa siparişlerini listeleme (`GET api/orders/tables/{tableId}`, `orders:read`)
 - `api/webhooks/checkout` — Stripe checkout ödeme olaylarını (`checkout.session.completed`, `async_payment_succeeded`, `async_payment_failed`, `expired`) işler; anonim uçtur, güvenlik `Stripe-Signature` imzasının doğrulanmasıyla sağlanır
 - `api/diagnostics/cache` — cache hit/miss sayaçları
 
