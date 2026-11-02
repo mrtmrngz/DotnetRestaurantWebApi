@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Abstractions.Repositories;
+using RestaurantApi.Application.Common.Abstractions.Settings;
 using RestaurantApi.Domain.Identity;
 using RestaurantApi.Persistence.Context;
 using RestaurantApi.Persistence.Repositories;
@@ -73,6 +74,9 @@ public static class PersistenceServiceRegistration
         using var scope = serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApiContext>();
 
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+        var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+
         var loggerFactory = scope.ServiceProvider.GetRequiredService<ILoggerFactory>();
         var logger = loggerFactory.CreateLogger("DataSeeder");
 
@@ -82,6 +86,13 @@ public static class PersistenceServiceRegistration
 
             await PermissionSeeder.SeedPermissionAsync(context, logger);
             await RoleSeeder.SeedRolesAndPermissionsAsync(context, logger);
+
+            var adminSettings = configuration
+                .GetSection(RootAdminSettings.SectionName)
+                .Get<RootAdminSettings>() ?? new RootAdminSettings();
+
+            await RootAdminSeeder.SeedRootAdminAsync(userManager, adminSettings, logger);
+            
             logger.LogInformation("🏁 Tüm seed işlemleri başarıyla tamamlandı.");
         }
         catch (Exception ex)

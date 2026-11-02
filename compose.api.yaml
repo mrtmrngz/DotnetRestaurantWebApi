@@ -50,6 +50,10 @@ x-api-environment: &api-environment
   Stripe__CancelUrl: "${Stripe__CancelUrl:? Stripe__CancelUrl gerekli}"
   Stripe__Currency: "${Stripe__Currency:? Stripe__Currency gerekli}"
   
+  RootAdmin__Email: "${AdminMail:? Admin Email Gerekli}"
+  RootAdmin__Password: "${AdminPassword:? Admin Password Gerekli}"
+  RootAdmin__PhoneNumber: "${AdminPhone:? Admin Phone Gerekli}"
+  
 
 x-api-depends-on: &api-depends-on
   postgres:

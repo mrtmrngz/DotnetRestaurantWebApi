@@ -147,6 +147,10 @@ Stripe__WebhookSecret=<your-stripe-webhook-secret>
 Stripe__SuccessUrl=<your-stripe-success-routing-url>
 Stripe__CancelUrl=<your-stripe-cancel-routing-url>
 Stripe__Currency=try
+
+AdminMail=<root admin mail address>
+AdminPassword=<root admin password>
+AdminPhone=<root admin phone number>
 ```
 
 `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `JWT_SECRET_KEY`, `MAIL_EMAIL` ve `MAIL_PASSWORD` zorunludur; eksik olmaları durumunda `docker compose` hata verir. `POSTGRES_USER` varsayılanı `user`, `MAIL_HOST` varsayılanı `smtp.gmail.com`, `MAIL_PORT` varsayılanı `587`'dir. Veritabanı, Redis ve MinIO değerleri `compose.yaml`'daki servis tanımlarıyla aynı olmalıdır.
@@ -206,6 +210,10 @@ dotnet user-secrets set "Stripe:WebhookSecret" "<stripe-webhook-secret>"
 dotnet user-secrets set "Stripe:SuccessUrl" "<ui-success-route>"
 dotnet user-secrets set "Stripe:CancelUrl" "<ui-cancel-route>"
 dotnet user-secrets set "Stripe:Currency" "try"
+
+dotnet user-secrets set "RootAdmin:Email" "<root_admin_mail>"
+dotnet user-secrets set "RootAdmin:Password" "<root_admin_pwd>"
+dotnet user-secrets set "RootAdmin:PhoneNumber" "<root_admin_phone>"
 ```
 
 Veritabanı, Redis ve MinIO değerleri (kullanıcı adı, parola, veritabanı ve bucket adı) `compose.yaml`'daki servis tanımlarıyla aynı olmalıdır; parolaları depoya yazmayın.
