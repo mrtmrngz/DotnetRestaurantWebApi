@@ -1,4 +1,5 @@
 using AutoMapper;
+using RestaurantApi.Application.Features.Orders.Queries.GetAllOrdersQuery;
 using RestaurantApi.Application.Features.Orders.Queries.GetTableOrdersQuery;
 using RestaurantApi.Application.Features.Orders.Queries.GetUserOrdersQuery;
 
@@ -16,5 +17,12 @@ public class OrderProfile: Profile
         // Masa sipariş listesi: kullanıcı listesiyle aynı alanlar, ayrı sözleşme.
         CreateMap<Domain.Entities.Order, GetTableOrdersQueryResult>()
             .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.Id));
+
+        // Panel sipariş listesi: ek olarak sipariş sahibi (userId/tableId) ve sahip tipi döner.
+        CreateMap<Domain.Entities.Order, GetAllOrdersQueryResult>()
+            .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.TableId, opt => opt.MapFrom(src => src.RestaurantTableId))
+            .ForMember(dest => dest.Type, opt => opt.MapFrom(src =>
+                src.UserId.HasValue ? GetAllOrdersQueryResult.OwnerUser : GetAllOrdersQueryResult.OwnerTable));
     }
 }

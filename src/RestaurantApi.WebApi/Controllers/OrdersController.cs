@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Features.Orders.Commands.OrderCancelCommand;
 using RestaurantApi.Application.Features.Orders.Commands.OrderStatusUpdateCommand;
+using RestaurantApi.Application.Features.Orders.Queries.GetAllOrdersQuery;
 using RestaurantApi.Application.Features.Orders.Queries.GetTableOrdersQuery;
 using RestaurantApi.Application.Features.Orders.Queries.GetUserOrdersQuery;
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
@@ -205,6 +206,54 @@ public class OrdersController : ControllerBase
         };
 
         GeneralSuccessResponseWithData<IReadOnlyList<GetTableOrdersQueryResult>> response =
+            await _mediator.Send(query);
+
+        return Ok(response);
+    }
+
+
+    /// <summary>
+    /// Panel: tüm siparişleri (kullanıcı + masa) filtreleyerek listeler; en yeni sipariş en üstte.
+    /// </summary>
+    /// <remarks>
+    /// Filtreler opsiyoneldir; hiçbiri gönderilmezse tüm siparişler döner:
+    /// - `type`: `table` (yalnız masa siparişleri) veya `users` (yalnız kullanıcı siparişleri).
+    /// - `order-status`: `OrderStatus` enum adı (ör. `Delivered`).
+    /// - `payment-status`: `PaymentStatus` enum adı (ör. `Paid`).
+    ///
+    /// Her satırda `orderId`, `subTotal`, `shippingCost`, `total`, `orderStatus`, `orderDate` alanlarına ek olarak
+    /// `userId`, `tableId` (sipariş sahibine göre biri boş olur) ve `type` (`user` / `table`) döner.
+    ///
+    /// Desteklenmeyen bir `type` değeri ya da enum'larla eşleşmeyen bir `order-status`/`payment-status` değeri
+    /// gönderilirse (ör. `type=owner`, `order-status=Foo`) istek hata dönmez; **200 + boş liste** döner.
+    /// </remarks>
+    /// <param name="type">Sipariş sahibi tipi filtresi (`table` veya `users`); boşsa filtre uygulanmaz.</param>
+    /// <param name="orderStatus">Sipariş durumu filtresi (`OrderStatus` enum adı); boşsa filtre uygulanmaz.</param>
+    /// <param name="paymentStatus">Ödeme durumu filtresi (`PaymentStatus` enum adı); boşsa filtre uygulanmaz.</param>
+    /// <response code="200">Filtreye uyan siparişler (boş liste olabilir) döner.</response>
+    /// <response code="401">Yetkisiz erişim (JWT token eksik veya geçersiz).</response>
+    /// <response code="403">Kullanıcının `orders:read` izni bulunmadığında.</response>
+    [HttpGet("panel")]
+    #region SwaggerDocumentation
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<IReadOnlyList<GetAllOrdersQueryResult>>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(GetAllOrdersResponseExample))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    #endregion
+    [Authorize(Policy = Permissions.OrderPermissions.Read)]
+    public async Task<IActionResult> GetAllOrders([FromQuery] string? type,
+        [FromQuery(Name = "order-status")] string? orderStatus,
+        [FromQuery(Name = "payment-status")] string? paymentStatus)
+    {
+        // Filtreler route query string'inden gelir; hepsi opsiyoneldir (boş bırakılabilir).
+        var query = new GetAllOrdersQuery
+        {
+            Type = type,
+            OrderStatus = orderStatus,
+            PaymentStatus = paymentStatus
+        };
+
+        GeneralSuccessResponseWithData<IReadOnlyList<GetAllOrdersQueryResult>> response =
             await _mediator.Send(query);
 
         return Ok(response);
