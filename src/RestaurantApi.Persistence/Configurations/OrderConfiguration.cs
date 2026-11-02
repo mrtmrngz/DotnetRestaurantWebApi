@@ -61,13 +61,13 @@ public class OrderConfiguration: IEntityTypeConfiguration<Order>
             .OnDelete(DeleteBehavior.Cascade);
 
         // user relation
-        builder.HasOne<AppUser>()
+        builder.HasOne(o => o.User)
             .WithMany()
             .HasForeignKey(o => o.UserId)
             .OnDelete(DeleteBehavior.SetNull);
         
         // table relation
-        builder.HasOne<RestaurantTable>()
+        builder.HasOne(o => o.RestaurantTable)
             .WithMany()
             .HasForeignKey(o => o.RestaurantTableId)
             .OnDelete(DeleteBehavior.SetNull);

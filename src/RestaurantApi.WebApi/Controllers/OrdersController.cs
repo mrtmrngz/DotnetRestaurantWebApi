@@ -5,6 +5,7 @@ using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Features.Orders.Commands.OrderCancelCommand;
 using RestaurantApi.Application.Features.Orders.Commands.OrderStatusUpdateCommand;
 using RestaurantApi.Application.Features.Orders.Queries.GetAllOrdersQuery;
+using RestaurantApi.Application.Features.Orders.Queries.GetPanelOrderDetailQuery;
 using RestaurantApi.Application.Features.Orders.Queries.GetTableOrdersQuery;
 using RestaurantApi.Application.Features.Orders.Queries.GetUserOrderDetailQuery;
 
@@ -301,6 +302,50 @@ public class OrdersController : ControllerBase
 
         GeneralSuccessResponseWithData<IReadOnlyList<GetAllOrdersQueryResult>> response =
             await _mediator.Send(query);
+
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Panel: tek bir siparişin detayını (masa ya da kullanıcı siparişi) döndürür.
+    /// </summary>
+    /// <remarks>
+    /// Akış:
+    /// 1. `orderId` **route'tan** alınır; sipariş bulunamazsa **404** döner.
+    /// 2. Detayda `orderStatus`, `paymentStatus`, `subTotal`, `shippingCost`, `total`, `orderDate`,
+    ///    `addressSnapshot` ve sipariş kalemleri (`orderItems`: `productName`, `unitPrice`, `quantity`) döner.
+    /// 3. Sipariş sahibine göre satır alanları değişir: masa siparişlerinde `tableNumber` (masa numarası),
+    ///    kullanıcı siparişlerinde müşteri tam adı (`customerFullName`) doludur; kullanıcı silinmişse ad boş döner.
+    /// 4. Adres anlık görüntüsü (`addressSnapshot`) kullanıcı siparişlerinde zorunlu olduğu için doludur,
+    ///    masa siparişlerinde boş olabilir.
+    /// Bu uç yalnızca `orders:read` izni olan panel kullanıcıları içindir; sahiplik kontrolü yapılmaz.
+    /// </remarks>
+    /// <param name="orderId">Detayı getirilecek siparişin benzersiz id'si.</param>
+    /// <response code="200">Sipariş detayı `FETH_DATA_SUCCESS` kodu ile döner.</response>
+    /// <response code="400">Doğrulama hataları (sipariş ID'si geçersiz/boş olduğunda).</response>
+    /// <response code="401">Yetkisiz erişim (JWT token eksik veya geçersiz).</response>
+    /// <response code="403">Kullanıcının `orders:read` izni bulunmadığında.</response>
+    /// <response code="404">Sipariş bulunamadığında.</response>
+    [HttpGet("panel/{orderId:guid}")]
+    #region SwaggerDocumentation
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<GetPanelOrderDetailQueryResult>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(GetPanelOrderDetailResponseExample))]
+    [ProducesResponseType(typeof(ValidationErrorResponse), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(ErrorResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    #endregion
+    [Authorize(Policy = Permissions.OrderPermissions.Read)]
+    public async Task<IActionResult> GetPanelOrderDetail([FromRoute] Guid orderId)
+    {
+        var query = new GetPanelOrderDetailQuery
+        {
+            OrderId = orderId
+        };
+
+        GeneralSuccessResponseWithData<GetPanelOrderDetailQueryResult> response = await _mediator.Send(query);
 
         return Ok(response);
     }

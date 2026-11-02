@@ -1,5 +1,6 @@
 using System.Text.Json;
 using RestaurantApi.Domain.Enums;
+using RestaurantApi.Domain.Identity;
 using RestaurantApi.Domain.ValueObjects;
 
 namespace RestaurantApi.Domain.Entities;
@@ -20,6 +21,11 @@ public class Order
 
     public Guid? RestaurantTableId { get; set; }
     public Guid? UserId { get; set; }
+
+    // Sipariş sahibi: masa siparişlerinde masa, kullanıcı siparişlerinde kullanıcı dolu olur.
+    // Panel detayı masa numarasını ve müşteri adını bu gezinme özellikleri üzerinden projeksiyonlar.
+    public RestaurantTable? RestaurantTable { get; set; }
+    public AppUser? User { get; set; }
 
     public string IdempotencyKey { get; private set; } = null!;
     public string? CheckoutSessionId { get; private set; }

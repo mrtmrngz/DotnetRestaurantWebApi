@@ -1,6 +1,7 @@
 using AutoMapper;
 using RestaurantApi.Application.Features.Orders.Queries.GetAllOrdersQuery;
 using RestaurantApi.Application.Features.Orders.Queries.GetTableOrdersQuery;
+using RestaurantApi.Application.Features.Orders.Queries.GetPanelOrderDetailQuery;
 using RestaurantApi.Application.Features.Orders.Queries.GetUserOrderDetailQuery;
 using RestaurantApi.Application.Features.Orders.Queries.GetUserOrdersQuery;
 
@@ -33,6 +34,22 @@ public class OrderProfile: Profile
             .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.Id))
             .ForMember(dest => dest.OrderItems, opt => opt.MapFrom(src => src.OrderItems
                 .Select(orderItem => new OrderItemDetail
+                {
+                    ProductName = orderItem.ProductName,
+                    UnitPrice = orderItem.UnitPrice,
+                    Quantity = orderItem.Quantity
+                })));
+
+        // Panel sipariş detayı: masa siparişlerinde masa numarası, kullanıcı siparişlerinde (kullanıcı
+        // silinmemişse) müşteri tam adı döner; adres anlık görüntüsü ve durum alanları isim eşleşmesiyle gelir.
+        CreateMap<Domain.Entities.Order, GetPanelOrderDetailQueryResult>()
+            .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.TableNumber, opt => opt.MapFrom(src =>
+                src.RestaurantTable != null ? src.RestaurantTable.Number : (int?)null))
+            .ForMember(dest => dest.CustomerFullName, opt => opt.MapFrom(src =>
+                src.User != null && !src.User.IsDeleted ? src.User.Name + " " + src.User.Surname : null))
+            .ForMember(dest => dest.OrderItems, opt => opt.MapFrom(src => src.OrderItems
+                .Select(orderItem => new PanelOrderItemDetail
                 {
                     ProductName = orderItem.ProductName,
                     UnitPrice = orderItem.UnitPrice,
