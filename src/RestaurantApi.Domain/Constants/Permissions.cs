@@ -105,4 +105,16 @@ public static class Permissions
         [Description("Yetki sahibi kullanıcılar siparişleri listeleyebilir.")]
         public const string Read = "orders:read";
     }
+    
+    public static class RolePermissions
+    {
+        [Description("Role görüntüleme yetkisi verir.")]
+        public const string View = "role:view";
+        [Description("Role oluşturma yetkisi verir.")]
+        public const string Create = "role:create";
+        [Description("Role güncelleme yetkisi verir.")]
+        public const string Update = "role:update";
+        [Description("Role silme yetkisi verir.")]
+        public const string Delete = "role:delete";
+    }
 }

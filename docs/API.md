@@ -165,6 +165,20 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
 - **Yetkilendirme ayrımı (iptal ve listeleme):** `SameUser` policy'si yalnızca geçerli bir kullanıcı token'ı arar (token'daki kullanıcı kimliği çözümlenemezse **403** döner; admin rolü her durumda geçer). Sipariş sahipliği ise iş kuralı olarak **404 ile** doğrulanır: başka bir kullanıcıya ait siparişin varlığı istemciye sızdırılmaz, gerçek sebep yalnızca sunucu loglarına yazılır.
 
 
+## Roles — `api/roles`
+
+| Method | Route | Açıklama | Gereken izin | Başarı kodu |
+| --- | --- | --- | --- | --- |
+| GET | `api/roles` | Panel: sistemdeki tüm rolleri kullanıcı ve izin sayılarıyla listeler | `role:view` | 200 |
+
+- **Parametre:** İstek parametre almaz; roller `Name` alanına göre alfabetik döner, hiç rol yoksa **200 + boş liste**.
+- **Satır alanları:** `id`, `name`, `userCount`, `permissionCount`, `isSystemRole`.
+- **`userCount`:** role bağlı kullanıcı sayısıdır; rol satırları tek projeksiyon sorgusuyla, kullanıcı sayıları ise kullanıcı-rol join tablosundan (`AspNetUserRoles`) tek gruplama sorgusuyla alınır.
+- **`permissionCount`:** role bağlı izin kaydı sayısıdır (`role_permissions`).
+- **`isSystemRole`:** rol `AppRoles` içindeki statik rollerden (`ADMIN` / `USER`) biri ise `true`, sonradan oluşturulan roller için `false`.
+- **Hatalar:** 401 (token yok veya geçersiz), 403 (`role:view` izni yok).
+
+
 ## Webhooks — `api/webhooks`
 
 | Method | Route | Açıklama | Gereken izin | Başarı kodu |
