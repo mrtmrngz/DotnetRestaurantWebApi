@@ -28,7 +28,7 @@ public class GetRoleListQueryHandler
     {
         _logger.LogInformation("Rol listeleme işlemi başlıyor.");
 
-        List<GetRoleListQueryResult> roles = await _roleRepository.GetAllRolesAsQueryable()
+        List<GetRoleListQueryResult> roles = await _roleRepository.GetAllAsQueryable()
             .AsNoTracking()
             .OrderBy(role => role.Name)
             .ProjectTo<GetRoleListQueryResult>(_mapper.ConfigurationProvider)

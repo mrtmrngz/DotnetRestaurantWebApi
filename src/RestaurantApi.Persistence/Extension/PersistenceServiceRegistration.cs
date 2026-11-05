@@ -62,6 +62,7 @@ public static class PersistenceServiceRegistration
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<ICartItemRepository, CartItemRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IRolePermissionRepository, RolePermissionRepository>();
         
         // UNIT OF WORK
         services.AddScoped<IUnitOfWork, UnitOfWork>();

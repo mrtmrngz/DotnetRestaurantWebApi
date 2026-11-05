@@ -217,7 +217,6 @@ public class GetRoleListTests : BaseIntegrationTest
         return $"TEST_ROLE_{Guid.NewGuid().ToString()[..8].ToUpperInvariant()}";
     }
 
-    // AspNetRoles tablosu testler arasında temizlenmediği için testler kendi rollerini oluşturur ve sonunda siler.
     private async Task<AppRole> SeedRoleAsync(string name, IReadOnlyCollection<Guid>? userIds = null,
         int permissionCount = 0)
     {
@@ -263,6 +262,8 @@ public class GetRoleListTests : BaseIntegrationTest
         return role;
     }
 
+    // AspNetRoles tablosu Respawn tarafından temizlenmediği için (TablesToIgnore) test rolü
+    // test sonunda silinir; aksi halde artık rol ve izin bağlantıları sonraki testlere sızar.
     private async Task DeleteRoleAsync(string name)
     {
         await using var scope = Factory.Services.CreateAsyncScope();

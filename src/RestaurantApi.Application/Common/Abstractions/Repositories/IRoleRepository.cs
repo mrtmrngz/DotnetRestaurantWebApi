@@ -5,7 +5,7 @@ namespace RestaurantApi.Application.Common.Abstractions.Repositories;
 
 public interface IRoleRepository
 {
-    IQueryable<AppRole> GetAllRolesAsQueryable();
+    IQueryable<AppRole> GetAllAsQueryable();
 
     // Rol id'sine göre, role bağlı kullanıcı sayıları (AspNetUserRoles join tablosundan).
     Task<Dictionary<Guid, int>> GetUserCountsByRoleIdAsync(CancellationToken cancellationToken);

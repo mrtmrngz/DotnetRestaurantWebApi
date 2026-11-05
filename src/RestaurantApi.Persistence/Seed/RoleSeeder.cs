@@ -30,7 +30,10 @@ public static class RoleSeeder
                 {
                     Name = roleName,
                     NormalizedName = normalizedName,
-                    ConcurrencyStamp = Guid.NewGuid().ToString()
+                    ConcurrencyStamp = Guid.NewGuid().ToString(),
+                    // AppRoles sabitlerinden gelen roller sistem rolüdür; ilk seed'de de işaretlenir
+                    // (aksi halde ilk çalıştırmada sistem rolü koruması devre dışı kalırdı).
+                    IsSystemRole = true
                 });
             }else if (!roleExist.IsSystemRole)
             {

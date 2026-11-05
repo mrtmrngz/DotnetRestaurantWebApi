@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using RestaurantApi.Application.Common.Abstractions.Repositories;
+using RestaurantApi.Domain.Entities;
 using RestaurantApi.Persistence.Context;
 
 namespace RestaurantApi.Persistence.Repositories;
@@ -22,5 +23,10 @@ public class PermissionRepository: IPermissionRepository
             .Select(rp => rp.Permission.Name)
             .Distinct()
             .ToListAsync();
+    }
+
+    public IQueryable<Permission> GetAllAsQueryable()
+    {
+        return _context.Permissions.AsQueryable();
     }
 }
