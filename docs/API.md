@@ -170,13 +170,18 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
 | Method | Route | Açıklama | Gereken izin | Başarı kodu |
 | --- | --- | --- | --- | --- |
 | GET | `api/roles` | Panel: sistemdeki tüm rolleri kullanıcı ve izin sayılarıyla listeler | `role:view` | 200 |
+| GET | `api/roles/{roleId}/permissions` | Bir role bağlı izinleri listeler | `role:view` | 200 |
+| PUT | `api/roles/{roleId}/permissions` | Rolün izin kümesini gövdedeki izinlerle değiştirir | `role:update` | 200 |
 
-- **Parametre:** İstek parametre almaz; roller `Name` alanına göre alfabetik döner, hiç rol yoksa **200 + boş liste**.
+- **Parametre:** `GET api/roles` istek parametresi almaz; roller `Name` alanına göre alfabetik döner, hiç rol yoksa **200 + boş liste**.
 - **Satır alanları:** `id`, `name`, `userCount`, `permissionCount`, `isSystemRole`.
 - **`userCount`:** role bağlı kullanıcı sayısıdır; rol satırları tek projeksiyon sorgusuyla, kullanıcı sayıları ise kullanıcı-rol join tablosundan (`AspNetUserRoles`) tek gruplama sorgusuyla alınır.
 - **`permissionCount`:** role bağlı izin kaydı sayısıdır (`role_permissions`).
-- **`isSystemRole`:** rol `AppRoles` içindeki statik rollerden (`ADMIN` / `USER`) biri ise `true`, sonradan oluşturulan roller için `false`.
-- **Hatalar:** 401 (token yok veya geçersiz), 403 (`role:view` izni yok).
+- **`isSystemRole`:** rolün `AppRole.IsSystemRole` kolonundan gelir; seed ile oluşturulan `ADMIN` / `USER` rolleri `true`, sonradan oluşturulan roller `false` olur.
+- **Rol izinleri (okuma):** `GET api/roles/{roleId}/permissions` rol id'sini **route'tan** alır; istek gövdesi/query string kabul edilmez. Her satırda iznin `id`, `name` ve `description` alanları döner, liste `name` alanına göre alfabetiktir. Rol bulunamazsa **404**, izni olmayan rol için **200 + boş liste** döner ("kayıt yok" bir hata değildir). Sistem rolleri de okunabilir: ör. ADMIN tüm izinlere sahiptir.
+- **Rol izinleri (güncelleme):** `PUT api/roles/{roleId}/permissions` rol id'sini **route'tan**, izin listesini **gövdeden** (`permissionIds`) alır; gövdedeki rol id dikkate alınmaz. Gövde, rolün **yeni izin kümesinin tamamıdır**: istekte olmayan izinler kaldırılır, eksik izinler eklenir; **boş liste** rolün tüm izinlerini kaldırır (rol silinmez). Ekleme ve silme tek `SaveChanges` ile atomik yazılır; değişiklik yoksa yazma yapılmaz (uç **idempotenttir**) ve yine **200** döner. Başarılı güncellemeden sonra rolün izin cache'i (`role:{rol}:permissions`) temizlenir; aksi halde yetki kararı cache süresi boyunca eski kalırdı. Uç yalnızca **sistem olmayan** rolleri günceller.
+- **Hatalar:** 400 (izin listesi yok, tekrar eden ya da boş izin id'si), 401 (token yok veya geçersiz), 403 (`role:view` / `role:update` izni yok), 404 (rol bulunamadı ya da istekteki izinlerden biri bulunamadı), 422 (sistem rolü güncellenmek istendi).
+- **Başarı cevabı:** iki okuma ucu `GeneralSuccessResponseWithData<T>`, güncelleme ucu `BaseResponse` + `CONTENT_UPDATED_SUCCESS`.
 
 
 ## Webhooks — `api/webhooks`
