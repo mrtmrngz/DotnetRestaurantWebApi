@@ -1,14 +1,14 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using RestaurantApi.Application.Common.Abstractions.Repositories;
+using RestaurantApi.Domain.Constants;
 using RestaurantApi.Domain.Identity;
 using RestaurantApi.Persistence.Context;
 
 namespace RestaurantApi.Persistence.Repositories;
 
-public class RoleRepository: IRoleRepository
+public class RoleRepository : IRoleRepository
 {
-
     private readonly RoleManager<AppRole> _roleManager;
     private readonly ApiContext _context;
 

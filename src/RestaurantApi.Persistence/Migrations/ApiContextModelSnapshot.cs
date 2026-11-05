@@ -704,6 +704,11 @@ namespace RestaurantApi.Persistence.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsSystemRole")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("Name")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
@@ -922,15 +927,19 @@ namespace RestaurantApi.Persistence.Migrations
 
             modelBuilder.Entity("RestaurantApi.Domain.Entities.Order", b =>
                 {
-                    b.HasOne("RestaurantApi.Domain.Entities.RestaurantTable", null)
+                    b.HasOne("RestaurantApi.Domain.Entities.RestaurantTable", "RestaurantTable")
                         .WithMany()
                         .HasForeignKey("RestaurantTableId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("RestaurantApi.Domain.Identity.AppUser", null)
+                    b.HasOne("RestaurantApi.Domain.Identity.AppUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("RestaurantTable");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("RestaurantApi.Domain.Entities.OrderItem", b =>

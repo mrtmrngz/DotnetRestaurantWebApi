@@ -21,5 +21,9 @@ public class AppRoleConfiguration: IEntityTypeConfiguration<AppRole>
         builder.HasIndex(r => r.NormalizedName)
             .IsUnique()
             .HasName("IX_Roles_NormalizedName");
+        
+        builder.Property(r => r.IsSystemRole)
+            .IsRequired()
+            .HasDefaultValue(false);
     }
 }

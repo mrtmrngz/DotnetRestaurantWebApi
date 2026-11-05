@@ -20,9 +20,9 @@ public static class RoleSeeder
         foreach (var roleName in roleNames)
         {
             var normalizedName = roleName.ToUpperInvariant();
-            var roleExist = await context.Roles.AnyAsync(r => r.NormalizedName == normalizedName);
+            var roleExist = await context.Roles.FirstOrDefaultAsync(r => r.NormalizedName == normalizedName);
 
-            if (!roleExist)
+            if (roleExist == null)
             {
                 logger.LogInformation("🎭 Yeni rol oluşturuluyor: {RoleName}", roleName);
 
@@ -32,6 +32,9 @@ public static class RoleSeeder
                     NormalizedName = normalizedName,
                     ConcurrencyStamp = Guid.NewGuid().ToString()
                 });
+            }else if (!roleExist.IsSystemRole)
+            {
+                roleExist.IsSystemRole = true;
             }
         }
 
