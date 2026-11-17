@@ -149,4 +149,86 @@ public class RoleRulesTests
     }
 
     #endregion
+
+    #region ShouldRoleInfoBeUpdatable Tests
+
+    [Fact]
+    public void ShouldRoleInfoBeUpdatable_WhenRoleIsSystemRole_ShouldThrowUnprocessableEntityError()
+    {
+        var role = CreateRole(AppRoles.Admin, isSystemRole: true);
+
+        Action act = () => _sut.ShouldRoleInfoBeUpdatable(role, role.Id);
+
+        act.Should().Throw<UnprocessableEntityError>(
+                "Sistem rolünün bilgileri güncellenemeyeceği için bu hata fırlatılması gerekirdi")
+            .WithMessage("Sistem rollerinin bilgileri güncellenemez.");
+    }
+
+    [Fact]
+    public void ShouldRoleInfoBeUpdatable_WhenRoleIsNotSystemRole_ShouldNotThrow()
+    {
+        var role = CreateRole("EDITOR", isSystemRole: false);
+
+        Action act = () => _sut.ShouldRoleInfoBeUpdatable(role, role.Id);
+
+        act.Should().NotThrow("Uygulamada oluşturulan roller güncellenebildiği için hata fırlatılmamalıydı");
+    }
+
+    [Theory]
+    [InlineData(AppRoles.Admin)]
+    [InlineData(AppRoles.User)]
+    public void ShouldRoleInfoBeUpdatable_WhenRoleNameIsASystemRoleName_ShouldThrow(string roleName)
+    {
+        var role = CreateRole(roleName, isSystemRole: true);
+
+        Action act = () => _sut.ShouldRoleInfoBeUpdatable(role, role.Id);
+
+        act.Should().Throw<UnprocessableEntityError>($"{roleName} sistem rolü olduğu için güncellenemez.");
+    }
+
+    #endregion
+
+    #region ShouldRoleNameBeAvailable Tests
+
+    [Fact]
+    public void ShouldRoleNameBeAvailable_WhenAnotherRoleHasTheSameName_ShouldThrowConflictException()
+    {
+        Action act = () => _sut.ShouldRoleNameBeAvailable(true, Guid.NewGuid(), "KITCHEN");
+
+        act.Should().Throw<ConflictException>(
+                "Rol adı başka bir rol tarafından kullanıldığı için bu hata fırlatılması gerekirdi")
+            .WithMessage("Bu rol adı zaten kullanılıyor.");
+    }
+
+    [Fact]
+    public void ShouldRoleNameBeAvailable_WhenNoOtherRoleHasTheName_ShouldNotThrow()
+    {
+        Action act = () => _sut.ShouldRoleNameBeAvailable(false, Guid.NewGuid(), "KITCHEN");
+
+        act.Should().NotThrow("Rol adı kullanılabilir olduğu için hata fırlatılmamalıydı");
+    }
+
+    #endregion
+
+    #region ShouldRoleUpdateBeApplied Tests
+
+    [Fact]
+    public void ShouldRoleUpdateBeApplied_WhenNoRowIsAffected_ShouldThrowConflictException()
+    {
+        Action act = () => _sut.ShouldRoleUpdateBeApplied(affectedRowCount: 0, Guid.NewGuid());
+
+        act.Should().Throw<ConflictException>(
+                "Güncelleme uygulanamadığı için bu hata fırlatılması gerekirdi")
+            .WithMessage("Rol güncellenemedi. Lütfen tekrar deneyiniz.");
+    }
+
+    [Fact]
+    public void ShouldRoleUpdateBeApplied_WhenRowIsAffected_ShouldNotThrow()
+    {
+        Action act = () => _sut.ShouldRoleUpdateBeApplied(affectedRowCount: 1, Guid.NewGuid());
+
+        act.Should().NotThrow("Güncelleme uygulandığı için hata fırlatılmamalıydı");
+    }
+
+    #endregion
 }

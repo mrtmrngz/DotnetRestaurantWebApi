@@ -145,4 +145,56 @@ public class RolesController : ControllerBase
 
         return Ok(response);
     }
+
+    /// <summary>
+    /// Bir rolün adını günceller.
+    /// </summary>
+    /// <remarks>
+    /// Akış:
+    /// 1. `roleId` **route'tan**, yeni ad **gövdeden** (`name`) alınır; gövdedeki rol id dikkate alınmaz.
+    /// 2. Rol bulunamazsa **404**; rol **sistem rolü** ise (`IsSystemRole`) **422** döner.
+    /// 3. Gönderilen ad (ve normalize edilmiş hali) rolün mevcut adıyla aynıysa yazma yapılmaz;
+    ///    uç **idempotenttir** ve yine **200** döner.
+    /// 4. Gönderilen ad ya da normalize edilmiş hali **başka bir role** aitse **409** döner.
+    /// 5. Güncelleme tek `UPDATE` ifadesiyle yazılır; bu sırada rol değişmiş ya da silinmişse
+    ///    (hiçbir satır etkilenmez) **409** döner.
+    /// 6. Başarılı güncellemeden sonra rol adına bağlı cache anahtarları temizlenir: eski ve yeni adın
+    ///    izin listesi (`role:{rol}:permissions`) ile rolün kullanıcılarının rol anahtarları
+    ///    (`roles:{userId}`, token üretiminde 7 gün kullanılır).
+    /// </remarks>
+    /// <param name="roleId">Adı güncellenecek rolün benzersiz id'si.</param>
+    /// <param name="command">Gövde: `name` (zorunlu, en fazla 256 karakter).</param>
+    /// <response code="200">Rol bilgisi güncellendi; `CONTENT_UPDATED_SUCCESS` kodu döner.</response>
+    /// <response code="400">Doğrulama hataları (rol adı yok ya da 256 karakterden uzun).</response>
+    /// <response code="401">Yetkisiz erişim (JWT token eksik veya geçersiz).</response>
+    /// <response code="403">Kullanıcının `role:update` izni bulunmadığında.</response>
+    /// <response code="404">Rol bulunamadığında.</response>
+    /// <response code="409">Rol adı başka bir rol tarafından kullanılıyorsa ya da güncelleme eşzamanlı bir değişiklik nedeniyle uygulanamazsa.</response>
+    /// <response code="422">Sistem rolleri (`ADMIN` / `USER`) güncellenmek istendiğinde.</response>
+    [HttpPatch("{roleId:guid}")]
+    #region SwaggerDocumentation
+    [ProducesResponseType(typeof(BaseResponse), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentUpdatedResponseExample))]
+    [SwaggerRequestExample(typeof(UpdateRoleInfoCommand), typeof(UpdateRoleInfoRequestExample))]
+    [ProducesResponseType(typeof(ValidationErrorResponse), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(ErrorResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    [ProducesResponseType(typeof(ErrorResponse), 409)]
+    [SwaggerResponseExample(StatusCodes.Status409Conflict, typeof(ConflictErrorExample))]
+    [ProducesResponseType(typeof(ErrorResponse), 422)]
+    [SwaggerResponseExample(StatusCodes.Status422UnprocessableEntity, typeof(UnproccesableEntityErrorExample))]
+    #endregion
+    [Authorize(Policy = Permissions.RolePermissions.Update)]
+    public async Task<IActionResult> UpdateRoleInfo([FromRoute] Guid roleId,
+        [FromBody] UpdateRoleInfoCommand command)
+    {
+        var commandToSend = command with { RoleId = roleId };
+
+        BaseResponse response = await _mediator.Send(commandToSend);
+
+        return Ok(response);
+    }
 }

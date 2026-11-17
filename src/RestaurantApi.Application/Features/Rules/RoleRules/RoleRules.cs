@@ -4,7 +4,7 @@ using RestaurantApi.Domain.Identity;
 
 namespace RestaurantApi.Application.Features.Rules.RoleRules;
 
-// Rol izin güncelleme akışının iş kuralları.
+// Rol yönetimi akışlarının iş kuralları (rol izinlerinin güncellenmesi ve rol bilgisinin düzenlenmesi).
 // Her kural, ilgili durumda log yazıp uygun iş kuralı hatasını fırlatır.
 public class RoleRules
 {
@@ -52,5 +52,40 @@ public class RoleRules
             roleId, missingPermissionIds.Count, string.Join(", ", missingPermissionIds));
 
         throw new NotFoundException("İstekteki bazı izinler bulunamadı.");
+    }
+
+    // (422) Sistem rollerinin (ADMIN / USER) bilgileri seed ile yönetilir; adı bu uçtan değiştirilemez.
+    public void ShouldRoleInfoBeUpdatable(AppRole role, Guid roleId)
+    {
+        if (!role.IsSystemRole)
+            return;
+
+        _logger.LogWarning("Sistem rolünün bilgileri güncellenemez. RoleId:{RoleId}, RoleName:{RoleName}",
+            roleId, role.Name);
+
+        throw new UnprocessableEntityError("Sistem rollerinin bilgileri güncellenemez.");
+    }
+
+    // (409) Rol adı (ya da normalize edilmiş hali) başka bir role aitse.
+    public void ShouldRoleNameBeAvailable(bool anotherRoleHasTheSameName, Guid roleId, string roleName)
+    {
+        if (!anotherRoleHasTheSameName)
+            return;
+
+        _logger.LogWarning("Rol adı başka bir rol tarafından kullanılıyor. RoleId:{RoleId}, RoleName:{RoleName}",
+            roleId, roleName);
+
+        throw new ConflictException("Bu rol adı zaten kullanılıyor.");
+    }
+
+    // (409) Eşzamanlı bir değişiklik nedeniyle güncelleme uygulanamadıysa (ör. rol bu sırada silindi).
+    public void ShouldRoleUpdateBeApplied(int affectedRowCount, Guid roleId)
+    {
+        if (affectedRowCount > 0)
+            return;
+
+        _logger.LogWarning("Rol güncellenemedi; rol bu sırada değişmiş olabilir. RoleId:{RoleId}", roleId);
+
+        throw new ConflictException("Rol güncellenemedi. Lütfen tekrar deneyiniz.");
     }
 }

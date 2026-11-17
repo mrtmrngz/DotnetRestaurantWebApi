@@ -47,13 +47,10 @@ public class UpdateRolePermissionCommandHandler: IRequestHandler<UpdateRolePermi
             "Rol izin güncelleme işlemi başlıyor. RoleId:{RoleId}, RequestedPermissionCount:{RequestedPermissionCount}",
             request.RoleId, requestedPermissionIds.Count);
 
-        // (1) rol var olmalı (404) ve sistem rolü olmamalı (422); rol adı cache temizliği için de gerekir
         AppRole role = await FindUpdatableRoleAsync(request.RoleId, cancellationToken);
 
-        // (2) istekteki izinlerin tamamı var olmalı; biri bile yoksa hiçbir değişiklik yazılmaz (404)
         await EnsurePermissionsExistAsync(requestedPermissionIds, request.RoleId, cancellationToken);
 
-        // (3) mevcut eşleşmelerle istek karşılaştırılır; yalnızca gerçekten değişen satırlar belirlenir
         List<RolePermission> currentAssignments =
             await GetCurrentAssignmentsAsync(request.RoleId, cancellationToken);
 

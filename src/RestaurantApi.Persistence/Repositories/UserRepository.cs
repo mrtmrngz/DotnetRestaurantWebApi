@@ -34,6 +34,11 @@ public class UserRepository: IUserRepository
         return roles.ToList();
     }
 
+    public async Task<IList<AppUser>> GetUsersInRoleAsync(string roleName)
+    {
+        return await _userManager.GetUsersInRoleAsync(roleName);
+    }
+
     public async Task<AppUser?> FindByEmailAsync(string email, CancellationToken cancellationToken)
     {
         return await _userManager.Users.AsNoTracking()

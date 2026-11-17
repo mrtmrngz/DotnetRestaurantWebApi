@@ -8,6 +8,7 @@ public interface IUserRepository
     Task<AppUser?> GetByIdAsync(Guid userId);
     Task<AppUser?> GetByIdTrackingAsync(Guid userId);
     Task<IList<string>> GetUserRolesAsync(AppUser user);
+    Task<IList<AppUser>> GetUsersInRoleAsync(string roleName);
     Task<AppUser?> FindByEmailAsync(string email, CancellationToken cancellationToken);
     Task<AppUser?> FindByEmailAsyncTracking(string email, CancellationToken cancellationToken);
     Task<IdentityResult> CreateAsync(AppUser user, string password);
