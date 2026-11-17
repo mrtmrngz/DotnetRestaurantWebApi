@@ -20,6 +20,12 @@ public class RoleRepository: IRoleRepository
         return _context.Roles.AsQueryable();
     }
 
+    public void CreateRole(AppRole role, CancellationToken ctx)
+    {
+        ctx.ThrowIfCancellationRequested();
+        _context.Roles.Add(role);
+    }
+
     public async Task<Dictionary<Guid, int>> GetUserCountsByRoleIdAsync(CancellationToken cancellationToken)
     {
         return await _context.UserRoles

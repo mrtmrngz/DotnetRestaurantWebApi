@@ -197,4 +197,42 @@ public class RolesController : ControllerBase
 
         return Ok(response);
     }
+
+    /// <summary>
+    /// Yeni bir rol oluşturur.
+    /// </summary>
+    /// <remarks>
+    /// Akış:
+    /// 1. Rol adı **gövdeden** (`name`) alınır; istek başka parametre almaz ve ad en fazla 256 karakter olabilir.
+    /// 2. Aynı adı (ya da normalize edilmiş halini) taşıyan bir rol varsa **409** döner.
+    /// 3. Rol, **sistem rolü olmayan** bir uygulama rolü olarak (`IsSystemRole = false`) eklenir; sistem
+    ///    rolleri yalnızca seed ile oluşturulur.
+    /// 4. Oluşturulan rolün izni yoktur; izinler `PUT api/roles/{roleId}/permissions` ile atanır.
+    /// Rol listesi cache'lenmediği ve yeni rolün izin kaydı olmadığı için temizlenecek cache anahtarı yoktur.
+    /// </remarks>
+    /// <param name="command">Gövde: `name` (zorunlu, en fazla 256 karakter).</param>
+    /// <response code="201">Rol oluşturuldu; `CONTENT_CREATED_SUCCESS` kodu döner.</response>
+    /// <response code="400">Doğrulama hataları (rol adı yok, boş ya da 256 karakterden uzun).</response>
+    /// <response code="401">Yetkisiz erişim (JWT token eksik veya geçersiz).</response>
+    /// <response code="403">Kullanıcının `role:create` izni bulunmadığında.</response>
+    /// <response code="409">Rol adı (ya da normalize edilmiş hali) başka bir rol tarafından kullanılıyorsa.</response>
+    [HttpPost]
+    #region SwaggerDocumentation
+    [ProducesResponseType(typeof(BaseResponse), 201)]
+    [SwaggerResponseExample(StatusCodes.Status201Created, typeof(ContentCreatedExample))]
+    [SwaggerRequestExample(typeof(CreateRoleCommand), typeof(CreateRoleRequestExample))]
+    [ProducesResponseType(typeof(ValidationErrorResponse), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(ErrorResponse), 409)]
+    [SwaggerResponseExample(StatusCodes.Status409Conflict, typeof(ConflictErrorExample))]
+    #endregion
+    [Authorize(Policy = Permissions.RolePermissions.Create)]
+    public async Task<IActionResult> CreateRole([FromBody] CreateRoleCommand command)
+    {
+        BaseResponse response = await _mediator.Send(command);
+
+        return StatusCode(StatusCodes.Status201Created, response);
+    }
 }

@@ -66,8 +66,7 @@ public class RoleRules
         throw new UnprocessableEntityError("Sistem rollerinin bilgileri güncellenemez.");
     }
 
-    // (409) Rol adı (ya da normalize edilmiş hali) başka bir role aitse.
-    public void ShouldRoleNameBeAvailable(bool anotherRoleHasTheSameName, Guid roleId, string roleName)
+    public void ShouldRoleNameBeAvailable(bool anotherRoleHasTheSameName, Guid? roleId, string roleName)
     {
         if (!anotherRoleHasTheSameName)
             return;

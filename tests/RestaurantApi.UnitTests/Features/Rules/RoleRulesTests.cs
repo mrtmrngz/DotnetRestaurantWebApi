@@ -231,4 +231,27 @@ public class RoleRulesTests
     }
 
     #endregion
+
+    #region ShouldRoleNameBeAvailable Tests (rol oluşturma akışı)
+
+    [Fact]
+    public void ShouldRoleNameBeAvailable_WhenRoleNameIsTakenAndNoRoleIdIsGiven_ShouldThrowConflictException()
+    {
+        // Oluşturma akışında güncellenen bir rol olmadığı için rol id verilmez.
+        Action act = () => _sut.ShouldRoleNameBeAvailable(true, roleId: null, "KITCHEN");
+
+        act.Should().Throw<ConflictException>(
+                "Yeni rolün adı başka bir rol tarafından kullanıldığı için bu hata fırlatılması gerekirdi")
+            .WithMessage("Bu rol adı zaten kullanılıyor.");
+    }
+
+    [Fact]
+    public void ShouldRoleNameBeAvailable_WhenRoleNameIsFreeAndNoRoleIdIsGiven_ShouldNotThrow()
+    {
+        Action act = () => _sut.ShouldRoleNameBeAvailable(false, roleId: null, "KITCHEN");
+
+        act.Should().NotThrow("Rol adı kullanılabilir olduğu için hata fırlatılmamalıydı");
+    }
+
+    #endregion
 }
