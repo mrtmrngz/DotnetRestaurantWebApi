@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Features.Roles.Commands;
 using RestaurantApi.Application.Features.Roles.Queries.GetRoleListQuery;
+using RestaurantApi.Application.Features.Roles.Queries.GetRoleInfoQuery;
 using RestaurantApi.Application.Features.Roles.Queries.GetRolePermissionsQuery;
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
@@ -234,5 +235,44 @@ public class RolesController : ControllerBase
         BaseResponse response = await _mediator.Send(command);
 
         return StatusCode(StatusCodes.Status201Created, response);
+    }
+
+    /// <summary>
+    /// Bir rolün bilgilerini (adı ve normalize edilmiş adı) getirir.
+    /// </summary>
+    /// <remarks>
+    /// Akış:
+    /// 1. `roleId` **route'tan** alınır; istek gövdesi/query string kabul edilmez.
+    /// 2. Rol bulunamazsa **404** döner.
+    /// 3. Yanıtta `id`, `name`, `normalizedName` ve `isSystemRole` alanları döner; liste ucundan farklı
+    ///    olarak kullanıcı ve izin sayıları bu yanıtta yer almaz.
+    /// Uç salt okunurdur ve `role:view` izniyle korunur.
+    /// </remarks>
+    /// <param name="roleId">Bilgileri getirilecek rolün benzersiz id'si.</param>
+    /// <response code="200">Rol bilgisi döner.</response>
+    /// <response code="401">Yetkisiz erişim (JWT token eksik veya geçersiz).</response>
+    /// <response code="403">Kullanıcının `role:view` izni bulunmadığında.</response>
+    /// <response code="404">Rol bulunamadığında ya da route'taki id geçerli bir GUID olmadığında.</response>
+    [HttpGet("{roleId:guid}")]
+    #region SwaggerDocumentation
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<GetRoleInfoQueryResult>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(GetRoleInfoResponseExample))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(ErrorResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    #endregion
+    [Authorize(Policy = Permissions.RolePermissions.View)]
+    public async Task<IActionResult> GetRoleInfo([FromRoute] Guid roleId)
+    {
+        var query = new GetRoleInfoQuery
+        {
+            RoleId = roleId
+        };
+
+        GeneralSuccessResponseWithData<GetRoleInfoQueryResult> response =
+            await _mediator.Send(query);
+
+        return Ok(response);
     }
 }

@@ -1,5 +1,6 @@
 using AutoMapper;
 using RestaurantApi.Application.Features.Roles.Queries.GetRoleListQuery;
+using RestaurantApi.Application.Features.Roles.Queries.GetRoleInfoQuery;
 using RestaurantApi.Application.Features.Roles.Queries.GetRolePermissionsQuery;
 using RestaurantApi.Domain.Entities;
 using RestaurantApi.Domain.Identity;
@@ -21,5 +22,12 @@ public class RoleProfile: Profile
 
         // Rol izin listesi: izin satırları (id, name, description) isim eşleşmesiyle döner.
         CreateMap<Permission, GetRolePermissionsQueryResult>();
+
+        // Rol bilgisi detayı: Id ve IsSystemRole kolonlardan gelir; ad alanları veritabanında boş
+        // olabileceği için boş string'e düşürülür.
+        CreateMap<AppRole, GetRoleInfoQueryResult>()
+            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name ?? string.Empty))
+            .ForMember(dest => dest.NormalizedName, opt => opt.MapFrom(src => src.NormalizedName ?? string.Empty))
+            .ForMember(dest => dest.IsSystemRole, opt => opt.MapFrom(src => src.IsSystemRole));
     }
 }
