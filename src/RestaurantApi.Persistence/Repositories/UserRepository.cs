@@ -5,17 +5,44 @@ using Microsoft.EntityFrameworkCore;
 using RestaurantApi.Application.Common.Abstractions.Repositories;
 using RestaurantApi.Domain.Constants;
 using RestaurantApi.Domain.Identity;
+using RestaurantApi.Persistence.Context;
 
 namespace RestaurantApi.Persistence.Repositories;
 
 public class UserRepository: IUserRepository
 {
     private readonly UserManager<AppUser> _userManager;
+    private readonly ApiContext _context;
 
-    public UserRepository(UserManager<AppUser> userManager)
+    public UserRepository(UserManager<AppUser> userManager, ApiContext context)
     {
         _userManager = userManager;
+        _context = context;
     }
+
+    public IQueryable<AppUser> GetAllAsQueryable()
+    {
+        return _userManager.Users;
+    }
+
+    public async Task<Dictionary<Guid, List<string>>> GetRoleNamesByUserIdsAsync(
+        IReadOnlyCollection<Guid> userIds, CancellationToken cancellationToken)
+    {
+        List<UserRoleNameRow> rows = await _context.UserRoles
+            .AsNoTracking()
+            .Where(userRole => userIds.Contains(userRole.UserId))
+            .Join(_context.Roles.AsNoTracking(),
+                userRole => userRole.RoleId,
+                role => role.Id,
+                (userRole, role) => new UserRoleNameRow(userRole.UserId, role.Name ?? string.Empty))
+            .ToListAsync(cancellationToken);
+
+        return rows
+            .GroupBy(row => row.UserId)
+            .ToDictionary(group => group.Key, group => group.Select(row => row.RoleName).ToList());
+    }
+
+    private readonly record struct UserRoleNameRow(Guid UserId, string RoleName);
 
     public async Task<AppUser?> GetByIdAsync(Guid userId)
     {

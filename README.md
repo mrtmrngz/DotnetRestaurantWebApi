@@ -287,7 +287,7 @@ Notlar:
 Ayrıntılı parametreler, örnek istek/yanıtlar ve yetki bilgisi için Swagger UI'ı kullanın. Modül özeti:
 
 - `api/auth` — kayıt, giriş, iki faktörlü giriş, mail doğrulama, token yenileme, şifre sıfırlama, çıkış
-- `api/users` — oturumdaki kullanıcı bilgisi (`GET api/users/me`)
+- `api/users` — oturumdaki kullanıcı bilgisi (`GET api/users/me`) ve panelde tüm kullanıcıları rolleriniyle listeleme (`GET api/users`, `user:view`)
 - `api/profile` — profil bilgisi ve şifre değiştirme
 - `api/addresses` — adres listeleme, detay, oluşturma, güncelleme, silme
 - `api/categories` — public ve admin kategori listeleme, detay, oluşturma, güncelleme, silme

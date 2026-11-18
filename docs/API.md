@@ -22,6 +22,9 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
 | Method | Route | Açıklama | Gereken izin | Başarı kodu |
 | --- | --- | --- | --- | --- |
 | GET | `api/users/me` | Oturumdaki kullanıcının bilgileri | `SameUser` | 200 |
+| GET | `api/users` | Panel: tüm kullanıcıları rolleriniyle listeler | `user:view` | 200 |
+
+- **Kullanıcı listesi (panel):** `GET api/users` istek parametresi almaz; kullanıcılar ad ve soyada göre alfabetik döner. Her satırda `id`, `fullName`, `email`, `phoneNumber`, `emailConfirmed`, `twoFactorStatus` ve `roles` döner: `fullName` ad ve soyadın birleşimidir, `twoFactorStatus` kullanıcının iki adımlı doğrulama ayarıdır (kaynak alan `TwoFactorEnabled`), `roles` ise kullanıcının rol **adları** dizisidir (rolü olmayan kullanıcı için boş dizi). Roller, kullanıcı-rol join tablosundan tek gruplama sorgusuyla alınır; kullanıcı başına ayrı sorgu atılmaz (N+1 yok). Silinmiş (soft delete) kullanıcılar da listede döner. Hiç kullanıcı yoksa **200 + boş liste**; token yoksa **401**, `user:view` izni yoksa **403** döner.
 
 ## Profile — `api/profile`
 
