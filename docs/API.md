@@ -23,7 +23,9 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
 | --- | --- | --- | --- | --- |
 | GET | `api/users/me` | Oturumdaki kullanıcının bilgileri | `SameUser` | 200 |
 | GET | `api/users` | Panel: tüm kullanıcıları rolleriniyle listeler | `user:view` | 200 |
+| GET | `api/users/{userId}` | Panel: bir kullanıcının bilgilerini ve rollerini getirir | `user:view` | 200 |
 
+- **Kullanıcı bilgisi (panel):** `GET api/users/{userId}` kullanıcı id'sini **route'tan** alır; yanıtta `id`, `name`, `surname`, `email`, `emailConfirmed`, `phoneNumber`, `phoneNumberConfirmed`, `twoFactorEnabled` ve `roles` döner. `roles` kullanıcının rol **adları** dizisidir (rolsüz kullanıcı için boş dizi). Kullanıcı bulunamazsa **404**; kullanıcı tek sorguda okunur, roller ise tek gruplama sorgusuyla alınır ve sonuç birleştirilir. Uç salt okunurdur ve `user:view` izniyle korunur.
 - **Kullanıcı listesi (panel):** `GET api/users` istek parametresi almaz; kullanıcılar ad ve soyada göre alfabetik döner. Her satırda `id`, `fullName`, `email`, `phoneNumber`, `emailConfirmed`, `twoFactorStatus` ve `roles` döner: `fullName` ad ve soyadın birleşimidir, `twoFactorStatus` kullanıcının iki adımlı doğrulama ayarıdır (kaynak alan `TwoFactorEnabled`), `roles` ise kullanıcının rol **adları** dizisidir (rolü olmayan kullanıcı için boş dizi). Roller, kullanıcı-rol join tablosundan tek gruplama sorgusuyla alınır; kullanıcı başına ayrı sorgu atılmaz (N+1 yok). Silinmiş (soft delete) kullanıcılar da listede döner. Hiç kullanıcı yoksa **200 + boş liste**; token yoksa **401**, `user:view` izni yoksa **403** döner.
 
 ## Profile — `api/profile`

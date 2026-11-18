@@ -1,5 +1,6 @@
 using AutoMapper;
 using RestaurantApi.Application.Features.Users.Queries.GetMeQuery;
+using RestaurantApi.Application.Features.Users.Queries.GetUserInfoQuery;
 using RestaurantApi.Application.Features.Users.Queries.GetUserListQuery;
 using RestaurantApi.Domain.Identity;
 
@@ -18,6 +19,12 @@ public class UserProfile: Profile
             .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.Name + " " + src.Surname))
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email ?? string.Empty))
             .ForMember(dest => dest.TwoFactorStatus, opt => opt.MapFrom(src => src.TwoFactorEnabled))
+            .ForMember(dest => dest.Roles, opt => opt.Ignore());
+
+        // Kullanıcı bilgisi detayı: alanlar kolonlardan isim eşleşmesiyle gelir (e-posta boş olabilir, boş
+        // string'e düşürülür); Roles ise handler tarafından tek gruplama sorgusuyla doldurulur.
+        CreateMap<AppUser, GetUserInfoQueryResult>()
+            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email ?? string.Empty))
             .ForMember(dest => dest.Roles, opt => opt.Ignore());
     }
 }

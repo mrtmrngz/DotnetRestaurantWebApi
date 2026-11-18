@@ -3,9 +3,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Features.Users.Queries.GetMeQuery;
+using RestaurantApi.Application.Features.Users.Queries.GetUserInfoQuery;
 using RestaurantApi.Application.Features.Users.Queries.GetUserListQuery;
+using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
+using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
 using RestaurantApi.WebApi.Swagger.Examples.SuccessExamples;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -66,6 +69,48 @@ public class UsersController : ControllerBase
         var query = new GetUserListQuery();
 
         GeneralSuccessResponseWithData<IReadOnlyList<GetUserListQueryResult>> response =
+            await _mediator.Send(query);
+
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Bir kullanıcının bilgilerini ve rollerini getirir.
+    /// </summary>
+    /// <remarks>
+    /// Akış:
+    /// 1. `userId` **route'tan** alınır; istek gövdesi/query string kabul edilmez.
+    /// 2. Kullanıcı bulunamazsa **404** döner.
+    /// 3. Yanıtta `id`, `name`, `surname`, `email`, `emailConfirmed`, `phoneNumber`, `phoneNumberConfirmed`,
+    ///    `twoFactorEnabled` ve `roles` döner.
+    /// 4. `roles`, kullanıcının rol **adları** dizisidir; rolü olmayan kullanıcı için boş dizi döner.
+    /// Kullanıcı tek sorguda okunur, roller ise kullanıcı-rol join tablosundan tek gruplama sorgusuyla alınır
+    /// ve sonuç birleştirilir (kullanıcı başına ek sorgu atılmaz).
+    /// Uç salt okunurdur ve `user:view` izniyle korunur.
+    /// </remarks>
+    /// <param name="userId">Bilgileri getirilecek kullanıcının benzersiz id'si.</param>
+    /// <response code="200">Kullanıcı bilgisi döner.</response>
+    /// <response code="401">Yetkisiz erişim (JWT token eksik veya geçersiz).</response>
+    /// <response code="403">Kullanıcının `user:view` izni bulunmadığında.</response>
+    /// <response code="404">Kullanıcı bulunamadığında ya da route'taki id geçerli bir GUID olmadığında.</response>
+    [HttpGet("{userId:guid}")]
+    #region SwaggerDocumentation
+    [ProducesResponseType(typeof(GeneralSuccessResponseWithData<GetUserInfoQueryResult>), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(GetUserInfoResponseExample))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(ErrorResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    #endregion
+    [Authorize(Policy = Permissions.UserPermissions.View)]
+    public async Task<IActionResult> GetUserInfo([FromRoute] Guid userId)
+    {
+        var query = new GetUserInfoQuery
+        {
+            UserId = userId
+        };
+
+        GeneralSuccessResponseWithData<GetUserInfoQueryResult> response =
             await _mediator.Send(query);
 
         return Ok(response);
