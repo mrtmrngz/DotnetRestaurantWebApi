@@ -87,4 +87,34 @@ public class RoleRules
 
         throw new ConflictException("Rol güncellenemedi. Lütfen tekrar deneyiniz.");
     }
+
+    public void ShouldRoleBeDeletable(AppRole role, Guid roleId)
+    {
+        if (!role.IsSystemRole)
+            return;
+
+        _logger.LogWarning("Sistem rolü silinemez. RoleId:{RoleId}, RoleName:{RoleName}", roleId, role.Name);
+
+        throw new UnprocessableEntityError("Sistem rolleri silinemez.");
+    }
+
+    public void ShouldRoleHaveNoUsers(bool roleHasUsers, Guid roleId)
+    {
+        if (!roleHasUsers)
+            return;
+
+        _logger.LogWarning("Role bağlı kullanıcılar olduğu için rol silinemez. RoleId:{RoleId}", roleId);
+
+        throw new ConflictException("Role bağlı kullanıcılar bulunduğu için rol silinemez.");
+    }
+
+    public void ShouldRoleDeletionBeApplied(int affectedRowCount, Guid roleId)
+    {
+        if (affectedRowCount > 0)
+            return;
+
+        _logger.LogWarning("Rol silinemedi; rol bu sırada değişmiş olabilir. RoleId:{RoleId}", roleId);
+
+        throw new ConflictException("Rol silinemedi. Lütfen tekrar deneyiniz.");
+    }
 }

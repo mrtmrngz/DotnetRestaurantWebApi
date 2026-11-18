@@ -275,4 +275,52 @@ public class RolesController : ControllerBase
 
         return Ok(response);
     }
+
+    /// <summary>
+    /// Bir rolü siler.
+    /// </summary>
+    /// <remarks>
+    /// Akış:
+    /// 1. `roleId` **route'tan** alınır; istek gövdesi almaz.
+    /// 2. Rol bulunamazsa **404** döner.
+    /// 3. Sistem rolleri (`ADMIN` / `USER`) silinemez (**422**); bu roller yalnızca seed ile yönetilir.
+    /// 4. Role bağlı kullanıcı varsa rol silinemez (**409**); önce kullanıcıların rolü değiştirilmelidir.
+    /// 5. Silme tek `DELETE` ifadesiyle yapılır ve rolün izin bağlantıları (`role_permissions`) veritabanı
+    ///    cascade kuralıyla birlikte silinir; bu sırada rol değişmiş ya da silinmişse (hiçbir satır
+    ///    etkilenmez) **409** döner.
+    /// 6. Başarılı silmeden sonra rol adına bağlı izin cache'i (`role:{rol}:permissions`) temizlenir.
+    ///    Kullanıcı-rol cache'leri için ekstra iş yoktur: rolün kullanıcısı varsa silme zaten reddedilir.
+    /// </remarks>
+    /// <param name="roleId">Silinecek rolün benzersiz id'si.</param>
+    /// <response code="200">Rol silindi; `CONTENT_DELETED_SUCCESS` kodu döner.</response>
+    /// <response code="401">Yetkisiz erişim (JWT token eksik veya geçersiz).</response>
+    /// <response code="403">Kullanıcının `role:delete` izni bulunmadığında.</response>
+    /// <response code="404">Rol bulunamadığında ya da route'taki id geçerli bir GUID olmadığında.</response>
+    /// <response code="409">Role bağlı kullanıcılar varsa ya da silme eşzamanlı bir değişiklik nedeniyle uygulanamazsa.</response>
+    /// <response code="422">Sistem rolleri (`ADMIN` / `USER`) silinmek istendiğinde.</response>
+    [HttpDelete("{roleId:guid}")]
+    #region SwaggerDocumentation
+    [ProducesResponseType(typeof(BaseResponse), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentDeletedSuccessResponseExample))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(ErrorResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    [ProducesResponseType(typeof(ErrorResponse), 409)]
+    [SwaggerResponseExample(StatusCodes.Status409Conflict, typeof(ConflictErrorExample))]
+    [ProducesResponseType(typeof(ErrorResponse), 422)]
+    [SwaggerResponseExample(StatusCodes.Status422UnprocessableEntity, typeof(UnproccesableEntityErrorExample))]
+    #endregion
+    [Authorize(Policy = Permissions.RolePermissions.Delete)]
+    public async Task<IActionResult> RemoveRole([FromRoute] Guid roleId)
+    {
+        var command = new RemoveRoleCommand
+        {
+            RoleId = roleId
+        };
+
+        BaseResponse response = await _mediator.Send(command);
+
+        return Ok(response);
+    }
 }

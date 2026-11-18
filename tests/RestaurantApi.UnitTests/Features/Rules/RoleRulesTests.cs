@@ -254,4 +254,86 @@ public class RoleRulesTests
     }
 
     #endregion
+
+    #region ShouldRoleBeDeletable Tests
+
+    [Fact]
+    public void ShouldRoleBeDeletable_WhenRoleIsSystemRole_ShouldThrowUnprocessableEntityError()
+    {
+        var role = CreateRole(AppRoles.Admin, isSystemRole: true);
+
+        Action act = () => _sut.ShouldRoleBeDeletable(role, role.Id);
+
+        act.Should().Throw<UnprocessableEntityError>(
+                "Sistem rolü silinemeyeceği için bu hata fırlatılması gerekirdi")
+            .WithMessage("Sistem rolleri silinemez.");
+    }
+
+    [Fact]
+    public void ShouldRoleBeDeletable_WhenRoleIsNotSystemRole_ShouldNotThrow()
+    {
+        var role = CreateRole("EDITOR", isSystemRole: false);
+
+        Action act = () => _sut.ShouldRoleBeDeletable(role, role.Id);
+
+        act.Should().NotThrow("Uygulama rolleri silinebildiği için hata fırlatılmamalıydı");
+    }
+
+    [Theory]
+    [InlineData(AppRoles.Admin)]
+    [InlineData(AppRoles.User)]
+    public void ShouldRoleBeDeletable_WhenRoleNameIsASystemRoleName_ShouldThrow(string roleName)
+    {
+        var role = CreateRole(roleName, isSystemRole: true);
+
+        Action act = () => _sut.ShouldRoleBeDeletable(role, role.Id);
+
+        act.Should().Throw<UnprocessableEntityError>($"{roleName} sistem rolü olduğu için silinemez.");
+    }
+
+    #endregion
+
+    #region ShouldRoleHaveNoUsers Tests
+
+    [Fact]
+    public void ShouldRoleHaveNoUsers_WhenRoleHasUsers_ShouldThrowConflictException()
+    {
+        Action act = () => _sut.ShouldRoleHaveNoUsers(true, Guid.NewGuid());
+
+        act.Should().Throw<ConflictException>(
+                "Role bağlı kullanıcılar olduğu için bu hata fırlatılması gerekirdi")
+            .WithMessage("Role bağlı kullanıcılar bulunduğu için rol silinemez.");
+    }
+
+    [Fact]
+    public void ShouldRoleHaveNoUsers_WhenRoleHasNoUsers_ShouldNotThrow()
+    {
+        Action act = () => _sut.ShouldRoleHaveNoUsers(false, Guid.NewGuid());
+
+        act.Should().NotThrow("Role bağlı kullanıcı olmadığı için hata fırlatılmamalıydı");
+    }
+
+    #endregion
+
+    #region ShouldRoleDeletionBeApplied Tests
+
+    [Fact]
+    public void ShouldRoleDeletionBeApplied_WhenNoRowIsAffected_ShouldThrowConflictException()
+    {
+        Action act = () => _sut.ShouldRoleDeletionBeApplied(affectedRowCount: 0, Guid.NewGuid());
+
+        act.Should().Throw<ConflictException>(
+                "Silme uygulanamadığı için bu hata fırlatılması gerekirdi")
+            .WithMessage("Rol silinemedi. Lütfen tekrar deneyiniz.");
+    }
+
+    [Fact]
+    public void ShouldRoleDeletionBeApplied_WhenRowIsAffected_ShouldNotThrow()
+    {
+        Action act = () => _sut.ShouldRoleDeletionBeApplied(affectedRowCount: 1, Guid.NewGuid());
+
+        act.Should().NotThrow("Silme uygulandığı için hata fırlatılmamalıydı");
+    }
+
+    #endregion
 }
