@@ -35,7 +35,8 @@ public static class RootAdminSeeder
                 NormalizedEmail = adminSettings.Email.ToUpper(),
                 PhoneNumber = adminSettings.PhoneNumber,
                 EmailConfirmed = true,
-                PhoneNumberConfirmed = true
+                PhoneNumberConfirmed = true,
+                IsSystemUser = true
             };
             
             var createResult = await userManager.CreateAsync(rootAdmin, adminSettings.Password);
@@ -50,14 +51,27 @@ public static class RootAdminSeeder
                 logger.LogError("❌ Root Admin oluşturulamadı: {Errors}", errors);
             }
         }
-        else if (!await userManager.IsInRoleAsync(existingAdmin, AppRoles.Admin))
-        {
-            await userManager.AddToRoleAsync(existingAdmin, AppRoles.Admin);
-            logger.LogInformation("ℹ️ Mevcut {Email} kullanıcısına ADMIN rolü eklendi.", adminSettings.Email);
-        }
         else
         {
-            logger.LogInformation("Admin veri tabanında mevcut olduğu için seed işlemi yapılmadı.");
+            // Bu alan eklenmeden önce oluşturulmuş root admin kaydı sistem kullanıcısı olarak işaretlenir;
+            // aksi halde kullanıcı rol güncelleme koruması (422) devre dışı kalırdı.
+            if (!existingAdmin.IsSystemUser)
+            {
+                existingAdmin.IsSystemUser = true;
+                await userManager.UpdateAsync(existingAdmin);
+                logger.LogInformation("ℹ️ Mevcut {Email} kullanıcısı sistem kullanıcısı olarak işaretlendi.",
+                    adminSettings.Email);
+            }
+
+            if (!await userManager.IsInRoleAsync(existingAdmin, AppRoles.Admin))
+            {
+                await userManager.AddToRoleAsync(existingAdmin, AppRoles.Admin);
+                logger.LogInformation("ℹ️ Mevcut {Email} kullanıcısına ADMIN rolü eklendi.", adminSettings.Email);
+            }
+            else
+            {
+                logger.LogInformation("Admin veri tabanında mevcut olduğu için seed işlemi yapılmadı.");
+            }
         }
     }
 }

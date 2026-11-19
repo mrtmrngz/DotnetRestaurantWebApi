@@ -333,4 +333,26 @@ public class UserRulesTests
     }
 
     #endregion
+
+    #region ShouldUserRolesUpdatable Tests
+
+    [Fact]
+    public void ShouldUserRolesUpdatable_WhenUserIsSystemUser_ShouldThrowUnprocessableEntityError()
+    {
+        Action act = () => _sut.ShouldUserRolesUpdatable(isSystemUser: true, Guid.NewGuid());
+
+        act.Should().Throw<UnprocessableEntityError>(
+                "Sistem kullanıcısının rolleri güncellenemeyeceği için bu hata fırlatılması gerekirdi")
+            .WithMessage("Sistem kullanıcısının rolleri güncellenemez.");
+    }
+
+    [Fact]
+    public void ShouldUserRolesUpdatable_WhenUserIsNotSystemUser_ShouldNotThrow()
+    {
+        Action act = () => _sut.ShouldUserRolesUpdatable(isSystemUser: false, Guid.NewGuid());
+
+        act.Should().NotThrow("Normal kullanıcının rolleri güncellenebildiği için hata fırlatılmamalıydı");
+    }
+
+    #endregion
 }

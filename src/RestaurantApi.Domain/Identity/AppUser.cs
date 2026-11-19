@@ -7,6 +7,7 @@ public class AppUser: IdentityUser<Guid>
     public string Name { get; set; } = null!;
     public string Surname { get; set; } = null!;
     public bool IsDeleted { get; set; }
+    public bool IsSystemUser { get; set; } = false;
     
     public string GetFullName() => $"{Name} {Surname}";
     public bool IsActive() => !IsDeleted;

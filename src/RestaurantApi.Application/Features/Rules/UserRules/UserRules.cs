@@ -149,4 +149,14 @@ public class UserRules
 
         return Task.CompletedTask;
     }
+
+    public void ShouldUserRolesUpdatable(bool isSystemUser, Guid userId)
+    {
+        if(!isSystemUser)
+            return;
+        
+        _logger.LogWarning("Sistem kullanıcısının rolleri güncellenemez. UserId:{UserId}", userId);
+
+        throw new UnprocessableEntityError("Sistem kullanıcısının rolleri güncellenemez.");
+    }
 }

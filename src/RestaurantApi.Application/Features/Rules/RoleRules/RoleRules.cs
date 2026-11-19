@@ -117,4 +117,18 @@ public class RoleRules
 
         throw new ConflictException("Rol silinemedi. Lütfen tekrar deneyiniz.");
     }
+
+    public void ShouldRolesExist(IReadOnlyCollection<Guid> dbIds, HashSet<Guid> requestedIds)
+    {
+        IReadOnlyList<Guid> missingRoles = requestedIds.Except(dbIds).ToList();
+
+        if (missingRoles.Count == 0)
+            return;
+
+        _logger.LogWarning(
+            "İstekteki bazı roller bulunamadı; kullanıcı rolleri güncellenmedi. MissingRoleCount:{MissingRoleCount}, MissingRoleIds:{MissingRoleIds}",
+            missingRoles.Count, string.Join(", ", missingRoles));
+
+        throw new NotFoundException("İstekteki bazı roller bulunamadı.");
+    }
 }

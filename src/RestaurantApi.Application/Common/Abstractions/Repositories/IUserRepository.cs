@@ -26,6 +26,9 @@ public interface IUserRepository
     Task<IdentityResult> ChangePasswordAsync(AppUser user, string oldPassword, string newPassword, CancellationToken cancellationToken);
     Task<bool> AnyUserExistAsync(Guid userId, CancellationToken ctx);
     IQueryable<AppUser> GetAllAsQueryable();
+    Task<IReadOnlyCollection<IdentityUserRole<Guid>>> GetUserRoles(Guid userId, CancellationToken ctx);
+    void UserRolesAddRange(List<IdentityUserRole<Guid>> userRoles);
+    void UserRolesRemoveRange(List<IdentityUserRole<Guid>> userRoles);
 
     // Kullanıcı id'lerine göre rol adları (kullanıcı-rol join tablosu ve roller tablosu tek sorguda gruplanır).
     Task<Dictionary<Guid, List<string>>> GetRoleNamesByUserIdsAsync(IReadOnlyCollection<Guid> userIds,

@@ -154,4 +154,21 @@ public class UserRepository: IUserRepository
     {
         return await _userManager.Users.AnyAsync(x => x.Id == userId, ctx);
     }
+    
+    public async Task<IReadOnlyCollection<IdentityUserRole<Guid>>> GetUserRoles(Guid userId, CancellationToken ctx)
+    {
+        return await _context.UserRoles
+            .Where(ur => ur.UserId == userId)
+            .ToListAsync(ctx);
+    }
+
+    public void UserRolesAddRange(List<IdentityUserRole<Guid>> userRoles)
+    {
+        _context.UserRoles.AddRange(userRoles);
+    }
+    
+    public void UserRolesRemoveRange(List<IdentityUserRole<Guid>> userRoles)
+    {
+        _context.UserRoles.RemoveRange(userRoles);
+    }
 }

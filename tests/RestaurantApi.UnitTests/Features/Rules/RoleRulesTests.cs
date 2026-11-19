@@ -336,4 +336,44 @@ public class RoleRulesTests
     }
 
     #endregion
+
+    #region ShouldRolesExist Tests
+
+    [Fact]
+    public void ShouldRolesExist_WhenAllRequestedRolesExist_ShouldNotThrow()
+    {
+        var roleIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
+
+        Action act = () => _sut.ShouldRolesExist(roleIds, roleIds.ToHashSet());
+
+        act.Should().NotThrow("İstekteki rollerin tamamı var olduğu için hata fırlatılmamalıydı");
+    }
+
+    [Fact]
+    public void ShouldRolesExist_WhenSomeRolesAreMissing_ShouldThrowNotFoundException()
+    {
+        var existingRoleId = Guid.NewGuid();
+        var missingRoleId = Guid.NewGuid();
+
+        IReadOnlyCollection<Guid> dbIds = new List<Guid> { existingRoleId };
+        HashSet<Guid> requestedIds = new HashSet<Guid> { existingRoleId, missingRoleId };
+
+        Action act = () => _sut.ShouldRolesExist(dbIds, requestedIds);
+
+        act.Should().Throw<NotFoundException>(
+                "İstekte var olmayan rol bulunduğu için bu hata fırlatılması gerekirdi")
+            .WithMessage("İstekteki bazı roller bulunamadı.");
+    }
+
+    [Fact]
+    public void ShouldRolesExist_WhenNoRoleIsRequested_ShouldNotThrow()
+    {
+        IReadOnlyCollection<Guid> dbIds = new List<Guid> { Guid.NewGuid() };
+
+        Action act = () => _sut.ShouldRolesExist(dbIds, new HashSet<Guid>());
+
+        act.Should().NotThrow("Boş liste eksik rol içermediği için hata fırlatılmamalıydı");
+    }
+
+    #endregion
 }

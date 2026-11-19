@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RestaurantApi.Application.Common.Abstractions;
+using RestaurantApi.Application.Features.Users.Commands.UpdateUserRoleCommand;
 using RestaurantApi.Application.Features.Users.Queries.GetMeQuery;
 using RestaurantApi.Application.Features.Users.Queries.GetUserInfoQuery;
 using RestaurantApi.Application.Features.Users.Queries.GetUserListQuery;
@@ -10,6 +11,7 @@ using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
 using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
+using RestaurantApi.WebApi.Swagger.Examples.RequestExamples.UserExamples;
 using RestaurantApi.WebApi.Swagger.Examples.SuccessExamples;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -154,6 +156,54 @@ public class UsersController : ControllerBase
 
         GeneralSuccessResponseWithData<IReadOnlyList<GetUserRolesQueryResult>> response =
             await _mediator.Send(query);
+
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Bir kullanıcının rollerini gövdedeki rollerle değiştirir.
+    /// </summary>
+    /// <remarks>
+    /// Akış:
+    /// 1. `userId` **route'tan**, rol listesi **gövdeden** (`roleIds`) alınır; gövdedeki kullanıcı id dikkate alınmaz.
+    /// 2. Gövde, kullanıcının **yeni rol kümesinin tamamıdır**: istekte olmayan roller kaldırılır, eksik roller eklenir.
+    ///    **En az bir rol** gönderilmelidir; kullanıcının tüm rolleri bu uçtan kaldırılamaz.
+    /// 3. Kullanıcı bulunamazsa **404**; istekteki rollerden biri bile bulunamazsa hiçbir değişiklik yazılmaz ve
+    ///    **404** döner.
+    /// 4. **Sistem kullanıcısının** (`IsSystemUser`, ör. root admin) rolleri güncellenemez (**422**).
+    /// 5. Değişiklik yoksa yazma yapılmaz; uç **idempotenttir** ve yine **200** döner.
+    /// 6. Ekleme ve silme tek `SaveChanges` ile atomik yazılır ve kullanıcının rol cache'i (`roles:{userId}`)
+    ///    temizlenir; bu anahtar token üretiminde kullanıldığı için temizlenmezse kullanıcı eski rolleriyle
+    ///    token almaya devam ederdi. Mevcut access token'lar ise süresi dolana kadar eski rolleri taşır.
+    /// </remarks>
+    /// <param name="command">Gövde: `roleIds` (zorunlu; kullanıcının yeni rol kümesinin tamamı, en az bir rol).</param>
+    /// <param name="userId">Rolleri güncellenecek kullanıcının benzersiz id'si.</param>
+    /// <response code="200">Kullanıcının rolleri güncellendi; `CONTENT_UPDATED_SUCCESS` kodu döner.</response>
+    /// <response code="400">Doğrulama hataları (kullanıcı id yok, rol listesi boş ya da geçersiz/tekrarlı rol id'si).</response>
+    /// <response code="401">Yetkisiz erişim (JWT token eksik veya geçersiz).</response>
+    /// <response code="403">Kullanıcının `user:update` izni bulunmadığında.</response>
+    /// <response code="404">Kullanıcı bulunamadığında ya da istekteki rollerden biri bulunamadığında.</response>
+    /// <response code="422">Sistem kullanıcısının rolleri güncellenmek istendiğinde.</response>
+    [HttpPut("{userId:guid}/roles")]
+    #region SwaggerDocumentation
+    [ProducesResponseType(typeof(BaseResponse), 200)]
+    [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentUpdatedResponseExample))]
+    [SwaggerRequestExample(typeof(UpdateUserRoleCommand), typeof(UpdateUserRoleRequestExample))]
+    [ProducesResponseType(typeof(ValidationErrorResponse), 400)]
+    [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(typeof(ErrorResponse), 404)]
+    [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
+    [ProducesResponseType(typeof(ErrorResponse), 422)]
+    [SwaggerResponseExample(StatusCodes.Status422UnprocessableEntity, typeof(UnproccesableEntityErrorExample))]
+    #endregion
+    [Authorize(Policy = Permissions.UserPermissions.Update)]
+    public async Task<IActionResult> UpdateUserRoles([FromBody] UpdateUserRoleCommand command, [FromRoute] Guid userId)
+    {
+        var commandToSend = command with { UserId = userId };
+
+        BaseResponse response = await _mediator.Send(commandToSend);
 
         return Ok(response);
     }
