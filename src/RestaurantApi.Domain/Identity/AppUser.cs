@@ -10,7 +10,4 @@ public class AppUser: IdentityUser<Guid>
     public bool IsSystemUser { get; set; } = false;
     
     public string GetFullName() => $"{Name} {Surname}";
-    public bool IsActive() => !IsDeleted;
-    public void Deactivate() => IsDeleted = true;
-    public void Activate() => IsDeleted = false;
 }

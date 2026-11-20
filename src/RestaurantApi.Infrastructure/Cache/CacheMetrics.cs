@@ -8,16 +8,14 @@ public static class CacheMetrics
     public static void Hit() => _hit++;
     public static void Miss() => _miss++;
 
-    public static object GetStats()
+    public static CacheMetricsStats GetStats()
     {
         var total = _hit + _miss;
         var ratio = total == 0 ? 0 : (double)_hit / total * 100;
 
-        return new
-        {
-            Hit = _hit,
-            Miss = _miss,
-            HitRatio = $"{ratio:0.00}%"
-        };
+        return new CacheMetricsStats(_hit, _miss, $"{ratio:0.00}%");
     }
 }
+
+// Cache hit/miss sayaçları; HitRatio yüzde metni olarak (ör. "85.00%") döner.
+public record CacheMetricsStats(int Hit, int Miss, string HitRatio);

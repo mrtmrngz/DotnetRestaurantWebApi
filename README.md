@@ -20,9 +20,10 @@ Restoranın menüsünü (kategoriler, ürünler, ürün görselleri, indirimler)
 - **Eşzamanlılık:** masa güncelleme ve silmede satır kilidi (`SELECT ... FOR UPDATE`) alınır; rezervasyon kontrolü ve yazma tek transaction içinde yapılır.
 - **Kimlik doğrulama:** ASP.NET Core Identity + JWT access token, veritabanında saklanan refresh token, mail doğrulama, iki faktörlü giriş, şifre sıfırlama ve çıkış akışları.
 - **İzin tabanlı yetkilendirme:** `Permissions` sabitlerinden üretilen authorization policy'leri; kullanıcının rolüne ait izin listesi Redis'te cache'lenir.
+- **CORS ve ön kontrol (preflight) yönetimi:** izinli frontend origin'leri `Cors:AllowedOrigins` ile tanımlanır ve boş bırakılamaz (uygulama açılışta hata verir). Joker (`*`) yalnız `Development` ortamında kabul edilir. Ön kontrol yanıtları `Access-Control-Max-Age` ile 10 dakika tarayıcıda cache'lenir; böylece `Authorization` başlığı taşıyan her istekten önce ikinci bir `OPTIONS` isteği gidip gelmez. Origin'ler açıkça listelendiğinde `AllowCredentials()` açıktır (refresh token cookie'si için).
 - **Redis cache:** liste uçları cache-aside deseniyle okunur. Cache miss olduğunda dağıtık kilit alınır, kilit alınamazsa kısa bir bekleme sonrası tekrar denenir; böylece eşzamanlı isteklerde veritabanına tek sorgu gider (cache stampede koruması). Değerler gzip ile sıkıştırılarak saklanır, mutasyonlarda ilgili cache anahtarları temizlenir.
 - **Medya ve arka plan işler:** S3 uyumlu depoya görsel yükleme, güncelleme sonrası eski dosyaların event handler ile silinmesi, indirimlerin başlangıç/bitiş anlarında çalışan Hangfire job'ları ve arka planda gönderilen HTML mailler.
-- **Test ve CI:** 1.440+ test (unit + integration); GitHub Actions üzerinde restore → build (Release) → test.
+- **Test ve CI:** 1.500+ test (961 unit + 542 integration); GitHub Actions üzerinde restore → build (Release) → test.
 
 ## Mimari
 
@@ -82,6 +83,7 @@ erDiagram
 - **Dosya ve cache işlemleri transaction dışında.** Yeni görseller transaction açılmadan **önce** S3'e yüklenir; ardından `IUnitOfWork` ile transaction açılır ve veritabanı değişiklikleri commit edilir. Commit sonrası Redis anahtarları temizlenir, güncellemede silinen eski görseller `UpdateProductEvent` / `UpdateCategoryEvent` notification handler'ları üzerinden depolamadan silinir. İşlem hata verirse yüklenen yeni dosyalar `IFileStorage.SafeDeleteMultipleFilesAsync` ile telafi edilir ve hata yeniden fırlatılır.
 - **Listelerde okuma odaklı cache.** `GetOrInternalSetAsync` dağıtık kilit ve gzip sıkıştırma ile çalışır; eşzamanlı cache miss durumunda tek sorgu atılır. Masa listesi 30 dakika, diğer liste uçları 1 saat cache'lenir.
 - **Reflection tabanlı izinler.** `Permissions` içine eklenen sabitler hem authorization policy'lerini hem veritabanı seed'ini hem de ADMIN rolüne atamayı otomatik besler; yeni izin için elle kayıt gerekmez.
+- **CORS tek yerden yönetilir.** `WebApi/Configurations/Cors` altındaki `CorsExtension` `FrontendPolicy` adlı tek policy tanımlar; `Cors:AllowedOrigins` boş kalırsa `ValidateOnStart` sayesinde uygulama **açılışta** hata verir, böylece yanlış yapılandırma sessizce çalışan bir API üretmez. Joker (`*`) yalnız Development'ta kabul edilir; joker modunda istek `AllowAnyOrigin()` ile karşılandığı için `AllowCredentials()` açılamaz (tarayıcı kısıtı), explicit origin listesinde ise refresh token cookie'si için `AllowCredentials()` açıktır.
 
 ## Teknoloji yığını
 
@@ -151,9 +153,12 @@ Stripe__Currency=try
 AdminMail=<root admin mail address>
 AdminPassword=<root admin password>
 AdminPhone=<root admin phone number>
+
+Cors__AllowedOrigins__0=<your_first_front_end_url>
+Cors__AllowedOrigins__1=<your_second_front_end_url>  // you can add more
 ```
 
-`POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `JWT_SECRET_KEY`, `MAIL_EMAIL` ve `MAIL_PASSWORD` zorunludur; eksik olmaları durumunda `docker compose` hata verir. `POSTGRES_USER` varsayılanı `user`, `MAIL_HOST` varsayılanı `smtp.gmail.com`, `MAIL_PORT` varsayılanı `587`'dir. Veritabanı, Redis ve MinIO değerleri `compose.yaml`'daki servis tanımlarıyla aynı olmalıdır.
+`POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `JWT_SECRET_KEY`, `MAIL_EMAIL` ve `MAIL_PASSWORD` zorunludur; eksik olmaları durumunda `docker compose` hata verir. `POSTGRES_USER` varsayılanı `user`, `MAIL_HOST` varsayılanı `smtp.gmail.com`, `MAIL_PORT` varsayılanı `587`'dir. Veritabanı, Redis ve MinIO değerleri `compose.yaml`'daki servis tanımlarıyla aynı olmalıdır. `Cors__AllowedOrigins__0` varsayılanı `*`'tır ve bu değer yalnız `Development` ortamında geçerlidir; production'da uygulama açılışta hata verir, gerçek frontend origin'i tanımlanmalıdır (ek origin'ler için `Cors__AllowedOrigins__1`, `Cors__AllowedOrigins__2` …).
 
 ### 3) Servisleri başlatın
 
@@ -214,6 +219,9 @@ dotnet user-secrets set "Stripe:Currency" "try"
 dotnet user-secrets set "RootAdmin:Email" "<root_admin_mail>"
 dotnet user-secrets set "RootAdmin:Password" "<root_admin_pwd>"
 dotnet user-secrets set "RootAdmin:PhoneNumber" "<root_admin_phone>"
+
+dotnet user-secrets set "Cors:AllowedOrigins:0" "<your_first_frontend_url>"
+dotnet user-secrets set "Cors:AllowedOrigins:1" "<your_second_frontend_url>" // you can add more
 ```
 
 Veritabanı, Redis ve MinIO değerleri (kullanıcı adı, parola, veritabanı ve bucket adı) `compose.yaml`'daki servis tanımlarıyla aynı olmalıdır; parolaları depoya yazmayın.
@@ -236,7 +244,7 @@ dotnet ef database update --project src/RestaurantApi.Persistence --startup-proj
 | --- | --- |
 | API | `http://localhost:5269` |
 | Swagger UI (yalnız `Development`) | `http://localhost:5269/swagger` |
-| Hangfire dashboard | `http://localhost:5269/hangfire` |
+| Hangfire dashboard | `http://localhost:5269/hangfire` (yalnız Development) |
 | Seq | `http://localhost:5341` |
 | MinIO konsolu | `http://localhost:9001` |
 
@@ -301,7 +309,7 @@ Ayrıntılı parametreler, örnek istek/yanıtlar ve yetki bilgisi için Swagger
 - `api/roles` — panelde sistemdeki tüm rolleri kullanıcı ve izin sayılarıyla listeleme (`GET api/roles`, `role:view`), yeni rol oluşturma (`POST api/roles`, `role:create`), bir rolün bilgilerini getirme (`GET api/roles/{roleId}`, `role:view`), rol adını güncelleme (`PATCH api/roles/{roleId}`, `role:update`), rol silme (`DELETE api/roles/{roleId}`, `role:delete`), bir rolün izinlerini listeleme (`GET api/roles/{roleId}/permissions`, `role:view`) ve rolün izin kümesini gövdedeki izinlerle değiştirme (`PUT api/roles/{roleId}/permissions`, `role:update`)
 
 - `api/webhooks/checkout` — Stripe checkout ödeme olaylarını (`checkout.session.completed`, `async_payment_succeeded`, `async_payment_failed`, `expired`) işler; anonim uçtur, güvenlik `Stripe-Signature` imzasının doğrulanmasıyla sağlanır
-- `api/diagnostics/cache` — cache hit/miss sayaçları
+- `api/diagnostics/cache` — cache hit/miss sayaçları (`diagnostics:view`)
 
 Tüm uçların method, route, izin ve başarı kodu bilgisiyle tablo halindeki listesi: [docs/API.md](docs/API.md).
 Ödeme akışının **neden böyle** yazıldığını anlatan kod rehberi: [docs/odeme-akisi](docs/odeme-akisi/README.md).
@@ -345,20 +353,20 @@ Bu projenin büyük bölümü Cline + DeepSeek ajanıyla geliştirilmektedir. Mi
 Planlanan işler (kodda henüz uç noktası yok):
 
 - **Checkout'ta adres seçimi:** current user akışı varsayılan adresi kullanır; çoklu adres seçimi yok.
-- **CORS politikası.**
 - **Rate limiting.**
-- **Güvenlik sertleştirmesi:** `api/diagnostics/cache` ucu ve Hangfire dashboard için yetkilendirme (CORS ve rate limiting ile birlikte).
 
 ## Bilinen sınırlamalar
 
 - Masa numarası benzersizliği veritabanı kısıtı yerine uygulama seviyesinde (Rules) kontrol edilir; tek restoran ve az sayıda yönetici senaryosu için bilinçli bir tercihtir.
 - İndirimler için silme ucu yok; indirim `PATCH api/discounts/{discountId}` ile pasife alınabilir.
+- Hangfire dashboard yalnız **Development** ortamında yayınlanır; production'da `/hangfire` yayınlanmaz (gerektiğinde Basic auth filtresi ile açılabilir). Arka plan işleri (indirim zamanlayıcısı, mailler) bu kısıtlamadan etkilenmez.
+- CORS joker (`*`) modunda tarayıcı kısıtı gereği `AllowCredentials()` açılamaz, bu nedenle refresh token `_session` cookie'si taşınamaz; joker yalnız hızlı deneme/önizleme içindir. Cookie tabanlı login/refresh akışını kullanan frontend için `Cors:AllowedOrigins` altına explicit origin (ör. `http://localhost:3000`) tanımlanmalıdır.
 - Sistem kullanıcısının (`IsSystemUser`, root admin) rolleri güncellenemez (**422**) ve bir kullanıcının tüm rolleri rol güncelleme ucundan kaldırılamaz (en az bir rol kalmalıdır). Rol değişikliği yalnızca kullanıcının rol cache'ini (`roles:{userId}`) temizler; mevcut access token'lar süresi dolana kadar eski rolleri taşımaya devam eder.
 - Rol yönetimi kısmi: listeleme (`GET api/roles`), bir rolün bilgilerinin getirilmesi (`GET api/roles/{roleId}`), rol izinlerinin okunması/güncellenmesi (`GET`/`PUT api/roles/{roleId}/permissions`) ve rol adının güncellenmesi (`PATCH api/roles/{roleId}`) vardır; izin atama geçmişi (audit) yoktur; rol silme yalnızca **sistem rolü olmayan** ve **kullanıcısı bulunmayan** roller için mümkündür (sırasıyla 422 ve 409). Sistem rollerinin (`ADMIN` / `USER`) ne **izinleri** ne de **bilgileri** güncellenemez (**422**, `IsSystemRole` alanıyla kontrol edilir); başarılı güncellemelerden sonra rolün izin cache'i (`role:{rol}:permissions`, rol adı değiştiğinde eski ve yeni ad için) ve rol adı değiştiğinde rolün kullanıcılarının rol anahtarları (`roles:{userId}`, token üretiminde 7 gün kullanılır) temizlenir.
 - Sipariş durumu güncelleme ucu yalnızca kullanıcı siparişlerini kapsar: masa siparişleri (`UserId` boş) ve ödemesi tamamlanmamış siparişler `PATCH api/orders/users/status/{orderId}` ile güncellenemez; gövdedeki `userId` sipariş sahibiyle eşleşmezse de istek reddedilir. Sipariş iptali (`PATCH api/orders/users/cancel/{orderId}`) yalnızca oturumdaki kullanıcının kendi siparişini kapsar; ödemesi tamamlanmamış, teslim edilmiş ya da zaten iptal edilmiş siparişler iptal edilemez. İptal edilen siparişin ödeme durumu `Refunded` olarak işaretlenir; Stripe üzerinden gerçek iade akışı henüz eklenmemiştir.
 - Checkout akışında Stripe ödeme oturumu açıldıktan sonra sipariş veritabanına yazılır; yazma başarısız olursa Stripe tarafında oturum açık kalabilir (mükerrer istekler idempotency key ile engellenir, oturum 1 saat sonra kendiliğinden kapanır).
 - Ödeme sonucu Stripe akışında `api/webhooks/checkout` ucu ile siparişe yansıtılır: `checkout.session.completed` (yalnızca ödeme alınmışsa) ve `async_payment_succeeded` siparişi `Paid`, `async_payment_failed` ve `expired` siparişi `Failed` + `Canceled` yapar. Olay, sipariş bulunamazsa 404 ile reddedilir ve Stripe olayı tekrar gönderir; işlem yalnızca ödeme sonucu bekleyen (`Pending`) siparişlerde uygulanır.
-- Webhook ucu anonimdir; erişim yalnızca `Stripe-Signature` başlığının HMAC-SHA256 ile doğrulanmasıyla kontrol edilir (imza sırrı `Stripe:WebhookSecret`), bu nedenle uç CORS/rate limiting sertleştirmesi ile birlikte ele alınmalıdır.
+- Webhook ucu anonimdir; erişim yalnızca `Stripe-Signature` başlığının HMAC-SHA256 ile doğrulanmasıyla kontrol edilir (imza sırrı `Stripe:WebhookSecret`), bu nedenle uç rate limiting sertleştirmesi ile birlikte ele alınmalıdır.
 - Boş sepette `POST api/checkout/users` 422 döner; `Order.CreateFromCart` içindeki "Sepet boş." koruması yedek katman olarak korunur.
 - Sepet ürünlerinin temizliği ödeme oturumu açıldıktan sonra yapılır; ödeme tamamlanmadan sepet sıfırlanmış olur (yeniden sipariş için ürünler tekrar eklenmelidir).
 

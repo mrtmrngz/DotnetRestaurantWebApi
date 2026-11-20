@@ -48,8 +48,6 @@ public static class Permissions
         public const string Create = "discount:create";
         [Description("İndirim güncelleme yetkisi verir.")]
         public const string Update = "discount:update";
-        [Description("İndirim silme yetkisi verir.")]
-        public const string Delete = "discount:delete";
     }
 
     public static class TablePermissions
@@ -106,6 +104,12 @@ public static class Permissions
         public const string Read = "orders:read";
     }
     
+    public static class DiagnosticsPermissions
+    {
+        [Description("Cache istatistiklerini görüntüleme yetkisi verir.")]
+        public const string View = "diagnostics:view";
+    }
+
     public static class RolePermissions
     {
         [Description("Role görüntüleme yetkisi verir.")]

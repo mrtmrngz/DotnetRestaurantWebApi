@@ -221,7 +221,9 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
 
 | Method | Route | Açıklama | Gereken izin | Başarı kodu |
 | --- | --- | --- | --- | --- |
-| GET | `api/diagnostics/cache` | Redis cache hit/miss sayaçları | Yok | 200 |
+| GET | `api/diagnostics/cache` | Redis cache hit/miss sayaçları | `diagnostics:view` | 200 |
+
+- **Cache istatistikleri:** `GET api/diagnostics/cache` istek parametresi almaz; yanıtta `hit`, `miss` ve `hitRatio` (yüzde metni, ör. `"85.00%"`) döner. Uç yalnızca süreç içi sayaçları okur (Redis'e sorgu atmaz), **anonim erişime kapalıdır** ve `diagnostics:view` izniyle korunur; token yoksa **401**, izin yoksa **403** döner.
 
 ## Ortak notlar
 
@@ -229,3 +231,4 @@ Tüm uçlar `api/` ön ekiyle başlar ve `{parametre}` biçimindeki ifadeler rou
 - **Hata kodları:** Doğrulama hataları 400, iş kuralı hataları 404 (`NotFoundException`), 409 (`ConflictException`) ve 422 (`UnprocessableEntityError`) olarak döner. Eşleme `WebApi/Middlewares/ExceptionMiddleware.cs` içinde yapılır.
 - **Yanıt gövdesi:** Başarılı yanıtlar `BaseResponse` (`Message`, `Code`) veya veri içeren uçlarda `GeneralSuccessResponseWithData<T>` (`Message`, `Code`, `Data`) biçimindedir.
 - **Kimlik doğrulama çerezleri:** Login, refresh ve logout uçları refresh token'ı `HttpOnly` `_session` cookie'sinde taşır; access token yanıt gövdesinde döner.
+- **CORS ve ön kontrol (preflight):** İzinli origin'ler `Cors:AllowedOrigins` ile tanımlanır; joker (`*`) yalnız Development ortamında geçerlidir (production'da uygulama açılışta hata verir). Tarayıcı ön kontrol yanıtlarını 10 dakika cache'ler (`Access-Control-Max-Age`), bu nedenle `Authorization` başlıklı isteklerden önce her seferinde `OPTIONS` isteği gönderilmez. İzinli origin'ler açıkça listelendiğinde yanıtlar `Access-Control-Allow-Credentials: true` içerir (`_session` refresh cookie'si için).

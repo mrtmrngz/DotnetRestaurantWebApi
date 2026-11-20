@@ -72,7 +72,8 @@ public class TestDatabaseFixture : IAsyncLifetime
                         {"Stripe:WebhookSecret", "whsec_test_fake"},
                         {"Stripe:SuccessUrl", "https://example.com/payment/success"},
                         {"Stripe:CancelUrl", "https://example.com/payment/cancel"},
-                        {"Stripe:Currency", "try"}
+                        {"Stripe:Currency", "try"},
+                        {"Cors:AllowedOrigins:0", "http://localhost:3000"}
                     };
 
                     config.AddInMemoryCollection(testJwtSettings!);

@@ -6,17 +6,13 @@ using Microsoft.OpenApi;
 using RestaurantApi.Application.Common.Extensions;
 using RestaurantApi.Infrastructure.DependencyInjection;
 using RestaurantApi.Persistence.Extension;
+using RestaurantApi.WebApi.Configurations.Cors;
 using RestaurantApi.WebApi.Middlewares;
 using Serilog;
 using Swashbuckle.AspNetCore.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Console.WriteLine(builder.Configuration.GetValue<string>("ConnectionStrings:Redis"));
-// Console.WriteLine(builder.Configuration.GetValue<string>("JwtSettings:SecretKey"));
-// Console.WriteLine(builder.Configuration.GetValue<string>("MailSettings:Host"));
-// Console.WriteLine(builder.Configuration.GetValue<string>("AWS:ServiceUrl"));
-// Console.WriteLine(builder.Configuration.GetValue<string>("ConnectionStrings:DefaultConnection"));
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -93,6 +89,9 @@ builder.Services.AddSwaggerGen(c =>
     
 });
 
+// CORS
+builder.Services.AddCorsConfiguration(builder.Configuration, builder.Environment);
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -112,11 +111,17 @@ app.UseMiddleware<ExceptionMiddleware>();
 // Logging Middleware
 app.UseMiddleware<RequestLoggingMiddleware>();
 
+app.UseCorsConfiguration();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.UseHangfireDashboard();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseHangfireDashboard();
+}
 
 await app.Services.SeedDataAsync();
 

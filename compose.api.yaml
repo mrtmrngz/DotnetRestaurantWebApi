@@ -54,6 +54,8 @@ x-api-environment: &api-environment
   RootAdmin__Password: "${AdminPassword:? Admin Password Gerekli}"
   RootAdmin__PhoneNumber: "${AdminPhone:? Admin Phone Gerekli}"
   
+  Cors__AllowedOrigins__0: "${Cors__AllowedOrigins__0:-*}"
+  
 
 x-api-depends-on: &api-depends-on
   postgres:
