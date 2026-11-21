@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Discount.Commands.AddDiscountCommand;
 using RestaurantApi.Application.Features.Discount.Commands.UpdateDiscountCommand;
@@ -9,6 +10,7 @@ using RestaurantApi.Application.Features.Discount.Queries.GetDiscountListQuery;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
 using RestaurantApi.Domain.Enums;
+using RestaurantApi.WebApi.Configurations.RateLimiting.Policies;
 using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
 using RestaurantApi.WebApi.Swagger.Examples.SuccessExamples;
 using Swashbuckle.AspNetCore.Filters;
@@ -34,6 +36,7 @@ public class DiscountController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(AdminDiscountListResponseExample))]
     #endregion
     [Authorize(Policy = Permissions.DiscountPermissions.View)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralRead)]
     public async Task<IActionResult> GetDiscounts([FromQuery] DiscountStatus? status)
     {
         GetDiscountListQuery query = new GetDiscountListQuery(status);
@@ -54,6 +57,7 @@ public class DiscountController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
     #endregion
     [Authorize(Policy = Permissions.DiscountPermissions.View)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralRead)]
     public async Task<IActionResult> GetDiscountDetail([FromRoute] Guid discountId)
     {
         GetDiscountDetailQuery query = new GetDiscountDetailQuery(discountId);
@@ -77,6 +81,7 @@ public class DiscountController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentUpdatedResponseExample))]
     #endregion
     [Authorize(Policy = Permissions.DiscountPermissions.Update)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralPatch)]
     public async Task<IActionResult> UpdateDiscount([FromRoute] Guid discountId,
         [FromBody] UpdateDiscountCommand command)
     {
@@ -103,6 +108,7 @@ public class DiscountController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status422UnprocessableEntity, typeof(UnproccesableEntityErrorExample))]
     #endregion
     [Authorize(Policy = Permissions.DiscountPermissions.Create)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralPost)]
     public async Task<IActionResult> AddDiscount([FromBody] AddDiscountCommand command)
     {
         BaseResponse response = await _mediator.Send(command);

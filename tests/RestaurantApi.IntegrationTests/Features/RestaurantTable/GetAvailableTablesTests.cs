@@ -120,20 +120,6 @@ public class GetAvailableTablesTests: BaseIntegrationTest
             "Kullanıcı login olmadığı için 401 UNAUTHORIZED dönmeliydi.");
     }
 
-    [Fact]
-    public async Task GetAvailableTables_WhenUserNotAdmin_ShouldReturn403()
-    {
-        await SeedTableAsync(number: 5, capacity: 6);
-        var setupResult = await CreateVanillaUserAsync();
-
-        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", setupResult.AccessToken);
-
-        var response = await Client.GetAsync(BuildUri(guestCount: 4));
-
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden,
-            "Kullanıcı admin olmadığı için 403 FORBIDDEN dönmeliydi.");
-    }
-
     // ERROR TESTS END
 
     // SETUP

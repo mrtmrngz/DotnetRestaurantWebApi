@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Products.Commands.CreateProductCommand;
 using RestaurantApi.Application.Features.Products.Commands.DeleteProductCommand;
@@ -11,6 +12,7 @@ using RestaurantApi.Application.Features.Products.Queries.PublicProductDetailQue
 using RestaurantApi.Application.Features.Products.Queries.PublicProductsListQuery;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
+using RestaurantApi.WebApi.Configurations.RateLimiting.Policies;
 using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
 using RestaurantApi.WebApi.Swagger.Examples.SuccessExamples;
 using Swashbuckle.AspNetCore.Filters;
@@ -33,6 +35,7 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(GeneralSuccessResponseWithData<IReadOnlyList<PublicProductsListQueryResult>>), 200)]
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(PublicProductListExample))]
     #endregion
+    [EnableRateLimiting(RateLimitPolicies.Public.Flexible)]
     public async Task<IActionResult> ProductsListForPublic()
     {
         PublicProductsListQuery query = new PublicProductsListQuery();
@@ -48,6 +51,7 @@ public class ProductsController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(AdminProductListResponseExample))]
     #endregion
     [Authorize(Policy = Permissions.ProductPermissions.View)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralRead)]
     public async Task<IActionResult> ProductsListForAdmin()
     {
         AdminProductListQuery query = new AdminProductListQuery();
@@ -62,6 +66,7 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(typeof(NotFoundException), 404)]
     [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
     #endregion
+    [EnableRateLimiting(RateLimitPolicies.Public.Flexible)]
     public async Task<IActionResult> ProductDetailForPublic([FromRoute] string slug)
     {
         PublicProductDetailQuery command = new PublicProductDetailQuery() with { Slug = slug };
@@ -80,6 +85,7 @@ public class ProductsController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
     #endregion
     [Authorize(Policy = Permissions.ProductPermissions.View)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralRead)]
     public async Task<IActionResult> ProductDetailForAdmin([FromRoute] Guid productId)
     {
         AdminProductDetailQuery command = new AdminProductDetailQuery { ProductId = productId};
@@ -98,6 +104,7 @@ public class ProductsController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
     #endregion
     [Authorize(Policy = Permissions.ProductPermissions.Create)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralPost)]
     public async Task<IActionResult> CreateProduct([FromForm] CreateProductCommand command)
     {
         var response = await _mediator.Send(command);
@@ -118,6 +125,7 @@ public class ProductsController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentUpdatedResponseExample))]
     #endregion
     [Authorize(Policy = Permissions.ProductPermissions.Update)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralPatch)]
     public async Task<IActionResult> UpdateProduct([FromForm] UpdateProductCommand command, Guid productId)
     {
         command ??= new UpdateProductCommand();
@@ -139,6 +147,7 @@ public class ProductsController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentDeletedSuccessResponseExample))]
     #endregion
     [Authorize(Policy = Permissions.ProductPermissions.Delete)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralDelete)]
     public async Task<IActionResult> DeleteProduct([FromRoute] Guid productId)
     {
         DeleteProductCommand command = new DeleteProductCommand { ProductId = productId };

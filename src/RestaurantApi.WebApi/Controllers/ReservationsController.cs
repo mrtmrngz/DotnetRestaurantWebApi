@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Enums;
 using RestaurantApi.Application.Common.Exceptions;
@@ -12,6 +13,7 @@ using RestaurantApi.Application.Features.Reservation.Queries.ReservationListQuer
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
+using RestaurantApi.WebApi.Configurations.RateLimiting.Policies;
 using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
 using RestaurantApi.WebApi.Swagger.Examples.RequestExamples.ReservationExamples;
 using RestaurantApi.WebApi.Swagger.Examples.SuccessExamples;
@@ -48,7 +50,8 @@ public class ReservationsController : ControllerBase
     [ProducesResponseType(typeof(GeneralSuccessResponseWithData<IReadOnlyList<ReservationListQueryResult>>), 200)]
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(GetCurrentUserReservationListResponseExample))]
     #endregion
-    [Authorize]
+    [Authorize(Policy = "SameUser")]
+    [EnableRateLimiting(RateLimitPolicies.SameUser.Restricted)]
     public async Task<IActionResult> GetCurrentUserReservationList()
     {
         var currentUserId = _currentUserService.GetRequiredUserId();
@@ -75,6 +78,7 @@ public class ReservationsController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(GetPanelUserReservationListResponseExample))]
     #endregion
     [Authorize(Policy = Permissions.ReservationPermissions.PanelListing)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralRead)]
     public async Task<IActionResult> GetPanelReservationList()
     {
         ReservationListQuery query = new ReservationListQuery(UserId: null, RequestType: ReservationListRequestEnums.PanelUser);
@@ -101,7 +105,8 @@ public class ReservationsController : ControllerBase
     [ProducesResponseType(typeof(BaseResponse), 201)]
     [SwaggerResponseExample(StatusCodes.Status201Created, typeof(ContentCreatedExample))]
     #endregion
-    [Authorize(Policy = Permissions.ReservationPermissions.Create)]
+    [Authorize(Policy = "SameUser")]
+    [EnableRateLimiting(RateLimitPolicies.SameUser.Critical)]
     public async Task<IActionResult> CreateCurrentUserReservation([FromBody] CreateCurrentUserReservationCommand command)
     {
         var userId = _currentUserService.GetRequiredUserId();
@@ -131,6 +136,7 @@ public class ReservationsController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status201Created, typeof(ContentCreatedExample))]
     #endregion
     [Authorize(Policy = Permissions.ReservationPermissions.PanelCreate)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralPost)]
     public async Task<IActionResult> CreatePanelReservation([FromBody] CreatePanelReservationCommand command)
     {
         var response = await _mediator.Send(command);
@@ -168,7 +174,8 @@ public class ReservationsController : ControllerBase
     [ProducesResponseType(typeof(BaseResponse), 200)]
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ReservationCanceledResponseExample))]
     #endregion
-    [Authorize]
+    [Authorize(Policy = "SameUser")]
+    [EnableRateLimiting(RateLimitPolicies.SameUser.Critical)]
     public async Task<IActionResult> PublicCancelReservation([FromRoute] Guid reservationId)
     {
         Guid currentUserId = _currentUserService.GetRequiredUserId();
@@ -207,6 +214,7 @@ public class ReservationsController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ReservationCanceledResponseExample))]
     #endregion
     [Authorize(Policy = Permissions.ReservationPermissions.Cancel)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.StrictPatch)]
     public async Task<IActionResult> PanelCancelReservation([FromRoute] Guid reservationId)
     {
         CancelReservationCommand command = new CancelReservationCommand(ReservationId: reservationId,
@@ -243,6 +251,7 @@ public class ReservationsController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(BaseResponse))]
     #endregion
     [Authorize(Policy = Permissions.ReservationPermissions.StatusUpdate)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.FlexiblePatch)]
     public async Task<IActionResult> ReservationStatusUpdate([FromBody] ReservationStatusUpdateCommand command, Guid reservationId)
     {
         command = command with { ReservationId = reservationId };

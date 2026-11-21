@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using RestaurantApi.Domain.Constants;
 using RestaurantApi.Infrastructure.Cache;
+using RestaurantApi.WebApi.Configurations.RateLimiting.Policies;
 using RestaurantApi.WebApi.Swagger.Examples.SuccessExamples;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -9,6 +11,7 @@ namespace RestaurantApi.WebApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting(RateLimitPolicies.Panel.GeneralRead)]
 public class DiagnosticsController : ControllerBase
 {
     /// <summary>

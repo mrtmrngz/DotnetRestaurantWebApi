@@ -1,9 +1,11 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Features.ProfileHandlers.Commands.ChangePasswordCommand;
 using RestaurantApi.Application.Features.ProfileHandlers.Queries.ProfileInfoQuery;
+using RestaurantApi.WebApi.Configurations.RateLimiting.Policies;
 
 namespace RestaurantApi.WebApi.Controllers;
 
@@ -22,6 +24,7 @@ public class ProfileController : ControllerBase
 
     [HttpGet]
     [Authorize(Policy = "SameUser")]
+    [EnableRateLimiting(RateLimitPolicies.SameUser.Restricted)]
     public async Task<IActionResult> ProfileInfo()
     {
         Guid userId = _currentUserService.GetRequiredUserId();
@@ -32,6 +35,7 @@ public class ProfileController : ControllerBase
 
     [HttpPost("change-password")]
     [Authorize(Policy = "SameUser")]
+    [EnableRateLimiting(RateLimitPolicies.Password.ChangeApply)]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand command)
     {
         var userId = _currentUserService.GetRequiredUserId();

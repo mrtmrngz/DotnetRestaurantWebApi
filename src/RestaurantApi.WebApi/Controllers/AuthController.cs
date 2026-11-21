@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using RestaurantApi.Application.Common.Enums;
 using RestaurantApi.Application.Features.Auth.Commands.ForgotPasswordApply;
 using RestaurantApi.Application.Features.Auth.Commands.ForgotPasswordVerify;
@@ -11,6 +12,7 @@ using RestaurantApi.Application.Features.Auth.Commands.Register;
 using RestaurantApi.Application.Features.Auth.Commands.TwoFactorLogin;
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
+using RestaurantApi.WebApi.Configurations.RateLimiting.Policies;
 using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
 using RestaurantApi.WebApi.Swagger.Examples.RequestExamples.AuthExamples;
 using RestaurantApi.WebApi.Swagger.Examples.SuccessExamples;
@@ -33,6 +35,7 @@ public class AuthController : ControllerBase
     [SwaggerRequestExample(typeof(RegisterCommand), typeof(RegisterRequestExample))]
     [ProducesResponseType(typeof(BaseResponse), 201)]
     [SwaggerResponseExample(StatusCodes.Status201Created, typeof(ContentCreatedExample))]
+    [EnableRateLimiting(RateLimitPolicies.Auth.Register)]
     public async Task<IActionResult> Register([FromBody] RegisterCommand command)
     {
         var response = await _mediator.Send(command);
@@ -44,6 +47,7 @@ public class AuthController : ControllerBase
     [SwaggerRequestExample(typeof(LoginCommand), typeof(LoginRequestExample))]
     [ProducesResponseType(typeof(BaseResponse), 200)]
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(LoginExample))]
+    [EnableRateLimiting(RateLimitPolicies.Auth.General)]
     public async Task<IActionResult> Login([FromBody] LoginCommand command)
     {
         LoginResponse result = await _mediator.Send(command);
@@ -94,6 +98,7 @@ public class AuthController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(BadRequestErrorExample))]
 
     #endregion
+    [EnableRateLimiting(RateLimitPolicies.Auth.MailVerify)]
     public async Task<IActionResult> MailVerify([FromBody] MailVerifyCommand command)
     {
         var response = await _mediator.Send(command);
@@ -111,6 +116,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponse), 401)]
     [SwaggerResponseExample(StatusCodes.Status401Unauthorized, typeof(UnauthorizedExceptionExample))]
     #endregion
+    [EnableRateLimiting(RateLimitPolicies.Auth.General)]
     public async Task<IActionResult> TwoFactorLogin([FromBody] TwoFactorLoginCommand command)
     {
         LoginResponse result = await _mediator.Send(command);
@@ -154,6 +160,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponse), 404)]
     [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
     #endregion
+    [EnableRateLimiting(RateLimitPolicies.Auth.Refresh)]
     public async Task<IActionResult> RefreshToken()
     {
         var token = Request.Cookies["_session"];
@@ -188,6 +195,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ValidationErrorResponse), 400)]
     [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
     #endregion
+    [EnableRateLimiting(RateLimitPolicies.Password.ChangeVerify)]
     public async Task<IActionResult> ForgotPasswordVerify([FromBody] ForgotPasswordVerifyCommand command)
     {
         var response = await _mediator.Send(command);
@@ -206,6 +214,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponse), 401)]
     [SwaggerResponseExample(StatusCodes.Status401Unauthorized, typeof(UnauthorizedExceptionExample))]
     #endregion
+    [EnableRateLimiting(RateLimitPolicies.Password.ChangeApply)]
     public async Task<IActionResult> ForgotPasswordApply([FromBody] ForgotPasswordApplyCommand command)
     {
         var response = await _mediator.Send(command);
@@ -215,6 +224,7 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     [ProducesResponseType(typeof(BaseResponse), 200)]
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(LogoutExample))]
+    [EnableRateLimiting(RateLimitPolicies.Auth.General)]
     public async Task<IActionResult> Logout()
     {
         var token = Request.Cookies["_session"];

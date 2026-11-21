@@ -54,60 +54,10 @@ public class TestDatabaseFixture : IAsyncLifetime
 
         Environment.SetEnvironmentVariable("Stripe__SecretKey", "sk_test_fake_key");
         Environment.SetEnvironmentVariable("Stripe__WebhookSecret", "whsec_test_fake");
+        
+        Environment.SetEnvironmentVariable("RateLimiting__Enabled", "false");
 
-        Factory = new WebApplicationFactory<Program>()
-            .WithWebHostBuilder(builder =>
-            {
-                builder.UseEnvironment("Testing");
-                
-                builder.ConfigureAppConfiguration((context, config) =>
-                {
-                    var testJwtSettings = new Dictionary<string, string>
-                    {
-                        {"JwtSettings:SecretKey", "test-ortami-icin-en-az-32-karakterli-gizli-key-123!"},
-                        {"JwtSettings:Issuer", "restaurant-api"},
-                        {"JwtSettings:Audience", "restaurant-api-client"},
-                        {"JwtSettings:AccessTokenExpirationMinutes", "60"},
-                        {"Stripe:SecretKey", "sk_test_fake_key"},
-                        {"Stripe:WebhookSecret", "whsec_test_fake"},
-                        {"Stripe:SuccessUrl", "https://example.com/payment/success"},
-                        {"Stripe:CancelUrl", "https://example.com/payment/cancel"},
-                        {"Stripe:Currency", "try"},
-                        {"Cors:AllowedOrigins:0", "http://localhost:3000"}
-                    };
-
-                    config.AddInMemoryCollection(testJwtSettings!);
-                });
-
-                builder.ConfigureServices(services =>
-                {
-                    var descriptor = services.SingleOrDefault(d => 
-                        d.ServiceType == typeof(IMailService));
-                    
-                    if (descriptor != null) services.Remove(descriptor);
-
-                    services.AddScoped<IMailService, FakeMailService>();
-                    
-                    var storageDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IFileStorage));
-                    if (storageDescriptor != null) services.Remove(storageDescriptor);
-                    services.AddScoped<IFileStorage, FakeFileStorage>();
-
-                    // dış ödeme servisi (Stripe) testlerde sahtelenir
-                    var paymentDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IPaymentService));
-                    if (paymentDescriptor != null) services.Remove(paymentDescriptor);
-                    services.AddScoped<IPaymentService, FakePaymentService>();
-
-                    // Test saati: rezervasyon zaman kuralları deterministik test edilebilsin diye dondurulabilir.
-                    // Dondurulmadığı sürece gerçek zamanı döner, diğer testleri etkilemez.
-                    // Birden fazla TimeProvider kaydı (framework + uygulama) olduğu için kaydı silmek yerine
-                    // en son kaydediyoruz; tek çözümlemede son kayıt kazanır.
-                    services.AddSingleton<TestTimeProvider>();
-                    services.AddSingleton<TimeProvider>(sp => sp.GetRequiredService<TestTimeProvider>());
-
-                    services.AddHttpContextAccessor();
-                });
-            });
-
+        Factory = CreateFactory();
         _dbConnection = new NpgsqlConnection(_dbContainer.GetConnectionString());
         await _dbConnection.OpenAsync();
 
@@ -117,6 +67,66 @@ public class TestDatabaseFixture : IAsyncLifetime
         await Factory.Services.SeedDataAsync();
 
         _redisConnection = ConnectionMultiplexer.Connect($"{_redisContainer.GetConnectionString()},allowAdmin=true");
+    }
+
+    // Test host'unu kurar. Varsayilan ayarlarla rate limiting kapalidir. Rate limiting
+    // testleri, host olusturulmadan once ilgili ortam degiskenlerini (RateLimiting__*)
+    // set edip bu metodu cagirarak Enabled=true ve dusuk limit degerleriyle kendi
+    // izole host'larini kurabilir. (RateLimiting ayarlari Program.cs icinde eager
+    // okundugu icin yalnizca ortam degiskenleri bu okumada gorunur.)
+    public WebApplicationFactory<Program> CreateFactory()
+    {
+        var testConfiguration = new Dictionary<string, string>
+        {
+            {"JwtSettings:SecretKey", "test-ortami-icin-en-az-32-karakterli-gizli-key-123!"},
+            {"JwtSettings:Issuer", "restaurant-api"},
+            {"JwtSettings:Audience", "restaurant-api-client"},
+            {"JwtSettings:AccessTokenExpirationMinutes", "60"},
+            {"Stripe:SecretKey", "sk_test_fake_key"},
+            {"Stripe:WebhookSecret", "whsec_test_fake"},
+            {"Stripe:SuccessUrl", "https://example.com/payment/success"},
+            {"Stripe:CancelUrl", "https://example.com/payment/cancel"},
+            {"Stripe:Currency", "try"},
+            {"Cors:AllowedOrigins:0", "http://localhost:3000"},
+            {"RateLimiting:Enabled", "false"}
+        };
+
+        return new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.UseEnvironment("Testing");
+
+                builder.ConfigureAppConfiguration((context, config) =>
+                {
+                    config.AddInMemoryCollection(testConfiguration!);
+                });
+
+                builder.ConfigureServices(services =>
+                {
+                    var descriptor = services.SingleOrDefault(d =>
+                        d.ServiceType == typeof(IMailService));
+                    if (descriptor != null) services.Remove(descriptor);
+                    services.AddScoped<IMailService, FakeMailService>();
+
+                    var storageDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IFileStorage));
+                    if (storageDescriptor != null) services.Remove(storageDescriptor);
+                    services.AddScoped<IFileStorage, FakeFileStorage>();
+
+                    // dis odeme servisi (Stripe) testlerde sahtelenir
+                    var paymentDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IPaymentService));
+                    if (paymentDescriptor != null) services.Remove(paymentDescriptor);
+                    services.AddScoped<IPaymentService, FakePaymentService>();
+
+                    // Test saati: rezervasyon zaman kurallari deterministik test edilebilsin diye dondurulabilir.
+                    // Dondurulmadigi surece gercek zamani doner, diger testleri etkilemez.
+                    // Birden fazla TimeProvider kaydi (framework + uygulama) oldugu icin kaydi silmek yerine
+                    // en son kaydediyoruz; tek cozumlemede son kayit kazanir.
+                    services.AddSingleton<TestTimeProvider>();
+                    services.AddSingleton<TimeProvider>(sp => sp.GetRequiredService<TestTimeProvider>());
+
+                    services.AddHttpContextAccessor();
+                });
+            });
     }
 
     public async Task ResetDataBaseAsync()
@@ -156,6 +166,7 @@ public class TestDatabaseFixture : IAsyncLifetime
 
         Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", null);
         Environment.SetEnvironmentVariable("ConnectionStrings__Redis", null);
+        Environment.SetEnvironmentVariable("RateLimiting__Enabled", null);
 
         await Factory.DisposeAsync();
         await Task.WhenAll(_dbContainer.DisposeAsync().AsTask(), _redisContainer.DisposeAsync().AsTask());

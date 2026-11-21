@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using RestaurantApi.Application.Features.Roles.Commands;
 using RestaurantApi.Application.Features.Roles.Queries.GetRoleListQuery;
 using RestaurantApi.Application.Features.Roles.Queries.GetRoleInfoQuery;
@@ -8,6 +9,7 @@ using RestaurantApi.Application.Features.Roles.Queries.GetRolePermissionsQuery;
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
+using RestaurantApi.WebApi.Configurations.RateLimiting.Policies;
 using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
 using RestaurantApi.WebApi.Swagger.Examples.RequestExamples.RoleExamples;
 using RestaurantApi.WebApi.Swagger.Examples.SuccessExamples;
@@ -50,6 +52,7 @@ public class RolesController : ControllerBase
     [ProducesResponseType(403)]
     #endregion
     [Authorize(Policy = Permissions.RolePermissions.View)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralRead)]
     public async Task<IActionResult> GetRoleList()
     {
         var query = new GetRoleListQuery();
@@ -87,6 +90,7 @@ public class RolesController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
     #endregion
     [Authorize(Policy = Permissions.RolePermissions.View)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralRead)]
     public async Task<IActionResult> GetRolePermissions([FromRoute] Guid roleId)
     {
         var query = new GetRolePermissionsQuery
@@ -137,6 +141,7 @@ public class RolesController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status422UnprocessableEntity, typeof(UnproccesableEntityErrorExample))]
     #endregion
     [Authorize(Policy = Permissions.RolePermissions.Update)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.Put)]
     public async Task<IActionResult> UpdateRolePermissions([FromRoute] Guid roleId,
         [FromBody] UpdateRolePermissionCommand command)
     {
@@ -189,6 +194,7 @@ public class RolesController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status422UnprocessableEntity, typeof(UnproccesableEntityErrorExample))]
     #endregion
     [Authorize(Policy = Permissions.RolePermissions.Update)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralPatch)]
     public async Task<IActionResult> UpdateRoleInfo([FromRoute] Guid roleId,
         [FromBody] UpdateRoleInfoCommand command)
     {
@@ -230,6 +236,7 @@ public class RolesController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status409Conflict, typeof(ConflictErrorExample))]
     #endregion
     [Authorize(Policy = Permissions.RolePermissions.Create)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralPost)]
     public async Task<IActionResult> CreateRole([FromBody] CreateRoleCommand command)
     {
         BaseResponse response = await _mediator.Send(command);
@@ -263,6 +270,7 @@ public class RolesController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
     #endregion
     [Authorize(Policy = Permissions.RolePermissions.View)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralRead)]
     public async Task<IActionResult> GetRoleInfo([FromRoute] Guid roleId)
     {
         var query = new GetRoleInfoQuery
@@ -312,6 +320,7 @@ public class RolesController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status422UnprocessableEntity, typeof(UnproccesableEntityErrorExample))]
     #endregion
     [Authorize(Policy = Permissions.RolePermissions.Delete)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralDelete)]
     public async Task<IActionResult> RemoveRole([FromRoute] Guid roleId)
     {
         var command = new RemoveRoleCommand

@@ -2,7 +2,7 @@
 
 Katmanlı mimariyle geliştirilen bir restoran yönetim API'si: menü (kategori/ürün), indirim ve masa yönetimi, JWT kimlik doğrulama, profil ve adres işlemleri.
 
-> Proje aktif olarak geliştirilmeye devam ediyor; planlanan işler için [Yol haritası](#yol-haritası) bölümüne bakın.
+> **Proje tamamlanmıştır (final sürüm).** Kapsam ve bilinen sınırlamalar için [Bilinen sınırlamalar](#bilinen-sınırlamalar) bölümüne bakın.
 
 ![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
@@ -21,9 +21,10 @@ Restoranın menüsünü (kategoriler, ürünler, ürün görselleri, indirimler)
 - **Kimlik doğrulama:** ASP.NET Core Identity + JWT access token, veritabanında saklanan refresh token, mail doğrulama, iki faktörlü giriş, şifre sıfırlama ve çıkış akışları.
 - **İzin tabanlı yetkilendirme:** `Permissions` sabitlerinden üretilen authorization policy'leri; kullanıcının rolüne ait izin listesi Redis'te cache'lenir.
 - **CORS ve ön kontrol (preflight) yönetimi:** izinli frontend origin'leri `Cors:AllowedOrigins` ile tanımlanır ve boş bırakılamaz (uygulama açılışta hata verir). Joker (`*`) yalnız `Development` ortamında kabul edilir. Ön kontrol yanıtları `Access-Control-Max-Age` ile 10 dakika tarayıcıda cache'lenir; böylece `Authorization` başlığı taşıyan her istekten önce ikinci bir `OPTIONS` isteği gidip gelmez. Origin'ler açıkça listelendiğinde `AllowCredentials()` açıktır (refresh token cookie'si için).
+- **Rate limiting (istek sınırlama):** Uçlar ASP.NET Core Rate Limiting ile politika bazlı korunur. Limitler kullanıcıya (JWT `NameIdentifier`) ya da istemci IP'sine göre partition'lanır; `per-endpoint` uygulanan politikalarda her route şablonu kendi sayacını tutar, böylece dinamik parametreli yollar (örn. `/api/products/public/{slug}`) limiti atlatamaz. Limit aşıldığında **429** ve `Retry-After` başlığı döner; politikalar ve limitler `RateLimiting` bölümünden yönetilir, `RateLimiting:Enabled=false` ile tümüyle kapatılabilir.
 - **Redis cache:** liste uçları cache-aside deseniyle okunur. Cache miss olduğunda dağıtık kilit alınır, kilit alınamazsa kısa bir bekleme sonrası tekrar denenir; böylece eşzamanlı isteklerde veritabanına tek sorgu gider (cache stampede koruması). Değerler gzip ile sıkıştırılarak saklanır, mutasyonlarda ilgili cache anahtarları temizlenir.
 - **Medya ve arka plan işler:** S3 uyumlu depoya görsel yükleme, güncelleme sonrası eski dosyaların event handler ile silinmesi, indirimlerin başlangıç/bitiş anlarında çalışan Hangfire job'ları ve arka planda gönderilen HTML mailler.
-- **Test ve CI:** 1.500+ test (961 unit + 542 integration); GitHub Actions üzerinde restore → build (Release) → test.
+- **Test ve CI:** 1.500+ test (961 unit + 545 integration); GitHub Actions üzerinde restore → build (Release) → test.
 
 ## Mimari
 
@@ -84,6 +85,7 @@ erDiagram
 - **Listelerde okuma odaklı cache.** `GetOrInternalSetAsync` dağıtık kilit ve gzip sıkıştırma ile çalışır; eşzamanlı cache miss durumunda tek sorgu atılır. Masa listesi 30 dakika, diğer liste uçları 1 saat cache'lenir.
 - **Reflection tabanlı izinler.** `Permissions` içine eklenen sabitler hem authorization policy'lerini hem veritabanı seed'ini hem de ADMIN rolüne atamayı otomatik besler; yeni izin için elle kayıt gerekmez.
 - **CORS tek yerden yönetilir.** `WebApi/Configurations/Cors` altındaki `CorsExtension` `FrontendPolicy` adlı tek policy tanımlar; `Cors:AllowedOrigins` boş kalırsa `ValidateOnStart` sayesinde uygulama **açılışta** hata verir, böylece yanlış yapılandırma sessizce çalışan bir API üretmez. Joker (`*`) yalnız Development'ta kabul edilir; joker modunda istek `AllowAnyOrigin()` ile karşılandığı için `AllowCredentials()` açılamaz (tarayıcı kısıtı), explicit origin listesinde ise refresh token cookie'si için `AllowCredentials()` açıktır.
+- **Rate limiting merkezî ve partition bazlıdır.** `WebApi/Configurations/RateLimiting` altında policy adları (`RateLimitPolicies`), limit ayarları (`RateLimitSettings`) ve kayıt mantığı (`RateLimitExtension`) toplanır; controller'lar yalnızca `[EnableRateLimiting(...)]` özniteliğiyle ilgili policy'yi seçer. Policy'ler sabit pencere (fixed window) ve `QueueLimit = 0` ile çalışır: fazla istek **kuyruğa alınmaz**, doğrudan **429** döner. Partition anahtarı kullanıcı politikalarında JWT `NameIdentifier`, IP politikalarında istemci adresidir; `per-endpoint` politikalarında partition anahtarına route şablonunun `DisplayName`'i eklenir (path'teki dinamik parametreler yeni sayaç üretmez). Limit aşımında `OnRejected` JSON gövdesi (`status` / `code` / `message`) yazar ve `Retry-After` başlığını ekler.
 
 ## Teknoloji yığını
 
@@ -96,6 +98,7 @@ erDiagram
 | Kimlik doğrulama | ASP.NET Core Identity, JwtBearer, refresh token |
 | Veritabanı | PostgreSQL, EF Core (Npgsql), kod tabanlı migration |
 | Cache | Redis (StackExchange.Redis) |
+| Rate limiting | ASP.NET Core Rate Limiting (sabit pencere, `System.Threading.RateLimiting`) |
 | Arka plan işler | Hangfire (PostgreSQL storage) |
 | Dosya depolama | AWS S3 SDK (MinIO uyumlu) |
 | Mail | MailKit + RazorLight şablonları |
@@ -156,9 +159,16 @@ AdminPhone=<root admin phone number>
 
 Cors__AllowedOrigins__0=<your_first_front_end_url>
 Cors__AllowedOrigins__1=<your_second_front_end_url>  // you can add more
+
+# Rate limiting (varsayilanlar kodda tanimli; asagidakiler ornektir)
+RateLimiting__Enabled=true
+RateLimiting__Auth__General__PermitLimit=15
+RateLimiting__Auth__General__WindowSeconds=60
+RateLimiting__Panel__GeneralRead__PermitLimit=100
+RateLimiting__Panel__GeneralRead__WindowSeconds=60
 ```
 
-`POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `JWT_SECRET_KEY`, `MAIL_EMAIL` ve `MAIL_PASSWORD` zorunludur; eksik olmaları durumunda `docker compose` hata verir. `POSTGRES_USER` varsayılanı `user`, `MAIL_HOST` varsayılanı `smtp.gmail.com`, `MAIL_PORT` varsayılanı `587`'dir. Veritabanı, Redis ve MinIO değerleri `compose.yaml`'daki servis tanımlarıyla aynı olmalıdır. `Cors__AllowedOrigins__0` varsayılanı `*`'tır ve bu değer yalnız `Development` ortamında geçerlidir; production'da uygulama açılışta hata verir, gerçek frontend origin'i tanımlanmalıdır (ek origin'ler için `Cors__AllowedOrigins__1`, `Cors__AllowedOrigins__2` …).
+`POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `JWT_SECRET_KEY`, `MAIL_EMAIL` ve `MAIL_PASSWORD` zorunludur; eksik olmaları durumunda `docker compose` hata verir. `POSTGRES_USER` varsayılanı `user`, `MAIL_HOST` varsayılanı `smtp.gmail.com`, `MAIL_PORT` varsayılanı `587`'dir. Veritabanı, Redis ve MinIO değerleri `compose.yaml`'daki servis tanımlarıyla aynı olmalıdır. `Cors__AllowedOrigins__0` varsayılanı `*`'tır ve bu değer yalnız `Development` ortamında geçerlidir; production'da uygulama açılışta hata verir, gerçek frontend origin'i tanımlanmalıdır (ek origin'ler için `Cors__AllowedOrigins__1`, `Cors__AllowedOrigins__2` …). `RateLimiting__*` anahtarları zorunlu değildir; tanımlanmayan limitler kodda (`RateLimitSettings`) varsayılan değerlerle çalışır ve `RateLimiting__Enabled` varsayılanı `true`'dur (her limit `PermitLimit` / `WindowSeconds` çiftiyle verilir; tüm bölümler — `Auth`, `Password`, `SameUser`, `Panel`, `Cart`, `Checkout`, `Categories`, `Public` — `.env` içinde örneklenmiştir).
 
 ### 3) Servisleri başlatın
 
@@ -222,6 +232,10 @@ dotnet user-secrets set "RootAdmin:PhoneNumber" "<root_admin_phone>"
 
 dotnet user-secrets set "Cors:AllowedOrigins:0" "<your_first_frontend_url>"
 dotnet user-secrets set "Cors:AllowedOrigins:1" "<your_second_frontend_url>" // you can add more
+
+dotnet user-secrets set "RateLimiting:Enabled" "true"
+dotnet user-secrets set "RateLimiting:Auth:General:PermitLimit" "15"
+dotnet user-secrets set "RateLimiting:Auth:General:WindowSeconds" "60"
 ```
 
 Veritabanı, Redis ve MinIO değerleri (kullanıcı adı, parola, veritabanı ve bucket adı) `compose.yaml`'daki servis tanımlarıyla aynı olmalıdır; parolaları depoya yazmayın.
@@ -312,6 +326,7 @@ Ayrıntılı parametreler, örnek istek/yanıtlar ve yetki bilgisi için Swagger
 - `api/diagnostics/cache` — cache hit/miss sayaçları (`diagnostics:view`)
 
 Tüm uçların method, route, izin ve başarı kodu bilgisiyle tablo halindeki listesi: [docs/API.md](docs/API.md).
+Tüm uçlar politika bazlı **rate limiting** ile korunur; limit aşılırsa API **429** (`Retry-After` başlığıyla) döner (ayrıntı: [docs/API.md](docs/API.md) — Ortak notlar).
 Ödeme akışının **neden böyle** yazıldığını anlatan kod rehberi: [docs/odeme-akisi](docs/odeme-akisi/README.md).
 Stripe webhook kodunun **satır satır** açıklaması: [docs/stripe-webhook](docs/stripe-webhook/README.md).
 
@@ -346,14 +361,7 @@ tests/
 
 ## Geliştirme süreci
 
-Bu projenin büyük bölümü Cline + DeepSeek ajanıyla geliştirilmektedir. Mimari kararları ben veriyorum; üretilen kodu inceliyor ve otomatik testlerle doğruluyorum.
-
-## Yol haritası
-
-Planlanan işler (kodda henüz uç noktası yok):
-
-- **Checkout'ta adres seçimi:** current user akışı varsayılan adresi kullanır; çoklu adres seçimi yok.
-- **Rate limiting.**
+Bu projenin büyük bölümü Cline + DeepSeek ajanıyla geliştirildi. Mimari kararları ben verdim; üretilen kodu inceledim ve otomatik testlerle doğruladım.
 
 ## Bilinen sınırlamalar
 
@@ -361,6 +369,8 @@ Planlanan işler (kodda henüz uç noktası yok):
 - İndirimler için silme ucu yok; indirim `PATCH api/discounts/{discountId}` ile pasife alınabilir.
 - Hangfire dashboard yalnız **Development** ortamında yayınlanır; production'da `/hangfire` yayınlanmaz (gerektiğinde Basic auth filtresi ile açılabilir). Arka plan işleri (indirim zamanlayıcısı, mailler) bu kısıtlamadan etkilenmez.
 - CORS joker (`*`) modunda tarayıcı kısıtı gereği `AllowCredentials()` açılamaz, bu nedenle refresh token `_session` cookie'si taşınamaz; joker yalnız hızlı deneme/önizleme içindir. Cookie tabanlı login/refresh akışını kullanan frontend için `Cors:AllowedOrigins` altına explicit origin (ör. `http://localhost:3000`) tanımlanmalıdır.
+- Rate limiting sayaçları **süreç içi** tutulur (dağıtık değildir); API birden fazla instance'a ölçeklendiğinde limit her instance için ayrı uygulanır (tam dağıtık limit için Redis tabanlı bir partition gerekir). Sabit pencere (fixed window) kullanıldığından pencere sınırında kısa süreli ani yüklenmeler mümkündür. İstemci IP'si yalnız **Production** ortamında `UseForwardedHeaders` ile `X-Forwarded-For` üzerinden okunur; proxy arkasındaki kurulumlarda doğru IP için proxy güvenilir olmalıdır.
+- 429 (rate limit) yanıt gövdesindeki `code` alanı, diğer hata yanıtlarından farklı olarak `Codes` enum'unun **sayısal** değerini (ör. `25`) döner; gövde `OnRejected` içinde MVC JSON ayarları yerine varsayılan HTTP JSON ayarlarıyla yazıldığı için metin kod üretilmez.
 - Sistem kullanıcısının (`IsSystemUser`, root admin) rolleri güncellenemez (**422**) ve bir kullanıcının tüm rolleri rol güncelleme ucundan kaldırılamaz (en az bir rol kalmalıdır). Rol değişikliği yalnızca kullanıcının rol cache'ini (`roles:{userId}`) temizler; mevcut access token'lar süresi dolana kadar eski rolleri taşımaya devam eder.
 - Rol yönetimi kısmi: listeleme (`GET api/roles`), bir rolün bilgilerinin getirilmesi (`GET api/roles/{roleId}`), rol izinlerinin okunması/güncellenmesi (`GET`/`PUT api/roles/{roleId}/permissions`) ve rol adının güncellenmesi (`PATCH api/roles/{roleId}`) vardır; izin atama geçmişi (audit) yoktur; rol silme yalnızca **sistem rolü olmayan** ve **kullanıcısı bulunmayan** roller için mümkündür (sırasıyla 422 ve 409). Sistem rollerinin (`ADMIN` / `USER`) ne **izinleri** ne de **bilgileri** güncellenemez (**422**, `IsSystemRole` alanıyla kontrol edilir); başarılı güncellemelerden sonra rolün izin cache'i (`role:{rol}:permissions`, rol adı değiştiğinde eski ve yeni ad için) ve rol adı değiştiğinde rolün kullanıcılarının rol anahtarları (`roles:{userId}`, token üretiminde 7 gün kullanılır) temizlenir.
 - Sipariş durumu güncelleme ucu yalnızca kullanıcı siparişlerini kapsar: masa siparişleri (`UserId` boş) ve ödemesi tamamlanmamış siparişler `PATCH api/orders/users/status/{orderId}` ile güncellenemez; gövdedeki `userId` sipariş sahibiyle eşleşmezse de istek reddedilir. Sipariş iptali (`PATCH api/orders/users/cancel/{orderId}`) yalnızca oturumdaki kullanıcının kendi siparişini kapsar; ödemesi tamamlanmamış, teslim edilmiş ya da zaten iptal edilmiş siparişler iptal edilemez. İptal edilen siparişin ödeme durumu `Refunded` olarak işaretlenir; Stripe üzerinden gerçek iade akışı henüz eklenmemiştir.

@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.RestaurantTable.Commands.CreateRestaurantTableCommand;
 using RestaurantApi.Application.Features.RestaurantTable.Commands.DeleteRestaurantTableCommand;
@@ -10,6 +11,7 @@ using RestaurantApi.Application.Features.RestaurantTable.Queries.GetRestaurantTa
 using RestaurantApi.Application.Features.RestaurantTable.Queries.GetRestaurantTableListQuery;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
+using RestaurantApi.WebApi.Configurations.RateLimiting.Policies;
 using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
 using RestaurantApi.WebApi.Swagger.Examples.SuccessExamples;
 using Swashbuckle.AspNetCore.Filters;
@@ -38,6 +40,7 @@ public class TablesController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status400BadRequest, typeof(ValidationErrorExample))]
     #endregion
     [Authorize(Policy = Permissions.TablePermissions.View)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralRead)]
     public async Task<IActionResult> GetTables([FromQuery] GetRestaurantTableListQuery query)
     {
         GeneralSuccessResponseWithData<IReadOnlyList<GetRestaurantTableListQueryResult>> response =
@@ -55,7 +58,8 @@ public class TablesController : ControllerBase
     [ProducesResponseType(typeof(GeneralSuccessResponseWithData<IReadOnlyList<GetAvailableTablesQueryResult>>), 200)]
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(AvailableRestaurantTableListResponseExample))]
     #endregion
-    [Authorize(Policy = Permissions.TablePermissions.View)]
+    [Authorize]
+    [EnableRateLimiting(RateLimitPolicies.SameUser.Restricted)]
     public async Task<IActionResult> GetAvailableTables([FromQuery] GetAvailableTablesQuery query)
     {
         GeneralSuccessResponseWithData<IReadOnlyList<GetAvailableTablesQueryResult>> response =
@@ -76,6 +80,7 @@ public class TablesController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
     #endregion
     [Authorize(Policy = Permissions.TablePermissions.View)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralRead)]
     public async Task<IActionResult> GetRestaurantTableDetail([FromRoute] Guid tableId)
     {
         GetRestaurantTableDetailQuery query = new GetRestaurantTableDetailQuery(tableId);
@@ -98,6 +103,7 @@ public class TablesController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status409Conflict, typeof(ConflictErrorExample))]
     #endregion
     [Authorize(Policy = Permissions.TablePermissions.Create)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralPost)]
     public async Task<IActionResult> CreateTable([FromBody] CreateRestaurantTableCommand command)
     {
         BaseResponse response = await _mediator.Send(command);
@@ -119,6 +125,7 @@ public class TablesController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentUpdatedResponseExample))]
     #endregion
     [Authorize(Policy = Permissions.TablePermissions.Update)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralPatch)]
     public async Task<IActionResult> UpdateRestaurantTable([FromRoute] Guid tableId,
         [FromBody] UpdateRestaurantTableCommand command)
     {
@@ -139,6 +146,7 @@ public class TablesController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentDeletedSuccessResponseExample))]
     #endregion
     [Authorize(Policy = Permissions.TablePermissions.Delete)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.GeneralDelete)]
     public async Task<IActionResult> DeleteTable([FromRoute] Guid tableId)
     {
         DeleteRestaurantTableCommand command = new DeleteRestaurantTableCommand { TableId = tableId };

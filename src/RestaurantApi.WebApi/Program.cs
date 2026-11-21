@@ -1,12 +1,14 @@
 using System.Reflection;
 using System.Text.Json.Serialization;
 using Hangfire;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi;
 using RestaurantApi.Application.Common.Extensions;
 using RestaurantApi.Infrastructure.DependencyInjection;
 using RestaurantApi.Persistence.Extension;
 using RestaurantApi.WebApi.Configurations.Cors;
+using RestaurantApi.WebApi.Configurations.RateLimiting;
 using RestaurantApi.WebApi.Middlewares;
 using Serilog;
 using Swashbuckle.AspNetCore.Filters;
@@ -92,7 +94,20 @@ builder.Services.AddSwaggerGen(c =>
 // CORS
 builder.Services.AddCorsConfiguration(builder.Configuration, builder.Environment);
 
+// RATE LIMITER
+builder.Services.AddRateLimitingConfiguration(builder.Configuration);
+
 var app = builder.Build();
+
+if (app.Environment.IsProduction())
+{
+    app.UseForwardedHeaders(new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+        KnownIPNetworks = { },
+        KnownProxies = { }
+    });
+}
 
 if (app.Environment.IsDevelopment())
 {
@@ -115,6 +130,8 @@ app.UseCorsConfiguration();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseRateLimitingConfiguration();
 
 app.MapControllers();
 

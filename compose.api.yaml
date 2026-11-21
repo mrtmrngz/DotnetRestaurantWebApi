@@ -56,6 +56,96 @@ x-api-environment: &api-environment
   
   Cors__AllowedOrigins__0: "${Cors__AllowedOrigins__0:-*}"
   
+  # ===== RateLimiting =====
+  RateLimiting__Enabled: "${RateLimiting__Enabled:-true}"
+
+  # ----- Auth -----
+  RateLimiting__Auth__Register__PermitLimit: "${RateLimiting__Auth__Register__PermitLimit:-10}"
+  RateLimiting__Auth__Register__WindowSeconds: "${RateLimiting__Auth__Register__WindowSeconds:-60}"
+
+  RateLimiting__Auth__General__PermitLimit: "${RateLimiting__Auth__General__PermitLimit:-15}"
+  RateLimiting__Auth__General__WindowSeconds: "${RateLimiting__Auth__General__WindowSeconds:-60}"
+
+  RateLimiting__Auth__Refresh__PermitLimit: "${RateLimiting__Auth__Refresh__PermitLimit:-50}"
+  RateLimiting__Auth__Refresh__WindowSeconds: "${RateLimiting__Auth__Refresh__WindowSeconds:-60}"
+
+  RateLimiting__Auth__MailVerify__PermitLimit: "${RateLimiting__Auth__MailVerify__PermitLimit:-15}"
+  RateLimiting__Auth__MailVerify__WindowSeconds: "${RateLimiting__Auth__MailVerify__WindowSeconds:-60}"
+
+  # ----- Password -----
+  RateLimiting__Password__ChangeVerify__PermitLimit: "${RateLimiting__Password__ChangeVerify__PermitLimit:-15}"
+  RateLimiting__Password__ChangeVerify__WindowSeconds: "${RateLimiting__Password__ChangeVerify__WindowSeconds:-300}"
+
+  RateLimiting__Password__ChangeApply__PermitLimit: "${RateLimiting__Password__ChangeApply__PermitLimit:-15}"
+  RateLimiting__Password__ChangeApply__WindowSeconds: "${RateLimiting__Password__ChangeApply__WindowSeconds:-300}"
+
+  # ----- SameUser -----
+  RateLimiting__SameUser__Standard__PermitLimit: "${RateLimiting__SameUser__Standard__PermitLimit:-50}"
+  RateLimiting__SameUser__Standard__WindowSeconds: "${RateLimiting__SameUser__Standard__WindowSeconds:-60}"
+
+  RateLimiting__SameUser__Strict__PermitLimit: "${RateLimiting__SameUser__Strict__PermitLimit:-30}"
+  RateLimiting__SameUser__Strict__WindowSeconds: "${RateLimiting__SameUser__Strict__WindowSeconds:-60}"
+
+  RateLimiting__SameUser__Restricted__PermitLimit: "${RateLimiting__SameUser__Restricted__PermitLimit:-50}"
+  RateLimiting__SameUser__Restricted__WindowSeconds: "${RateLimiting__SameUser__Restricted__WindowSeconds:-60}"
+
+  RateLimiting__SameUser__Critical__PermitLimit: "${RateLimiting__SameUser__Critical__PermitLimit:-30}"
+  RateLimiting__SameUser__Critical__WindowSeconds: "${RateLimiting__SameUser__Critical__WindowSeconds:-60}"
+
+  RateLimiting__SameUser__Flexible__PermitLimit: "${RateLimiting__SameUser__Flexible__PermitLimit:-50}"
+  RateLimiting__SameUser__Flexible__WindowSeconds: "${RateLimiting__SameUser__Flexible__WindowSeconds:-60}"
+
+  # ----- Panel -----
+  RateLimiting__Panel__GeneralRead__PermitLimit: "${RateLimiting__Panel__GeneralRead__PermitLimit:-100}"
+  RateLimiting__Panel__GeneralRead__WindowSeconds: "${RateLimiting__Panel__GeneralRead__WindowSeconds:-60}"
+
+  RateLimiting__Panel__Put__PermitLimit: "${RateLimiting__Panel__Put__PermitLimit:-30}"
+  RateLimiting__Panel__Put__WindowSeconds: "${RateLimiting__Panel__Put__WindowSeconds:-60}"
+
+  RateLimiting__Panel__GeneralPost__PermitLimit: "${RateLimiting__Panel__GeneralPost__PermitLimit:-50}"
+  RateLimiting__Panel__GeneralPost__WindowSeconds: "${RateLimiting__Panel__GeneralPost__WindowSeconds:-60}"
+
+  RateLimiting__Panel__GeneralPatch__PermitLimit: "${RateLimiting__Panel__GeneralPatch__PermitLimit:-50}"
+  RateLimiting__Panel__GeneralPatch__WindowSeconds: "${RateLimiting__Panel__GeneralPatch__WindowSeconds:-60}"
+
+  RateLimiting__Panel__GeneralDelete__PermitLimit: "${RateLimiting__Panel__GeneralDelete__PermitLimit:-50}"
+  RateLimiting__Panel__GeneralDelete__WindowSeconds: "${RateLimiting__Panel__GeneralDelete__WindowSeconds:-60}"
+
+  RateLimiting__Panel__StrictPatch__PermitLimit: "${RateLimiting__Panel__StrictPatch__PermitLimit:-50}"
+  RateLimiting__Panel__StrictPatch__WindowSeconds: "${RateLimiting__Panel__StrictPatch__WindowSeconds:-60}"
+
+  RateLimiting__Panel__FlexiblePatch__PermitLimit: "${RateLimiting__Panel__FlexiblePatch__PermitLimit:-50}"
+  RateLimiting__Panel__FlexiblePatch__WindowSeconds: "${RateLimiting__Panel__FlexiblePatch__WindowSeconds:-60}"
+  
+  RateLimiting__Panel__Order__PermitLimit: "${RateLimiting__Panel__Order__PermitLimit:-60}"
+  RateLimiting__Panel__Order__WindowSeconds: "${RateLimiting__Panel__Order__WindowSeconds:-60}"
+
+  # ----- Cart -----
+  RateLimiting__Cart__GeneralCart__PermitLimit: "${RateLimiting__Cart__GeneralCart__PermitLimit:-150}"
+  RateLimiting__Cart__GeneralCart__WindowSeconds: "${RateLimiting__Cart__GeneralCart__WindowSeconds:-60}"
+
+  RateLimiting__Cart__UserRemoveCart__PermitLimit: "${RateLimiting__Cart__UserRemoveCart__PermitLimit:-100}"
+  RateLimiting__Cart__UserRemoveCart__WindowSeconds: "${RateLimiting__Cart__UserRemoveCart__WindowSeconds:-60}"
+
+  # ----- Checkout -----
+  RateLimiting__Checkout__HybridPanel__PermitLimit: "${RateLimiting__Checkout__HybridPanel__PermitLimit:-100}"
+  RateLimiting__Checkout__HybridPanel__WindowSeconds: "${RateLimiting__Checkout__HybridPanel__WindowSeconds:-60}"
+  
+  RateLimiting__Checkout__User__PermitLimit: "${RateLimiting__Checkout__User__PermitLimit:-50}"
+  RateLimiting__Checkout__User__WindowSeconds: "${RateLimiting__Checkout__User__WindowSeconds:-60}"
+
+  # ----- Order -----
+  RateLimiting__Order__HybridPanel__PermitLimit: "${RateLimiting__Order__HybridPanel__PermitLimit:-150}"
+  RateLimiting__Order__HybridPanel__WindowSeconds: "${RateLimiting__Order__HybridPanel__WindowSeconds:-60}"
+
+  # ----- Categories -----
+  RateLimiting__Categories__GetCategories__PermitLimit: "${RateLimiting__Categories__GetCategories__PermitLimit:-100}"
+  RateLimiting__Categories__GetCategories__WindowSeconds: "${RateLimiting__Categories__GetCategories__WindowSeconds:-60}"
+
+  # ----- Public -----
+  RateLimiting__Public__Flexible__PermitLimit: "${RateLimiting__Public__Flexible__PermitLimit:-100}"
+  RateLimiting__Public__Flexible__WindowSeconds: "${RateLimiting__Public__Flexible__WindowSeconds:-60}"
+  
 
 x-api-depends-on: &api-depends-on
   postgres:

@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Enums;
 using RestaurantApi.Application.Features.Checkout.Commands.CreateOnlineCheckoutCommand;
@@ -9,6 +10,7 @@ using RestaurantApi.Application.Features.Checkout.Commands.CreateTableCashChecko
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
+using RestaurantApi.WebApi.Configurations.RateLimiting.Policies;
 using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
 using RestaurantApi.WebApi.Swagger.Examples.SuccessExamples;
 using Swashbuckle.AspNetCore.Filters;
@@ -17,6 +19,7 @@ namespace RestaurantApi.WebApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting(RateLimitPolicies.Checkout.HybridPanel)]
 public class CheckoutController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -64,7 +67,8 @@ public class CheckoutController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponse), 422)]
     [SwaggerResponseExample(StatusCodes.Status422UnprocessableEntity, typeof(UnproccesableEntityErrorExample))]
     #endregion
-    [Authorize]
+    [Authorize(Policy = "SameUser")]
+    [EnableRateLimiting(RateLimitPolicies.Checkout.User)]
     public async Task<IActionResult> CreateCheckoutForUsers(
         [FromHeader(Name = "X-Idempotency-Key"), Required] string idempotencyKey
         )

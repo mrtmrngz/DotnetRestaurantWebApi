@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Features.Orders.Commands.OrderCancelCommand;
 using RestaurantApi.Application.Features.Orders.Commands.OrderStatusUpdateCommand;
@@ -8,11 +9,11 @@ using RestaurantApi.Application.Features.Orders.Queries.GetAllOrdersQuery;
 using RestaurantApi.Application.Features.Orders.Queries.GetPanelOrderDetailQuery;
 using RestaurantApi.Application.Features.Orders.Queries.GetTableOrdersQuery;
 using RestaurantApi.Application.Features.Orders.Queries.GetUserOrderDetailQuery;
-
 using RestaurantApi.Application.Features.Orders.Queries.GetUserOrdersQuery;
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
+using RestaurantApi.WebApi.Configurations.RateLimiting.Policies;
 using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
 using RestaurantApi.WebApi.Swagger.Examples.RequestExamples.OrderExamples;
 using RestaurantApi.WebApi.Swagger.Examples.SuccessExamples;
@@ -22,6 +23,7 @@ namespace RestaurantApi.WebApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting(RateLimitPolicies.Panel.Order)]
 public class OrdersController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -120,6 +122,7 @@ public class OrdersController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status422UnprocessableEntity, typeof(UnproccesableEntityErrorExample))]
     #endregion
     [Authorize(Policy = "SameUser")]
+    [EnableRateLimiting(RateLimitPolicies.SameUser.Critical)]
     public async Task<IActionResult> OrderCancel([FromRoute] Guid orderId)
     {
         var command = new OrderCancelCommand
@@ -158,6 +161,7 @@ public class OrdersController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
     #endregion
     [Authorize(Policy = "SameUser")]
+    [EnableRateLimiting(RateLimitPolicies.SameUser.Flexible)]
     public async Task<IActionResult> GetUserOrders()
     {
         var query = new GetUserOrdersQuery
@@ -203,6 +207,7 @@ public class OrdersController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
     #endregion
     [Authorize(Policy = "SameUser")]
+    [EnableRateLimiting(RateLimitPolicies.SameUser.Flexible)]
     public async Task<IActionResult> GetUserOrderDetail([FromRoute] Guid orderId)
     {
         var query = new GetUserOrderDetailQuery

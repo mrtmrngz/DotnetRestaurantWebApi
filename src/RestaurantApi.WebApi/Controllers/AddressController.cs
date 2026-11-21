@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Exceptions;
 using RestaurantApi.Application.Features.Address.Commands;
@@ -10,6 +11,7 @@ using RestaurantApi.Application.Features.Address.Queries.GetUserAddressByIdQuery
 using RestaurantApi.Application.Features.Address.Queries.GetUserAddressQuery;
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
+using RestaurantApi.WebApi.Configurations.RateLimiting.Policies;
 using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
 using RestaurantApi.WebApi.Swagger.Examples.RequestExamples.AddressExamples;
 using RestaurantApi.WebApi.Swagger.Examples.SuccessExamples;
@@ -42,6 +44,7 @@ public class AddressController: ControllerBase
     [SwaggerResponseExample(StatusCodes.Status201Created, typeof(ContentCreatedExample))]
     #endregion
     [Authorize(Policy = "SameUser")]
+    [EnableRateLimiting(RateLimitPolicies.SameUser.Strict)]
     public async Task<IActionResult> CreateAddress([FromBody] CreateAddressCommand command)
     {
         var userId = _currentUserService.GetRequiredUserId();
@@ -61,6 +64,7 @@ public class AddressController: ControllerBase
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(UserAddressListResponseExample))]
     #endregion
     [Authorize(Policy = "SameUser")]
+    [EnableRateLimiting(RateLimitPolicies.SameUser.Restricted)]
     public async Task<IActionResult> GetUserAddress()
     {
         var userId = _currentUserService.GetRequiredUserId();
@@ -78,6 +82,7 @@ public class AddressController: ControllerBase
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(GetUserAddressByIdResponseExample))]
     #endregion
     [Authorize(Policy = "SameUser")]
+    [EnableRateLimiting(RateLimitPolicies.SameUser.Standard)]
     public async Task<IActionResult> GetAddressById([FromRoute] Guid addressId)
     {
         var userId = _currentUserService.GetRequiredUserId();
@@ -97,6 +102,7 @@ public class AddressController: ControllerBase
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentUpdatedResponseExample))]
     #endregion
     [Authorize(Policy = "SameUser")]
+    [EnableRateLimiting(RateLimitPolicies.SameUser.Strict)]
     public async Task<IActionResult> UpdateAddress([FromBody] UpdateAddressCommand command, [FromRoute] Guid addressId)
     {
         var userId = _currentUserService.GetRequiredUserId();
@@ -117,6 +123,7 @@ public class AddressController: ControllerBase
     [SwaggerResponseExample(StatusCodes.Status200OK, typeof(ContentDeletedSuccessResponseExample))]
     #endregion
     [Authorize(Policy = "SameUser")]
+    [EnableRateLimiting(RateLimitPolicies.SameUser.Restricted)]
     public async Task<IActionResult> RemoveAddress([FromRoute] Guid addressId)
     {
         var userId = _currentUserService.GetRequiredUserId();

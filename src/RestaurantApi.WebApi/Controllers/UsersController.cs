@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Features.Users.Commands.UpdateUserRoleCommand;
 using RestaurantApi.Application.Features.Users.Queries.GetMeQuery;
@@ -10,6 +11,7 @@ using RestaurantApi.Application.Features.Users.Queries.GetUserRolesQuery;
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
+using RestaurantApi.WebApi.Configurations.RateLimiting.Policies;
 using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
 using RestaurantApi.WebApi.Swagger.Examples.RequestExamples.UserExamples;
 using RestaurantApi.WebApi.Swagger.Examples.SuccessExamples;
@@ -19,6 +21,7 @@ namespace RestaurantApi.WebApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting(RateLimitPolicies.Panel.GeneralRead)]
 public class UsersController : ControllerBase
 {
     private readonly ICurrentUserService _currentUserService;
@@ -32,6 +35,7 @@ public class UsersController : ControllerBase
 
     [HttpGet("me")]
     [Authorize(Policy = "SameUser")]
+    [EnableRateLimiting(RateLimitPolicies.SameUser.Standard)]
     public async Task<IActionResult> GetUserInfoForLogin()
     {
         string? userId = _currentUserService.UserId;
@@ -199,6 +203,7 @@ public class UsersController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status422UnprocessableEntity, typeof(UnproccesableEntityErrorExample))]
     #endregion
     [Authorize(Policy = Permissions.UserPermissions.Update)]
+    [EnableRateLimiting(RateLimitPolicies.Panel.Put)]
     public async Task<IActionResult> UpdateUserRoles([FromBody] UpdateUserRoleCommand command, [FromRoute] Guid userId)
     {
         var commandToSend = command with { UserId = userId };

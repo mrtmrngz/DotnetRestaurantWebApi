@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using RestaurantApi.Application.Common.Abstractions;
 using RestaurantApi.Application.Common.Enums;
 using RestaurantApi.Application.Common.Exceptions;
@@ -13,6 +14,7 @@ using RestaurantApi.Application.Features.Cart.Queries.GetCartTotalQuery;
 using RestaurantApi.Application.Models.Responses.ErrorResponses;
 using RestaurantApi.Application.Models.Responses.SuccessResponse;
 using RestaurantApi.Domain.Constants;
+using RestaurantApi.WebApi.Configurations.RateLimiting.Policies;
 using RestaurantApi.WebApi.Swagger.Examples.ErrorExamples;
 using RestaurantApi.WebApi.Swagger.Examples.RequestExamples.CartExample;
 using RestaurantApi.WebApi.Swagger.Examples.SuccessExamples;
@@ -22,6 +24,7 @@ namespace RestaurantApi.WebApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting(RateLimitPolicies.Cart.GeneralCart)]
 public class CartController : ControllerBase
 {
     private readonly ICurrentUserService _currentUserService;
@@ -46,7 +49,8 @@ public class CartController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponse), 404)]
     [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
     [ProducesResponseType(401)]
-    [Authorize]
+    [Authorize(Policy = "SameUser")]
+    [EnableRateLimiting(RateLimitPolicies.SameUser.Flexible)]
     public async Task<IActionResult> GetUserCartItems()
     {
         var userId = _currentUserService.GetRequiredUserId();
@@ -107,7 +111,8 @@ public class CartController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponse), 404)]
     [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
     [ProducesResponseType(401)]
-    [Authorize]
+    [Authorize(Policy = "SameUser")]
+    [EnableRateLimiting(RateLimitPolicies.SameUser.Flexible)]
     public async Task<IActionResult> GetUserCartTotal()
     {
         var userId = _currentUserService.GetRequiredUserId();
@@ -180,7 +185,7 @@ public class CartController : ControllerBase
     [ProducesResponseType(typeof(UnprocessableEntityError), 422)]
     [SwaggerResponseExample(StatusCodes.Status422UnprocessableEntity, typeof(UnproccesableEntityErrorExample))]
     #endregion
-    [Authorize]
+    [Authorize(Policy = "SameUser")]
     public async Task<IActionResult> AddToCartForUsers([FromBody] AddToCartCommand command)
     {
         var currentUserId = _currentUserService.GetRequiredUserId();
@@ -263,6 +268,7 @@ public class CartController : ControllerBase
     [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
     #endregion
     [Authorize]
+    [EnableRateLimiting(RateLimitPolicies.Public.Flexible)]
     public async Task<IActionResult> SetCartItemQuantityForUsers([FromBody] SetCartItemQuantityCommand command,
         [FromRoute] Guid itemId)
     {
@@ -339,7 +345,8 @@ public class CartController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponse), 404)]
     [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
     #endregion
-    [Authorize]
+    [Authorize(Policy = "SameUser")]
+    [EnableRateLimiting(RateLimitPolicies.Public.Flexible)]
     public async Task<IActionResult> RemoveCartItemForUsers([FromRoute] Guid itemId)
     {
         var userId = _currentUserService.GetRequiredUserId();
@@ -412,7 +419,8 @@ public class CartController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponse), 404)]
     [SwaggerResponseExample(StatusCodes.Status404NotFound, typeof(NotFoundErrorExample))]
     #endregion
-    [Authorize]
+    [Authorize(Policy = "SameUser")]
+    [EnableRateLimiting(RateLimitPolicies.Cart.UserRemoveCart)]
     public async Task<IActionResult> RemoveCartForUsers()
     {
         var userId = _currentUserService.GetRequiredUserId();
